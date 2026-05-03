@@ -1,0 +1,241 @@
+.table-card {
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  width: 100%;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1.5px solid #F1F5F9;
+
+  .title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0;
+  }
+
+  .record-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #E2E8F0;
+
+    span {
+      color: #3B82F6;
+      font-weight: 700;
+    }
+  }
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+
+  thead {
+    background: #F8FAFC;
+    
+    th {
+      padding: 16px 24px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1.5px solid #F1F5F9;
+    }
+  }
+
+  tbody {
+    tr {
+      transition: background 0.2s ease, transform 0.2s ease;
+      
+      &:hover {
+        background: #F8FAFC;
+        transform: translateX(2px);
+      }
+
+      td {
+        padding: 16px 24px;
+        font-size: 14px;
+        color: #1E293B;
+        font-weight: 500;
+        border-bottom: 1px solid #F1F5F9;
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+// Special Column Styles
+.badge-count {
+  display: inline-flex;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1.5px solid rgba(59, 130, 246, 0.1);
+}
+
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #E2E8F0;
+    border: 1.5px solid #FFFFFF;
+    box-shadow: 0 0 0 1.5px #3B82F6;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .auth-name {
+    font-weight: 600;
+    color: #1E293B;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  span {
+    display: flex;
+  }
+
+  &.view { color: #64748B; &:hover { background: #F1F5F9; color: #3B82F6; } }
+  &.edit { color: #64748B; &:hover { background: rgba(59, 130, 246, 0.1); color: #3B82F6; } }
+  &.delete { color: #64748B; &:hover { background: rgba(239, 68, 68, 0.1); color: #EF4444; } }
+}
+
+.no-records {
+  text-align: center;
+  padding: 60px 0 !important;
+
+  .empty-state {
+    color: #94A3B8;
+    font-weight: 600;
+    font-size: 15px;
+    width: 100%;
+  }
+}
+
+// Pagination
+.pagination-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #FFFFFF;
+  border-top: 1.5px solid #F1F5F9;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: #64748B;
+  font-weight: 500;
+
+  span {
+    color: #1E293B;
+    font-weight: 700;
+  }
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-page {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #64748B;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0 8px;
+
+  &:hover:not(:disabled):not(.active):not(.dots) {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: #1E293B;
+  }
+
+  &.active {
+    background: #3B82F6;
+    border-color: #3B82F6;
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+  }
+
+  &.nav {
+    min-width: 60px;
+    background: #F8FAFC;
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &.dots {
+    border: none;
+    background: transparent;
+    cursor: default;
+  }
+}

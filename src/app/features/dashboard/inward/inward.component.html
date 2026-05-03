@@ -1,0 +1,145 @@
+<div class="dashboard-page animate-fade-in">
+  <div class="dashboard-container">
+    <!-- Page Header -->
+    <app-section-header 
+      [title]="isEditMode ? 'Edit Inward Entry' : 'Inward Entry'" 
+      [actionText]="isEditMode ? 'Update Entry' : 'Add New'"
+      [actionIcon]="isEditMode ? icons.update : icons.plus"
+      (actionClick)="!isEditMode && updateModalService.open()">
+    </app-section-header>
+
+    <app-alert 
+      *ngIf="alertMessage" 
+      [message]="alertMessage" 
+      [type]="alertType"
+      (close)="alertMessage = null">
+    </app-alert>
+
+    <div class="form-card-wrapper">
+      <div class="card inward-card">
+        <form [formGroup]="inwardForm" (ngSubmit)="onSubmit()">
+          
+          <!-- Primary Form Fields -->
+          <div class="form-grid">
+            
+            <!-- Company Selection -->
+            <div class="input-group">
+              <label>Select Company <span class="required">*</span></label>
+              <app-custom-select 
+                formControlName="companyId" 
+                [options]="companies$ | async" 
+                [icon]="icons.company"
+                placeholder="Choose a company..."
+                (change)="onCompanyChange($event)">
+              </app-custom-select>
+              <div class="error-text" *ngIf="inwardForm.get('companyId')?.touched && inwardForm.get('companyId')?.invalid">
+                Company selection is required
+              </div>
+            </div>
+
+            <!-- Inward DC No -->
+            <div class="input-group">
+              <label>Inward DC No <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <span class="input-icon" [innerHTML]="icons.calendar | safeHtml"></span>
+                <input type="text" formControlName="inwardDcNo" placeholder="e.g. DC-2024-001" class="form-control with-icon" [class.invalid]="inwardForm.get('inwardDcNo')?.touched && inwardForm.get('inwardDcNo')?.invalid">
+              </div>
+              <div class="error-text" *ngIf="inwardForm.get('inwardDcNo')?.touched && inwardForm.get('inwardDcNo')?.invalid">
+                Inward DC No is required
+              </div>
+            </div>
+
+            <!-- Style Number -->
+            <div class="input-group">
+              <label>Style Number <span class="required">*</span></label>
+              <input type="text" formControlName="styleNo" placeholder="e.g. SN-8820" class="form-control" [class.invalid]="inwardForm.get('styleNo')?.touched && inwardForm.get('styleNo')?.invalid">
+            </div>
+
+            <!-- Design Name -->
+            <div class="input-group">
+              <label>Design Name <span class="required">*</span></label>
+              <input type="text" formControlName="designName" placeholder="e.g. Floral Pattern" class="form-control" [class.invalid]="inwardForm.get('designName')?.touched && inwardForm.get('designName')?.invalid">
+            </div>
+
+            <!-- Colour -->
+            <div class="input-group">
+              <label>Colour <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <span class="input-icon" [innerHTML]="icons.palette | safeHtml"></span>
+                <input type="text" formControlName="colour" placeholder="e.g. Royal Blue" class="form-control with-icon" [class.invalid]="inwardForm.get('colour')?.touched && inwardForm.get('colour')?.invalid">
+              </div>
+            </div>
+
+
+          </div>
+
+          <!-- Upload Design Image Section -->
+          <div class="upload-section">
+            <label>Design Image</label>
+            <div class="upload-container" [class.has-file]="fileName" [class.disabled]="!isCompanySelected" (click)="!fileName && isCompanySelected && fileInput.click()">
+              <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" hidden>
+              
+              <!-- Placeholder State -->
+              <div class="upload-placeholder" *ngIf="!fileName">
+                <span class="upload-icon" [innerHTML]="icons.image | safeHtml"></span>
+                <div class="upload-text">
+                  <span class="primary-text">Click to upload design image</span>
+                </div>
+              </div>
+
+              <!-- Success State (File Name Only) -->
+              <div class="file-success-badge" *ngIf="fileName">
+                <span class="file-icon" [innerHTML]="icons.check | safeHtml"></span>
+                <span class="file-name-text">{{ fileName }}</span>
+                <button type="button" class="btn-remove-file" (click)="removeImage(); $event.stopPropagation()" title="Remove file">
+                  <span [innerHTML]="icons.x | safeHtml"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Sizes Section -->
+          <div class="size-breakdown-section">
+            <div class="section-header-inline">
+              <h3>Sizes <span class="required">*</span></h3>
+              <button type="button" class="btn-add-size" (click)="addSizeRow()" [disabled]="!isCompanySelected">
+                <span class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
+                Add Size
+              </button>
+            </div>
+
+            <div formArrayName="sizes" class="size-list">
+              <div *ngFor="let row of sizes.controls; let i=index" [formGroupName]="i" class="size-row animate-in">
+                <div class="field-col size-label">
+                  <input type="text" formControlName="size" placeholder="Size (e.g. XL)" class="form-control" [class.invalid]="row.get('size')?.touched && row.get('size')?.invalid">
+                </div>
+                <div class="field-col size-qty">
+                  <input type="number" formControlName="count" placeholder="Qty" class="form-control" [class.invalid]="row.get('count')?.touched && row.get('count')?.invalid">
+                </div>
+                <button type="button" class="btn-delete-row" (click)="removeSizeRow(i)" [disabled]="sizes.length <= 1" title="Delete row">
+                  <span [innerHTML]="icons.trash | safeHtml"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Total Calculation Bar -->
+            <div class="total-summary">
+              <span class="label">Total Inward Quantity:</span>
+              <span class="value">{{ totalQuantity || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-footer">
+            <button type="button" class="btn-cancel" (click)="onCancel()" [disabled]="loading">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="(inwardForm.invalid && !isEditMode) || loading">
+              <span *ngIf="!loading" class="btn-icon" [innerHTML]="(isEditMode ? icons.update : icons.check) | safeHtml"></span>
+              <span *ngIf="loading" class="spinner"></span>
+              {{ loading ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Entry' : 'Submit Entry') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

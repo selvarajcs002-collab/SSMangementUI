@@ -1,0 +1,17 @@
+<div class="content animate-fade-in">
+  <div class="page-header welcome-section">
+    <h1 class="title welcome-title">Company Management</h1>
+    <p class="subtitle welcome-subtitle">Manage and update company details</p>
+  </div>
+
+  <div class="cards-grid">
+    <app-option-card
+      *ngFor="let item of companyOptions"
+      [icon]="item.icon"
+      [title]="item.title"
+      [description]="item.description"
+      [route]="item.route"
+    >
+    </app-option-card>
+  </div>
+</div>

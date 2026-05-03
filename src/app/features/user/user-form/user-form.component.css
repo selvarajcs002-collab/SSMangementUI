@@ -1,0 +1,4 @@
+/* UserFormComponent CSS */
+.user-form-container {
+  @apply max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg border border-gray-100;
+}

@@ -1,0 +1,128 @@
+.login-page-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to bottom, #f8fafc, #dceeff);
+  z-index: 50;
+  overflow-y: auto;
+}
+
+.login-card {
+  width: 90%;
+  max-width: 380px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 28px 24px;
+  animation: loginCardEnter 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.icon-container {
+  width: 48px;
+  height: 48px;
+  background: #E6F0FF;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+  animation: iconFloat 2.6s ease-in-out infinite;
+}
+
+.icon-container svg {
+  width: 22px;
+  height: 22px;
+  color: #4096FF;
+  stroke-width: 1.5;
+}
+
+.login-title {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 4px;
+  color: #111827;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: #6B7280;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.label-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.input-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.forgot-password {
+  font-size: 12px;
+  color: #4096FF;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.input-wrapper {
+  margin-bottom: 14px;
+  width: 100%;
+}
+
+.divider-container {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: #E5E7EB;
+}
+
+.divider-text {
+  font-size: 11px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.footer-text {
+  font-size: 12px;
+  color: #6B7280;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loginCardEnter {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}

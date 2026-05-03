@@ -1,0 +1,73 @@
+<div class="filter-card animate-fade-in">
+  <form [formGroup]="filterForm" (ngSubmit)="onSearch()">
+    <div class="filter-row">
+      
+      <!-- From Date -->
+      <div class="filter-group">
+        <label>From Date</label>
+        <div class="input-wrapper">
+          <span class="icon" [innerHTML]="icons.calendar | safeHtml"></span>
+          <input type="date" formControlName="fromDate" class="form-control with-icon">
+        </div>
+      </div>
+
+      <!-- To Date -->
+      <div class="filter-group">
+        <label>To Date</label>
+        <div class="input-wrapper">
+          <span class="icon" [innerHTML]="icons.calendar | safeHtml"></span>
+          <input type="date" formControlName="toDate" class="form-control with-icon">
+        </div>
+      </div>
+
+      <!-- Company -->
+      <div class="filter-group">
+        <label>Company</label>
+        <app-custom-select 
+          formControlName="companyId" 
+          [options]="companies$ | async" 
+          [icon]="icons.company"
+          placeholder="Select Company"
+          (change)="onCompanyChange($event)">
+        </app-custom-select>
+      </div>
+
+      <!-- Style No -->
+      <div class="filter-group">
+        <label>Style No</label>
+        <app-custom-select 
+          formControlName="styleNo" 
+          [options]="styleOptions" 
+          [icon]="icons.style"
+          [disabled]="filterForm.get('styleNo')?.disabled || false"
+          placeholder="Select Style">
+        </app-custom-select>
+      </div>
+
+      <!-- Design -->
+      <div class="filter-group">
+        <label>Design</label>
+        <app-custom-select 
+          formControlName="designName" 
+          [options]="designOptions" 
+          [icon]="icons.design"
+          [disabled]="filterForm.get('designName')?.disabled || false"
+          placeholder="Select Design">
+        </app-custom-select>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-group">
+        <button type="button" class="btn-reset" (click)="onReset()">
+          <span class="icon" [innerHTML]="icons.reset | safeHtml"></span>
+          Reset
+        </button>
+        <button type="submit" class="btn-search">
+          <span class="icon" [innerHTML]="icons.search | safeHtml"></span>
+          Search
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>

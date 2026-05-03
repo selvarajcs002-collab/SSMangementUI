@@ -1,0 +1,73 @@
+<div class="signup-page-container animate-fade-in">
+  <div class="signup-card">
+    <div class="signup-top-accent"></div>
+    <div class="flex flex-col items-center">
+      <div class="signup-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+        </svg>
+      </div>
+      <h2 class="signup-title">Create Account</h2>
+      <p class="signup-subtitle">Sign up to get started with your new workspace.</p>
+    </div>
+
+    <form [formGroup]="signupForm" class="flex flex-col">
+      <div class="signup-input-wrapper">
+        <label class="input-label">Email Address</label>
+        <app-input-field
+          formControlName="email"
+          type="email"
+          placeholder="name@company.com"
+          icon="email">
+        </app-input-field>
+        <div *ngIf="signupForm.controls['email'].touched && signupForm.controls['email'].invalid" class="text-red-500 text-xs mt-1">
+          Valid email is required
+        </div>
+      </div>
+
+      <div class="signup-input-wrapper">
+        <label class="input-label">Password</label>
+        <app-input-field
+          formControlName="password"
+          type="password"
+          placeholder="Create a strong password"
+          icon="lock">
+        </app-input-field>
+        <div *ngIf="signupForm.controls['password'].touched && signupForm.controls['password'].invalid" class="text-red-500 text-xs mt-1">
+          Password is required (must meet strength requirements)
+        </div>
+      </div>
+
+      <app-password-strength [password]="currentPasswordValue"></app-password-strength>
+
+      <div class="signup-input-wrapper">
+        <label class="input-label">Confirm Password</label>
+        <app-input-field
+          formControlName="confirmPassword"
+          type="password"
+          placeholder="Confirm your password"
+          icon="lock">
+        </app-input-field>
+        <div *ngIf="signupForm.controls['confirmPassword'].touched && signupForm.controls['confirmPassword'].invalid" class="text-red-500 text-xs mt-1">
+          <span *ngIf="signupForm.controls['confirmPassword'].errors?.['required']">Please confirm your password</span>
+          <span *ngIf="signupForm.controls['confirmPassword'].errors?.['passwordMismatch']">Passwords do not match</span>
+        </div>
+      </div>
+
+      <div class="mt-[10px]">
+        <app-button 
+          text="Create Account" 
+          [type]="'button'" 
+          (click)="onSignup()" 
+          [isLoading]="isLoading" 
+          [disabled]="signupForm.invalid"
+          variant="gradient">
+        </app-button>
+      </div>
+    </form>
+
+    <div class="footer-text">
+      <p>Already have an account? <a routerLink="/login" class="text-[#3B82F6] font-[600] hover:underline cursor-pointer">Login</a></p>
+    </div>
+  </div>
+</div>

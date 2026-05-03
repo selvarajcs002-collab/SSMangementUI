@@ -1,0 +1,80 @@
+<div class="table-card animate-fade-in">
+
+  <!-- Table Header Section -->
+  <div class="table-header">
+    <h3 class="title">Activity Log</h3>
+    <div class="record-count"> Total Records: <span>{{ totalRecords }}</span> </div>
+  </div>
+
+  <!-- Table Container -->
+  <div class="table-container">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of columns" [style.text-align]="col.align || 'left'">
+            {{ col.label }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of data; let i = index" class="table-row">
+          <td *ngFor="let col of columns" [style.text-align]="col.align || 'left'">
+
+            <!-- S.No Column -->
+            <ng-container *ngIf="col.key === 'sno'">
+              {{ (currentPage - 1) * pageSize + i + 1 }}
+            </ng-container>
+
+            <!-- Count Column (Badge) -->
+            <ng-container *ngIf="col.key === 'count'">
+              <span class="badge-count">{{ row[col.key] }}</span>
+            </ng-container>
+
+            <!-- Authorized By Column (Avatar + Name) -->
+            <ng-container *ngIf="col.key === 'authorizedBy'">
+              <div class="auth-wrapper">
+                <div class="avatar">
+                  <img [src]="row['profileImage'] || 'assets/images/default-avatar.png'" [alt]="row[col.key]">
+                </div>
+                <span class="auth-name">{{ row[col.key] }}</span>
+              </div>
+            </ng-container>
+
+            <!-- Action Column -->
+            <ng-container *ngIf="col.key === 'action'">
+              <div class="action-buttons">
+                <button *ngIf="showViewAction" class="btn-icon view" (click)="onView(row)" title="View">
+                  <span [innerHTML]="icons.view | safeHtml"></span>
+                </button>
+                <button class="btn-icon edit" (click)="onEdit(row)" title="Edit">
+                  <span [innerHTML]="icons.edit | safeHtml"></span>
+                </button>
+                <button class="btn-icon delete" (click)="onDelete(row)" title="Delete">
+                  <span [innerHTML]="icons.delete | safeHtml"></span>
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- Default Columns -->
+            <ng-container *ngIf="!['sno', 'count', 'authorizedBy', 'action'].includes(col.key)">
+              {{ row[col.key] || '-' }}
+            </ng-container>
+
+          </td>
+        </tr>
+
+        <!-- No Records State -->
+        <tr *ngIf="data.length === 0">
+          <td [attr.colspan]="columns.length" class="no-records">
+            <div class="empty-state">
+              <span>No Records Found</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+
+</div>

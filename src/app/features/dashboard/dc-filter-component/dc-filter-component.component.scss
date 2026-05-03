@@ -1,0 +1,129 @@
+.filter-card {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  width: 100%;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .icon {
+    position: absolute;
+    left: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94A3B8;
+    pointer-events: none;
+  }
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  padding-bottom: 2px; // Align with input line
+}
+
+.btn-reset, .btn-search {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  .icon {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.btn-reset {
+  background: transparent;
+  border: 1.5px solid #E2E8F0;
+  color: #64748B;
+
+  &:hover {
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+  }
+}
+
+.btn-search {
+  background: #3B82F6;
+  border: 1.5px solid #3B82F6;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+
+  &:hover {
+    background: #2563EB;
+    border-color: #2563EB;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .filter-group {
+    flex: calc(33.33% - 12px);
+  }
+  .action-group {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-group {
+    flex: calc(50% - 8px);
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-group {
+    flex: 100%;
+  }
+}

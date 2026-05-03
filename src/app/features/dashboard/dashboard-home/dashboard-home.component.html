@@ -1,0 +1,17 @@
+<!-- Welcome Header -->
+<div class="welcome-section">
+  <h2 class="welcome-title">Welcome to Dashboard</h2>
+  <p class="welcome-subtitle">Select an option to manage your operations and inventory.</p>
+</div>
+
+<!-- Cards Grid -->
+<div class="cards-grid">
+  <app-option-card
+    *ngFor="let item of options"
+    [icon]="item.icon"
+    [title]="item.title"
+    [description]="item.description"
+    [route]="item.route"
+  >
+  </app-option-card>
+</div>

@@ -1,0 +1,64 @@
+<div class="dc-container animate-fade-in">
+  
+  <!-- Header Section -->
+  <div class="section-header">
+    <app-dc-filter-header></app-dc-filter-header>
+  </div>
+
+  <!-- Toggle Section -->
+  <div class="toggle-wrapper">
+    <app-dynamic-toggle
+      [config]="toggleConfig"
+      [(value)]="activeView"
+      (valueChange)="onToggleChange($event)">
+    </app-dynamic-toggle>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div class="loader-container" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <span>Loading Records...</span>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="section-filter card-wrapper" *ngIf="!isLoading">
+    <app-dc-filter-component (search)="onSearch($event)"></app-dc-filter-component>
+  </div>
+
+  <!-- Table Section -->
+  <div class="section-table" *ngIf="!isLoading">
+    <app-dc-filter-table
+      [columns]="tableColumns"
+      [data]="tableData"
+      [totalRecords]="totalRecords"
+      [currentPage]="pageNumber"
+      [showViewAction]="activeView === 'outward'"
+      (view)="onView($event)"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+      (pageChange)="onPageChange($event)">
+    </app-dc-filter-table>
+  </div>
+
+  <!-- Pagination Controls (Explicit) -->
+  <div class="pagination-controls-wrapper" *ngIf="!isLoading && tableData.length > 0">
+    <div class="pagination-actions">
+      <button 
+        class="btn-nav" 
+        [disabled]="pageNumber === 1" 
+        (click)="prevPage()">
+        Prev
+      </button>
+      
+      <span class="page-info">Page {{ pageNumber }}</span>
+      
+      <button 
+        class="btn-nav" 
+        [disabled]="tableData.length < pageSize" 
+        (click)="nextPage()">
+        Next
+      </button>
+    </div>
+  </div>
+
+</div>

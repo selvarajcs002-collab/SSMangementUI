@@ -1,0 +1,185 @@
+<div class="dashboard-page animate-fade-in">
+  <div class="dashboard-container">
+    <!-- Page Header -->
+    <app-section-header [title]="isEditMode ? 'Edit Outward Entry' : 'Outward Entry'" actionText="Update" [actionIcon]="icons.update"
+      (actionClick)="updateModalService.open()">
+    </app-section-header>
+
+
+    <div class="form-card-wrapper">
+      <div class="card outward-card">
+        <form [formGroup]="outwardForm" (ngSubmit)="onSubmit()">
+
+          <div class="form-grid">
+
+            <!-- Company Selection -->
+            <div class="input-group">
+              <label>Select Company <span class="required">*</span></label>
+              <app-custom-select formControlName="companyId" [options]="companies$ | async" [icon]="icons.company"
+                [loading]="isOptionsLoading" placeholder="Choose a company..." (change)="onCompanyChange($event)">
+              </app-custom-select>
+              <div class="error-text"
+                *ngIf="outwardForm.get('companyId')?.touched && outwardForm.get('companyId')?.invalid">
+                Company selection is required
+              </div>
+            </div>
+
+            <!-- Outward Date -->
+            <div class="input-group">
+              <label>Outward Date <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <span class="input-icon" [innerHTML]="icons.calendar | safeHtml"></span>
+                <input type="date" formControlName="outwardDate" class="form-control with-icon"
+                  [class.invalid]="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid">
+              </div>
+              <div class="error-text"
+                *ngIf="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid">
+                Please select a valid date
+              </div>
+            </div>
+
+
+            <!-- Style Number (Dropdown) -->
+            <div class="input-group">
+              <label>Style Number <span class="required">*</span></label>
+              <app-custom-select formControlName="styleNo" [options]="styleSelectOptions" placeholder="Select Style..."
+                (change)="onSelectionChange()">
+              </app-custom-select>
+              <div class="error-text"
+                *ngIf="outwardForm.get('styleNo')?.touched && outwardForm.get('styleNo')?.invalid">Style is required
+              </div>
+            </div>
+
+            <!-- Colour (Dropdown) -->
+            <div class="input-group">
+              <label>Colour <span class="required">*</span></label>
+              <app-custom-select formControlName="colour" [options]="colourSelectOptions" placeholder="Select Colour..."
+                (change)="onSelectionChange()">
+              </app-custom-select>
+              <div class="error-text" *ngIf="outwardForm.get('colour')?.touched && outwardForm.get('colour')?.invalid">
+                Colour is required</div>
+            </div>
+
+            <!-- Design Reference (Dropdown) -->
+            <div class="input-group">
+              <label>Design Reference</label>
+              <app-custom-select formControlName="designRef" [options]="designSelectOptions"
+                placeholder="Select Design Reference..." (change)="onSelectionChange()">
+              </app-custom-select>
+            </div>
+
+            <!-- Item Type (Dropdown) -->
+            <div class="input-group">
+              <label>Item Type</label>
+              <app-custom-select formControlName="itemType" [options]="itemTypeSelectOptions"
+                placeholder="Select Item Type..." (change)="onSelectionChange()">
+              </app-custom-select>
+            </div>
+
+            <!-- Remarks -->
+            <div class="input-group full-width">
+              <label>Remarks</label>
+              <textarea formControlName="remarks" class="form-control" rows="3" placeholder="Add any remarks or notes here..."></textarea>
+            </div>
+
+          </div>
+
+
+          <!-- Image Upload Section -->
+          <div class="upload-section">
+            <label>Design Image</label>
+            <div class="upload-container" [class.has-file]="fileName" [class.disabled]="!isDataLoaded"
+              (click)="!fileName && isDataLoaded && outwardFileInput.click()">
+              <input type="file" #outwardFileInput (change)="onFileSelect($event)" accept="image/*" hidden>
+
+              <div class="upload-placeholder" *ngIf="!fileName">
+                <span class="upload-icon" [innerHTML]="icons.image | safeHtml"></span>
+                <div class="upload-text">
+                  <span class="primary-text">Click to upload design image</span>
+                </div>
+              </div>
+
+              <div class="file-success-badge" *ngIf="fileName">
+                <span class="file-icon" [innerHTML]="icons.check | safeHtml"></span>
+                <span class="file-name-text">{{ fileName }}</span>
+                <button type="button" class="btn-remove-file" (click)="removeImage(); $event.stopPropagation()"
+                  title="Remove file">
+                  <span [innerHTML]="icons.x | safeHtml"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Size Breakdown Section -->
+          <div class="size-breakdown-section" *ngIf="outwardForm.get('itemType')?.value === 'size'">
+            <div class="section-header-inline">
+              <div class="title-group">
+                <h3>Size Breakdown</h3>
+                <p *ngIf="sizeBreakdown.length === 0" class="empty-hint">No sizes selected. Click the button to start.
+                </p>
+              </div>
+              <button type="button" class="btn-select-sizes" (click)="selectSizes()"
+                [disabled]="!isDataLoaded || isSizesLoading">
+                <span *ngIf="!isSizesLoading" class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
+                <span *ngIf="isSizesLoading" class="loading-spinner small"></span>
+                {{ isSizesLoading ? 'Fetching Sizes...' : 'Select Sizes' }}
+              </button>
+            </div>
+
+            <div formArrayName="sizeBreakdown" class="size-list">
+              <div *ngFor="let row of sizeBreakdown.controls; let i=index" [formGroupName]="i"
+                class="size-row animate-in">
+                <div class="field-col size-label-display">
+                  <div class="size-badge">{{ row.get('size')?.value }}</div>
+                </div>
+                <div class="field-col size-qty">
+                  <input type="number" formControlName="quantity" placeholder="Enter Count" class="form-control"
+                    [class.invalid]="row.get('quantity')?.touched && row.get('quantity')?.invalid">
+                </div>
+                <button type="button" class="btn-delete-row" (click)="removeSizeRow(i)"
+                  [disabled]="sizeBreakdown.length === 0" title="Delete row">
+                  <span [innerHTML]="icons.trash | safeHtml"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Total Calculation Bar -->
+            <div class="total-summary" *ngIf="sizeBreakdown.length > 0">
+              <span class="label">Total Outward Quantity:</span>
+              <span class="value">{{ totalQuantity }}</span>
+            </div>
+          </div>
+
+          <!-- Lot Completion Toggle -->
+          <div class="completion-section animate-in">
+            <div class="toggle-wrapper">
+              <div class="toggle-info">
+                <h3>Lot is Completed</h3>
+                <p>Toggle ON to confirm this lot is now fully completed</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" formControlName="isLotCompleted">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-footer">
+            <button type="button" class="btn-cancel" (click)="onCancel()" [disabled]="isSubmitting">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="(!isEditMode && !isFormValid()) || isSubmitting">
+              <span *ngIf="!isSubmitting" class="btn-icon" [innerHTML]="icons.check | safeHtml"></span>
+              <span *ngIf="isSubmitting" class="spinner"></span>
+              {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Entry' : 'Submit Entry') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multiselect Size Picker Modal -->
+  <app-size-picker-modal *ngIf="isSizePickerOpen" [availableSizes]="sizes" (confirm)="onSizesSelected($event)"
+    (cancel)="isSizePickerOpen = false">
+  </app-size-picker-modal>
+</div>

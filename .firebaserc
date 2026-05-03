@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "production": "ss-management-app",
+    "development": "ss-management-dev",
+    "test": "ss-management-test-app"
+  }
+}

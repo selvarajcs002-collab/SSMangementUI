@@ -1,0 +1,55 @@
+<div class="modal-backdrop animate-fade-in" (click)="onCancel()">
+  <div class="modal-container animate-slide-up" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-left">
+        <h2>Select Sizes</h2>
+        <p>Choose sizes to add to your outward entry</p>
+      </div>
+      <button class="btn-close" (click)="onCancel()" title="Close">
+        <span [innerHTML]="icons.x | safeHtml"></span>
+      </button>
+    </div>
+
+    <!-- Modal Content -->
+    <div class="modal-content">
+      
+      <!-- Select All Toggle -->
+      <div class="select-all-row" (click)="toggleSelectAll()">
+        <div class="custom-checkbox" [class.checked]="isAllSelected()">
+          <span *ngIf="isAllSelected()" [innerHTML]="icons.check | safeHtml"></span>
+        </div>
+        <span class="label">Select All Available Sizes</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Size Checklist Grid -->
+      <div class="size-grid">
+        <div *ngFor="let size of availableSizes" 
+             class="size-item" 
+             [class.selected]="selectedSizes.has(size)"
+             (click)="toggleSize(size)">
+          
+          <div class="size-checkbox" [class.active]="selectedSizes.has(size)">
+            <span *ngIf="selectedSizes.has(size)" [innerHTML]="icons.check | safeHtml"></span>
+          </div>
+          
+          <span class="size-label">{{ size }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button class="btn-cancel-modal" (click)="onCancel()">Cancel</button>
+      <button class="btn-confirm-modal" 
+              (click)="onConfirm()" 
+              [disabled]="selectedSizes.size === 0">
+        Add {{ selectedSizes.size }} Size{{ selectedSizes.size !== 1 ? 's' : '' }}
+      </button>
+    </div>
+
+  </div>
+</div>

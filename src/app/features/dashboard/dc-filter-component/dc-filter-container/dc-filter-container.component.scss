@@ -1,0 +1,128 @@
+.dc-container {
+  padding: 40px 0;
+  max-width: 1600px;
+  width: 95%;
+  margin: 0 auto;
+  min-height: calc(100vh - 72px);
+}
+
+// Global page background override for Status page
+:host {
+  display: block;
+  background-color: #F1F5F9; // Soft blue/grey background
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.toggle-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: #64748B;
+  font-weight: 500;
+  gap: 16px;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #E2E8F0;
+    border-top: 3px solid #3B82F6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.card-wrapper {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 32px;
+}
+
+.section-table {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .dc-container {
+    padding: 20px 0;
+    width: 95%;
+  }
+}
+
+.pagination-controls-wrapper {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+
+  .pagination-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    padding: 8px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+    .btn-nav {
+      padding: 8px 24px;
+      border-radius: 20px;
+      border: 1px solid #E2E8F0;
+      background: #FFFFFF;
+      color: #1E293B;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover:not(:disabled) {
+        background: #F8FAFC;
+        border-color: #CBD5E1;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #F1F5F9;
+      }
+    }
+
+    .page-info {
+      font-weight: 700;
+      color: #3B82F6;
+      font-size: 0.9375rem;
+      min-width: 80px;
+      text-align: center;
+    }
+  }
+}

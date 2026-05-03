@@ -70,7 +70,7 @@ export class OutwardPreviewComponent implements OnInit {
         base64Pdf: pdfBase64
       };
 
-      this.apiService.post<any>('Print/save-pdf', payload).subscribe({
+      this.apiService.post<any>('save-pdf', payload).subscribe({
         next: (res) => {
           this.isSaving = false;
           if (res.success) {

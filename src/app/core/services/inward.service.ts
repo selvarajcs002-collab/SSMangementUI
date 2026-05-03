@@ -35,12 +35,12 @@ export class InwardService {
   }
 
   saveInward(payload: InwardSavePayload): Observable<any> {
-    return this.api.post<any>('inward/save', payload);
+    return this.api.post<any>('save', payload);
   }
 
   getSizes(companyId: number, colour: string, styleNo: string): Observable<any[]> {
     const params = { companyId, colour, styleNo };
-    return this.api.get<any[]>('inward/sizes', params);
+    return this.api.get<any[]>('sizes', params);
   }
 
   getDesignStyleColour(companyId: number): Observable<any[]> {
@@ -49,13 +49,13 @@ export class InwardService {
     }
 
     const params = { companyId };
-    return this.api.get<any[]>('inward/design-style-colour', params).pipe(
+    return this.api.get<any[]>('design-style-colour', params).pipe(
       tap(data => this.selectionCache.set(companyId, data))
     );
   }
 
   updateInward(payload: any): Observable<any> {
-    return this.api.put<any>('inward/update', payload);
+    return this.api.put<any>('update', payload);
   }
 
   clearCache(): void {

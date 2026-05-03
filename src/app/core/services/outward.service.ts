@@ -28,16 +28,16 @@ export class OutwardService {
   constructor(private api: ApiService) { }
 
   saveOutward(payload: OutwardSaveRequest): Observable<any> {
-    return this.api.post<any>('outward/save-outward', payload);
+    return this.api.post<any>('save-outward', payload);
   }
 
   updateOutward(payload: any): Observable<any> {
-    return this.api.post<any>('outward/outward-update', payload);
+    return this.api.post<any>('outward-update', payload);
   }
 
   getOutwardByDcNo(id: number, mode: string): Observable<any> {
     const params = { id, mode };
-    return this.api.get<any>('outward/outward_get_by_dcno', params).pipe(
+    return this.api.get<any>('outward_get_by_dcno', params).pipe(
       tap(data => this.setEditData(data))
     );
   }

@@ -10,11 +10,11 @@ import { Router } from '@angular/router';
 })
 export class AuthService {
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router) { }
 
   login(data: LoginRequest): Observable<CommonResponse> {
     return this.api.post<CommonResponse>(
-      'login/login',
+      'login',
       data
     );
   }

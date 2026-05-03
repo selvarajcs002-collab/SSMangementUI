@@ -116,7 +116,7 @@ export class DcFilterContainerComponent implements OnInit {
 
   getData(pageNumber: number, pageSize: number) {
     const mode = this.activeView.toUpperCase();
-    return this.apiService.getWithResponse<any>(`DcFilter/get-all`, {
+    return this.apiService.getWithResponse<any>(`get-all`, {
       mode: mode,
       pageNumber: pageNumber,
       pageSize: pageSize
@@ -168,7 +168,7 @@ export class DcFilterContainerComponent implements OnInit {
       designName: filterPayload.designName || null
     };
 
-    this.apiService.post<any>('DcFilter/get-details', payload).subscribe({
+    this.apiService.post<any>('get-details', payload).subscribe({
       next: (res) => {
         if (res && res.success && res.data) {
           const mode = this.activeView.toUpperCase();

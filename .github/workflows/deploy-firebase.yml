@@ -1,40 +1,32 @@
-name: Deploy Frontend to Firebase
+name: Deploy Frontend to Firebase Hosting
 
 on:
   push:
-    branches: [ master, dev, test ]
+    branches: [ master, dev ]
 
 jobs:
-  build_and_deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Set Environment Variables
-        id: vars
-        run: |
-          if [ "${{ github.ref_name }}" == "master" ]; then
-            echo "project_id=ss-management-app" >> $GITHUB_OUTPUT
-            echo "config=production" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref_name }}" == "test" ]; then
-            echo "project_id=ss-management-test-app" >> $GITHUB_OUTPUT
-            echo "config=test" >> $GITHUB_OUTPUT
-          else
-            echo "project_id=ss-management-dev" >> $GITHUB_OUTPUT
-            echo "config=development" >> $GITHUB_OUTPUT
-          fi
+      - name: Build Angular application
+        run: npm run build -- --configuration=production
 
-      - name: Build Angular App
-        run: npm run build -- --configuration=${{ steps.vars.outputs.config }}
-
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_SS_MANAGEMENT }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_SSMANAGEMENT }}"
           channelId: live
-          projectId: ${{ steps.vars.outputs.project_id }}
+          projectId: ssmanagement-firebase # UPDATE THIS with your actual project ID

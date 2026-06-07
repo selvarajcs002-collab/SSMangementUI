@@ -7,7 +7,6 @@ branches:
 - test
 
 jobs:
-
 deploy-dev:
 if: github.ref == 'refs/heads/dev'
 runs-on: self-hosted
@@ -30,7 +29,7 @@ steps:
 
   - name: Deploy DEV
     shell: powershell
-    run: C:\Deploy\deploy-ui-dev.ps1
+    run: 'C:\Deploy\deploy-ui-dev.ps1'
 ```
 
 deploy-test:
@@ -55,5 +54,5 @@ steps:
 
   - name: Deploy TEST
     shell: powershell
-    run: C:\Deploy\deploy-ui-test.ps1
+    run: 'C:\Deploy\deploy-ui-test.ps1'
 ```

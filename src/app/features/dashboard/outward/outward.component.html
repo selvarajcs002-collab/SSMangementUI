@@ -25,13 +25,14 @@
             </div>
 
             <!-- Outward Date -->
-            <div class="input-group">
-              <label>Outward Date <span class="required">*</span></label>
-              <div class="input-wrapper">
-                <span class="input-icon" [innerHTML]="icons.calendar | safeHtml"></span>
-                <input type="date" formControlName="outwardDate" class="form-control with-icon"
-                  [class.invalid]="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid">
-              </div>
+            <div class="input-group app-date-filter">
+              <app-date-picker 
+                label="Outward Date" 
+                formControlName="outwardDate" 
+                placeholder="Select Outward Date"
+                [required]="true"
+                [error]="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid ? true : false">
+              </app-date-picker>
               <div class="error-text"
                 *ngIf="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid">
                 Please select a valid date
@@ -50,8 +51,8 @@
               </div>
             </div>
 
-            <!-- Colour (Dropdown) -->
-            <div class="input-group">
+            <!-- Colour (Dropdown) - Only for Meter Based -->
+            <div class="input-group" *ngIf="entryType === 'meter'">
               <label>Colour <span class="required">*</span></label>
               <app-custom-select formControlName="colour" [options]="colourSelectOptions" placeholder="Select Colour..."
                 (change)="onSelectionChange()">
@@ -110,43 +111,236 @@
             </div>
           </div>
 
-          <!-- Dynamic Size Breakdown Section -->
-          <div class="size-breakdown-section" *ngIf="outwardForm.get('itemType')?.value === 'size'">
+          <!-- â”€â”€ NEW: Entry Type Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+          <div class="entry-type-section">
+            <label class="entry-type-label">Entry Type <span class="required">*</span></label>
+            <div class="entry-type-toggle">
+              <button type="button"
+                class="entry-type-btn"
+                [class.active]="entryType === 'size'"
+                (click)="setEntryType('size')"
+                [disabled]="!isDataLoaded">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Size Based
+              </button>
+              <button type="button"
+                class="entry-type-btn"
+                [class.active]="entryType === 'meter'"
+                (click)="setEntryType('meter')"
+                [disabled]="!isDataLoaded">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>
+                Meter Based
+              </button>
+            </div>
+          </div>
+
+          <!-- NEW: Dynamic Colour & Size Breakdown Section (Size Based) -->
+          <div class="size-breakdown-section" *ngIf="entryType === 'size' && outwardForm.get('itemType')?.value === 'size'">
             <div class="section-header-inline">
               <div class="title-group">
-                <h3>Size Breakdown</h3>
-                <p *ngIf="sizeBreakdown.length === 0" class="empty-hint">No sizes selected. Click the button to start.
-                </p>
+                <h3>Colour Breakdown</h3>
+                <p *ngIf="colourBreakdowns.length === 0" class="empty-hint">No colours selected. Click the button to start.</p>
               </div>
-              <button type="button" class="btn-select-sizes" (click)="selectSizes()"
-                [disabled]="!isDataLoaded || isSizesLoading">
-                <span *ngIf="!isSizesLoading" class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
-                <span *ngIf="isSizesLoading" class="loading-spinner small"></span>
-                {{ isSizesLoading ? 'Fetching Sizes...' : 'Select Sizes' }}
+              <button type="button" class="btn-select-sizes" (click)="openAddColourModal()"
+                [disabled]="!isDataLoaded || !selectedStyle">
+                <span class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
+                Add Colour
               </button>
             </div>
 
-            <div formArrayName="sizeBreakdown" class="size-list">
-              <div *ngFor="let row of sizeBreakdown.controls; let i=index" [formGroupName]="i"
-                class="size-row animate-in">
-                <div class="field-col size-label-display">
-                  <div class="size-badge">{{ row.get('size')?.value }}</div>
+            <!-- NEW: Horizontal Matrix Colour List -->
+            <div formArrayName="colourBreakdowns" class="matrix-colour-list">
+              <div *ngFor="let colour of colourBreakdowns.controls; let cIndex=index" [formGroupName]="cIndex" class="mc-card animate-in">
+                <!-- Header -->
+                <div class="mc-header">
+                  <div class="mc-title">
+                     <div class="colour-swatch" [style.backgroundColor]="colour.get('colourName')?.value | lowercase"></div>
+                     <h4 class="colour-name">{{ colour.get('colourName')?.value }}</h4>
+                  </div>
+                  <div class="mc-actions">
+                     <span class="mc-total-badge">Colour Total: {{ colour.get('colourTotal')?.value }}</span>
+                     <button type="button" class="btn-icon-action" title="Collapse">
+                       <span [innerHTML]="icons.chevronUp | safeHtml"></span>
+                     </button>
+                     <button type="button" class="btn-icon-action text-danger" (click)="removeColourRow(cIndex)" title="Delete Colour">
+                       <span [innerHTML]="icons.trash | safeHtml"></span>
+                     </button>
+                  </div>
                 </div>
-                <div class="field-col size-qty">
-                  <input type="number" formControlName="quantity" placeholder="Enter Count" class="form-control"
-                    [class.invalid]="row.get('quantity')?.touched && row.get('quantity')?.invalid">
+                
+                <!-- Matrix Table -->
+                <div class="mc-matrix" formArrayName="sizeBreakdowns" *ngIf="getSizeBreakdowns(cIndex).length > 0">
+                  <div class="matrix-row matrix-header-row">
+                    <div class="m-cell m-label">SIZE</div>
+                    <div class="m-cell" *ngFor="let size of getSizeBreakdowns(cIndex).controls">{{ size.get('sizeName')?.value }}</div>
+                    <div class="m-cell m-total">TOTAL</div>
+                  </div>
+                  <div class="matrix-row matrix-input-row">
+                    <div class="m-cell m-label">QUANTITY</div>
+                    <div class="m-cell" *ngFor="let size of getSizeBreakdowns(cIndex).controls; let sIndex=index" [formGroupName]="sIndex">
+                      <input type="number" formControlName="quantity" class="form-control m-input" placeholder="0">
+                    </div>
+                    <div class="m-cell m-total m-value-green">{{ colour.get('colourTotal')?.value }}</div>
+                  </div>
                 </div>
-                <button type="button" class="btn-delete-row" (click)="removeSizeRow(i)"
-                  [disabled]="sizeBreakdown.length === 0" title="Delete row">
-                  <span [innerHTML]="icons.trash | safeHtml"></span>
-                </button>
+
+                <div *ngIf="getSizeBreakdowns(cIndex).length === 0" class="mc-empty">
+                  No sizes added to this colour yet.
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="mc-footer">
+                  <button type="button" class="btn-text-primary" (click)="openSizeModal(cIndex)">
+                    + Add Size
+                  </button>
+                  <button type="button" class="btn-text-danger" *ngIf="getSizeBreakdowns(cIndex).length > 0" (click)="clearAllSizes(cIndex)">
+                    Clear All
+                  </button>
+                </div>
               </div>
             </div>
 
-            <!-- Total Calculation Bar -->
-            <div class="total-summary" *ngIf="sizeBreakdown.length > 0">
-              <span class="label">Total Outward Quantity:</span>
-              <span class="value">{{ totalQuantity }}</span>
+            <!-- Dashed Add Colour Button (Visible if at least 1 colour exists) -->
+            <button type="button" class="btn-add-colour-dashed" *ngIf="colourBreakdowns.length > 0" (click)="openAddColourModal()">
+               <span class="btn-icon">+</span> Add Colour
+            </button>
+
+            <!-- Totals Dashboard -->
+            <div class="totals-dashboard" *ngIf="colourBreakdowns.length > 0">
+               <div class="total-item">
+                  <span class="total-label">Total Colours</span>
+                  <span class="total-value">{{ totalColours }}</span>
+               </div>
+               <div class="total-item">
+                  <span class="total-label">Total Sizes</span>
+                  <span class="total-value">{{ totalSizes }}</span>
+               </div>
+               <div class="total-item grand-total">
+                  <div class="gt-left">
+                     <span class="total-label">Grand Total Quantity</span>
+                     <span class="total-desc">Total of all colours and sizes</span>
+                  </div>
+                  <span class="total-value gt-value-green">{{ totalQuantity }}</span>
+               </div>
+            </div>
+          </div>
+
+          <!-- â”€â”€ NEW: Meter Based Entry Section (completely isolated) â”€â”€â”€â”€â”€ -->
+          <div class="size-breakdown-section" *ngIf="entryType === 'meter'">
+            <div class="section-header-inline">
+              <div class="title-group">
+                <h3>Meter Based Entry</h3>
+                <p class="empty-hint">Select meter and enter bits details. Total Meter is auto-calculated.</p>
+              </div>
+              <button type="button" class="btn-add-meter-row" (click)="selectMeters()" [disabled]="!isDataLoaded || isMetersLoading">
+                <svg *ngIf="isMetersLoading" class="spinner" style="width: 14px; height: 14px; border-width: 2px; border-color: var(--primary) transparent var(--primary) transparent;" viewBox="0 0 24 24"></svg>
+                <svg *ngIf="!isMetersLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                {{ isMetersLoading ? 'Loading...' : 'Select Meter' }}
+              </button>
+            </div>
+
+            <!-- Grid Header -->
+            <div class="meter-grid" formArrayName="meterBreakdown">
+              <div class="meter-grid-head" *ngIf="meterBreakdown.length > 0">
+                <div class="mg-col mg-num">#</div>
+                <div class="mg-col mg-meter">
+                  <div>Meter (in Mtr) <span class="required">*</span></div>
+                  <small>Enter meter value</small>
+                </div>
+                <div class="mg-col mg-bits">
+                  <div>Bits Count <span class="required">*</span></div>
+                  <small>Enter bits</small>
+                </div>
+                <div class="mg-col mg-pieces">
+                  <div>No of Pieces <span class="required">*</span></div>
+                  <small>Enter pieces</small>
+                </div>
+                <div class="mg-col mg-total">
+                  <div>Total Meter</div>
+                  <small>(Meter Ã— Bits)</small>
+                </div>
+                <div class="mg-col mg-action">Action</div>
+              </div>
+
+              <!-- Grid Rows -->
+              <div *ngFor="let row of meterBreakdown.controls; let i = index"
+                [formGroupName]="i"
+                class="meter-grid-row animate-in">
+                <div class="mg-col mg-num">{{ i + 1 }}</div>
+                <div class="mg-col mg-meter">
+                  <div class="size-badge">{{ row.get('meterPerBit')?.value | number:'1.2-2' }} Mtr</div>
+                </div>
+                <div class="mg-col mg-bits">
+                  <input type="number" formControlName="bitsCount" class="form-control"
+                    min="1" step="1" placeholder="e.g. 100"
+                    [class.invalid]="row.get('bitsCount')?.touched && row.get('bitsCount')?.invalid">
+                  <div class="error-text" *ngIf="row.get('bitsCount')?.touched && row.get('bitsCount')?.errors?.['required']">Required</div>
+                  <div class="error-text" *ngIf="row.get('bitsCount')?.touched && row.get('bitsCount')?.errors?.['min']">Must be â‰¥ 1</div>
+                </div>
+                <div class="mg-col mg-pieces">
+                  <input type="number" formControlName="piecesCount" class="form-control"
+                    min="1" step="1" placeholder="e.g. 50"
+                    [class.invalid]="row.get('piecesCount')?.touched && row.get('piecesCount')?.invalid">
+                  <div class="error-text" *ngIf="row.get('piecesCount')?.touched && row.get('piecesCount')?.errors?.['required']">Required</div>
+                  <div class="error-text" *ngIf="row.get('piecesCount')?.touched && row.get('piecesCount')?.errors?.['min']">Must be â‰¥ 1</div>
+                </div>
+                <div class="mg-col mg-total">
+                  <span class="meter-total-val">{{ row.get('totalMeter')?.value | number:'1.2-3' }}</span>
+                </div>
+                <div class="mg-col mg-action">
+                  <button type="button" class="btn-delete-row"
+                    (click)="removeMeterRow(i)" title="Delete row"
+                    [disabled]="meterBreakdown.length <= 1">
+                    <span [innerHTML]="icons.trash | safeHtml"></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div class="meter-empty-state" *ngIf="meterBreakdown.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>
+                <p>No meter rows added. Click <strong>Select Meter</strong> to start.</p>
+              </div>
+            </div>
+
+            <!-- Footer Summary Cards -->
+            <div class="meter-summary-bar" *ngIf="meterBreakdown.length > 0">
+              <div class="msb-card">
+                <div class="msb-icon" style="background: rgba(99,102,241,0.1); color: #6366F1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 10h6"/></svg>
+                </div>
+                <div class="msb-info">
+                  <span class="msb-title">Total Rows</span>
+                  <span class="msb-value">{{ meterBreakdown.length }}</span>
+                </div>
+              </div>
+              <div class="msb-card">
+                <div class="msb-icon" style="background: rgba(59,130,246,0.1); color: #3B82F6;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="16" width="18" height="4" rx="1"/><rect x="3" y="4" width="18" height="4" rx="1"/><path d="m8 8-2 8"/><path d="m16 8-2 8"/><path d="m12 8-2 8"/></svg>
+                </div>
+                <div class="msb-info">
+                  <span class="msb-title">Total Bits</span>
+                  <span class="msb-value" style="color: #3B82F6;">{{ totalBitsQuantity | number }}</span>
+                </div>
+              </div>
+              <div class="msb-card">
+                <div class="msb-icon" style="background: rgba(234,179,8,0.1); color: #EAB308;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="msb-info">
+                  <span class="msb-title">Total Pieces</span>
+                  <span class="msb-value" style="color: #EAB308;">{{ totalPiecesQuantity | number }}</span>
+                </div>
+              </div>
+              <div class="msb-card">
+                <div class="msb-icon" style="background: rgba(16,185,129,0.1); color: #10B981;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>
+                </div>
+                <div class="msb-info">
+                  <span class="msb-title">Total Meter</span>
+                  <span class="msb-value" style="color: #10B981;">{{ totalMeterQuantity | number:'1.2-3' }} Mtr</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -179,7 +373,45 @@
   </div>
 
   <!-- Multiselect Size Picker Modal -->
-  <app-size-picker-modal *ngIf="isSizePickerOpen" [availableSizes]="sizes" (confirm)="onSizesSelected($event)"
-    (cancel)="isSizePickerOpen = false">
+  <app-size-picker-modal *ngIf="isSizePickerOpen" [availableSizes]="sizes" [colourName]="activeColourName" (confirm)="onSizesSelected($event)"
+    (cancel)="isSizePickerOpen = false; activeColourIndexForSize = null; activeColourName = '';">
   </app-size-picker-modal>
+
+  <!-- Add Colour Modal (Simple custom modal) -->
+  <div class="modal-overlay" *ngIf="isAddColourModalOpen">
+    <div class="modal-card animate-scale-in" style="max-width: 400px; background-color: #ffffff; border-radius: 8px;">
+      <div class="modal-header">
+        <h3>Add Colour</h3>
+        <button class="btn-close" (click)="cancelAddColour()">
+          <span [innerHTML]="icons.x | safeHtml"></span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Select Colour(s) <span class="text-danger">*</span></label>
+          <app-custom-select 
+            [(ngModel)]="selectedColoursForModal" 
+            [ngModelOptions]="{standalone: true}"
+            [options]="availableColoursForModal" 
+            [multiple]="true"
+            placeholder="Choose colours...">
+          </app-custom-select>
+          <div *ngIf="availableColoursForModal.length === 0" class="no-colours-msg">
+            No more colours available for this Style.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="cancelAddColour()">Cancel</button>
+        <button class="btn-submit" (click)="confirmAddColour()" [disabled]="!selectedColoursForModal || selectedColoursForModal.length === 0">
+          Add
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multiselect Meter Picker Modal -->
+  <app-meter-picker-modal *ngIf="isMeterPickerOpen" [availableMeters]="availableMeters" (confirm)="onMetersSelected($event)"
+    (cancel)="isMeterPickerOpen = false">
+  </app-meter-picker-modal>
 </div>

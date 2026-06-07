@@ -18,6 +18,7 @@ export interface ChallanCompany {
   address: string;
   gst: string;
   logo: string | null;
+  phone?: string;
 }
 
 export interface ChallanData {
@@ -29,6 +30,15 @@ export interface ChallanData {
   items: ChallanItem[];
   totalQty: number;
   remarks?: string;
+  entryType?: 'S' | 'M';
+  meterDetails?: {
+    meterPerBit: number;
+    bitsCount: number;
+    piecesCount: number;
+    totalMeter: number;
+  }[];
+  totalMeterSum?: number;
+  totalPiecesSum?: number;
 }
 
 @Injectable({ providedIn: 'root' })

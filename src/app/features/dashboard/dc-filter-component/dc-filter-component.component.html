@@ -3,21 +3,21 @@
     <div class="filter-row">
       
       <!-- From Date -->
-      <div class="filter-group">
-        <label>From Date</label>
-        <div class="input-wrapper">
-          <span class="icon" [innerHTML]="icons.calendar | safeHtml"></span>
-          <input type="date" formControlName="fromDate" class="form-control with-icon">
-        </div>
+      <div class="filter-group app-date-filter">
+        <app-date-picker 
+          label="From Date" 
+          formControlName="fromDate" 
+          placeholder="Select From Date">
+        </app-date-picker>
       </div>
 
       <!-- To Date -->
-      <div class="filter-group">
-        <label>To Date</label>
-        <div class="input-wrapper">
-          <span class="icon" [innerHTML]="icons.calendar | safeHtml"></span>
-          <input type="date" formControlName="toDate" class="form-control with-icon">
-        </div>
+      <div class="filter-group app-date-filter">
+        <app-date-picker 
+          label="To Date" 
+          formControlName="toDate" 
+          placeholder="Select To Date">
+        </app-date-picker>
       </div>
 
       <!-- Company -->

@@ -4,14 +4,16 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { CompanyService, CompanySummary } from '../../../core/services/company.service';
 import { InwardService } from '../../../core/services/inward.service';
+import { MessageService } from '../../../core/services/message.service';
 import { SelectOption, CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
+import { AppDatePickerComponent } from '../../../shared/components/app-date-picker/app-date-picker.component';
 
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-dc-filter-component',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CustomSelectComponent, SafeHtmlPipe],
+  imports: [CommonModule, ReactiveFormsModule, CustomSelectComponent, SafeHtmlPipe, AppDatePickerComponent],
   templateUrl: './dc-filter-component.component.html',
   styleUrl: './dc-filter-component.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -37,7 +39,8 @@ export class DcFilterComponent implements OnInit {
     private fb: FormBuilder,
     private companyService: CompanyService,
     private inwardService: InwardService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private messageService: MessageService
   ) {
     this.companies$ = this.companyService.getCompanies();
   }
@@ -105,8 +108,8 @@ export class DcFilterComponent implements OnInit {
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     this.filterForm.reset({
-      fromDate: this.formatDate(firstDayOfMonth),
-      toDate: this.formatDate(today),
+      fromDate: null,
+      toDate: null,
       companyId: null,
       styleNo: null,
       designName: null
@@ -121,7 +124,18 @@ export class DcFilterComponent implements OnInit {
 
   onSearch(): void {
     if (this.filterForm.valid) {
-      this.search.emit(this.filterForm.getRawValue());
+      const formValues = this.filterForm.getRawValue();
+      
+      if (formValues.fromDate && formValues.toDate) {
+        const from = new Date(formValues.fromDate);
+        const to = new Date(formValues.toDate);
+        if (from > to) {
+          this.messageService.error('From Date cannot be greater than To Date.');
+          return;
+        }
+      }
+
+      this.search.emit(formValues);
     }
   }
 

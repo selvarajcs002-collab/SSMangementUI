@@ -35,6 +35,30 @@ export const routes: Routes = [
       { 
         path: 'company/update/:id', 
         loadComponent: () => import('./features/company/update-company/update-company.component').then(m => m.UpdateCompanyComponent)
+      },
+      {
+        path: 'employee',
+        loadComponent: () => import('./employee/AddEmployee/add-employee.component').then(m => m.AddEmployeeComponent)
+      },
+      {
+        path: 'employee/attendance',
+        loadComponent: () => import('./employee/emp-addendence/emp-addendence.component').then(m => m.EmpAddendenceComponent)
+      },
+      {
+        path: 'employee/reports',
+        loadComponent: () => import('./employee/component/report-generation-page/report-generation-page.component').then(m => m.ReportGenerationPageComponent)
+      },
+      {
+        path: 'employee/update',
+        loadComponent: () => import('./employee/UpdateEmployee/update-employee.component').then(m => m.UpdateEmployeeComponent)
+      },
+      {
+        path: 'payroll',
+        loadComponent: () => import('./admin/payroll/payroll.component').then(m => m.PayrollComponent)
+      },
+      {
+        path: 'shifts',
+        loadComponent: () => import('./admin/shift-management/shift-management.component').then(m => m.ShiftManagementComponent)
       }
     ]
   },

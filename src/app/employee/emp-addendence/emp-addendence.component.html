@@ -1,0 +1,287 @@
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" [@sidebarAnimation]="isSidebarCollapsed() ? 'collapsed' : 'expanded'">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed()">SS Management <span class="pro-badge">PRO</span></span>
+      </div>
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.rotated]="isSidebarCollapsed()"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item" *ngFor="let item of menuItems" [class.active]="item.active" [routerLink]="item.route">
+        <div class="nav-icon" [title]="item.label">
+          <svg *ngIf="item.label === 'Dashboard'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          <svg *ngIf="item.label === 'New Registration'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+          <svg *ngIf="item.label === 'Attendance'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <svg *ngIf="item.label === 'Payroll'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg *ngIf="item.label === 'Shift Management'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10l4.5 4.5"/><circle cx="12" cy="12" r="10"/></svg>
+          <svg *ngIf="item.label === 'Reports'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed()">{{ item.label }}</span>
+        <div class="active-indicator" *ngIf="item.active"></div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-container">
+
+
+    <div class="content-wrapper">
+      <div class="attendance-summary" [@fadeSlide]>
+        <div class="title-section">
+          <h2>Daily Attendance</h2>
+          <p>Mark attendance for <span class="highlight-date">{{ now | date:'EEEE, MMMM d, y' }}</span></p>
+        </div>
+        
+        <div class="summary-cards">
+          <!-- Present Card -->
+          <div class="s-card present-card">
+            <div class="s-icon-wrap present-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="s-info">
+              <span class="s-value">{{ stats().present }}</span>
+              <span class="s-label">PRESENT</span>
+            </div>
+          </div>
+
+          <!-- Absent Card -->
+          <div class="s-card absent-card">
+            <div class="s-icon-wrap absent-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="s-info">
+              <span class="s-value">{{ stats().absent }}</span>
+              <span class="s-label">ABSENT</span>
+            </div>
+          </div>
+
+          <!-- Leave Card -->
+          <div class="s-card leave-card">
+            <div class="s-icon-wrap leave-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>
+            </div>
+            <div class="s-info">
+              <span class="s-value">{{ stats().leave }}</span>
+              <span class="s-label">LEAVE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Actions Card -->
+      <div class="bulk-actions-card" [@fadeSlide]>
+        <h3 class="bulk-card-title">Bulk Actions</h3>
+        <div class="bulk-actions-content">
+          <div class="bulk-left">
+            <button class="btn-premium btn-present" (click)="markAllPresent()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg> 
+              Mark All Present
+            </button>
+            <button class="btn-premium btn-outline" (click)="bulkConfirm()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 
+              Check-Out / Confirm
+            </button>
+            <button class="btn-premium btn-outline" (click)="autoSave()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> 
+              Update All
+            </button>
+          </div>
+          
+          <div class="bulk-right">
+            <div class="premium-search">
+              <input type="text" placeholder="Search employees..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            
+            <select class="premium-select" [ngModel]="selectedDept()" (ngModelChange)="selectedDept.set($event)">
+              <option *ngFor="let dept of departments()" [value]="dept">{{ dept === 'All' ? 'All Departments' : dept }}</option>
+            </select>
+            
+            <select class="premium-select" [ngModel]="selectedShift()" (ngModelChange)="selectedShift.set($event)">
+              <option *ngFor="let shift of shifts()" [value]="shift">{{ shift === 'All' ? 'All Shifts' : shift }}</option>
+            </select>
+
+            <div class="premium-date">
+              <app-date-picker placeholder="dd-mm-yyyy"></app-date-picker>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view-tabs">
+          <button class="view-tab" [class.active]="currentView() === 'table'" (click)="switchView('table')">Table View</button>
+          <button class="view-tab" [class.active]="currentView() === 'calendar'" (click)="switchView('calendar')">Month View</button>
+        </div>
+      </div>
+
+      <!-- Views -->
+      <div class="premium-table-container" *ngIf="currentView() === 'table'" [@fadeSlide]>
+        <div class="table-scroll-wrapper" *ngIf="filteredAttendance().length > 0; else emptyState">
+          <table class="premium-table">
+            <thead>
+              <tr>
+                <th class="w-checkbox">
+                  <input type="checkbox" class="premium-checkbox" (change)="toggleSelectAll($event)">
+                </th>
+                <th>EMPLOYEE PROFILE</th>
+                <th>DEPARTMENT & SHIFT</th>
+                <th class="w-status">ATTENDANCE STATUS</th>
+                <th>REMARKS</th>
+                <th class="w-action">ACTION</th>
+              </tr>
+            </thead>
+          <tbody>
+            <tr *ngFor="let emp of filteredAttendance(); trackBy: trackByEmpId" [class]="getStatusClass(emp.status)" [@statusChange]="emp.status">
+              <td class="w-checkbox">
+                <input type="checkbox" [(ngModel)]="emp.selected">
+              </td>
+              <td>
+                <div class="emp-profile">
+                  <div class="avatar-placeholder small">{{ getInitials(emp.name) }}</div>
+                  <div class="emp-info">
+                    <span class="emp-name">{{ emp.name }}</span>
+                    <span class="emp-id">ID: {{ emp.id }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="dept-info">
+                  <span class="dept-name">{{ emp.dept }}</span>
+                  <span class="shift-name">{{ emp.shift }}</span>
+                </div>
+              </td>
+              <td class="w-status">
+                <div class="status-selector">
+                  <button *ngFor="let opt of statusOptions" 
+                          class="status-chip" 
+                          [class.active]="emp.status === opt.label"
+                          [style.--chip-color]="opt.color"
+                          (click)="selectStatus(emp.id, opt.label)">
+                    <span class="material-icons">{{ opt.icon }}</span>
+                    <span class="chip-label">{{ opt.label }}</span>
+                  </button>
+                </div>
+                
+                <div class="half-day-indicator" *ngIf="emp.status === 'First Half' || emp.status === 'Second Half'">
+                  <div class="split-bar" [class.first]="emp.status === 'First Half'" [class.second]="emp.status === 'Second Half'">
+                    <div class="segment"></div>
+                    <div class="segment"></div>
+                  </div>
+                  <span class="indicator-text">{{ emp.status }}</span>
+                </div>
+              </td>
+
+              <td>
+                <div class="remark-field">
+                  <input type="text" [(ngModel)]="emp.remarks" (ngModelChange)="updateRemarks(emp.id, $event)" placeholder="Add a note..." class="r-input">
+                </div>
+              </td>
+
+              <td class="w-action">
+                <button class="row-confirm-btn" [class.saved]="emp.status !== 'Pending'"
+                  (click)="saveAttendanceRecord(emp.id)" [disabled]="emp.status === 'Pending'">
+                  <span class="material-icons">{{ emp.status !== 'Pending' ? 'verified' : 'send' }}</span>
+                  {{ emp.status === 'Pending' ? 'Confirm' : 'Save' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+
+        <!-- Empty State -->
+        <ng-template #emptyState>
+          <div class="premium-empty-state">
+            <div class="empty-illustration">
+              <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background decoration -->
+                <circle cx="100" cy="100" r="70" fill="#F1F5F9"/>
+                <circle cx="150" cy="60" r="6" fill="#BFDBFE"/>
+                <circle cx="50" cy="130" r="8" fill="#A7F3D0"/>
+                <!-- Clipboard -->
+                <rect x="75" y="55" width="50" height="70" rx="8" fill="#FFFFFF" filter="url(#drop-shadow)"/>
+                <rect x="90" y="50" width="20" height="10" rx="4" fill="#93C5FD"/>
+                <!-- Avatar in clipboard -->
+                <circle cx="100" cy="85" r="12" fill="#60A5FA"/>
+                <circle cx="100" cy="82" r="4" fill="#FFFFFF"/>
+                <path d="M92 92 C92 88, 108 88, 108 92 L108 94 C108 95, 92 95, 92 94 Z" fill="#FFFFFF"/>
+                <!-- Lines -->
+                <rect x="85" y="105" width="30" height="4" rx="2" fill="#E2E8F0"/>
+                <rect x="85" y="113" width="20" height="4" rx="2" fill="#E2E8F0"/>
+                <!-- Clock -->
+                <circle cx="125" cy="125" r="16" fill="#FFFFFF" stroke="#3B82F6" stroke-width="4"/>
+                <path d="M125 118 V125 H130" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Defs -->
+                <defs>
+                  <filter id="drop-shadow" x="65" y="45" width="70" height="90" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.08"/>
+                  </filter>
+                </defs>
+              </svg>
+            </div>
+            <h3>No attendance records found</h3>
+            <p>Try adjusting your filters or select a different date.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Calendar View -->
+      <div class="calendar-view-container" *ngIf="currentView() === 'calendar'" [@fadeSlide]>
+        <div class="calendar-header">
+          <h2>{{ currentCalendarDate() | date:'MMMM yyyy' }}</h2>
+          <div class="calendar-actions">
+            <button class="bulk-btn-outline" (click)="previousMonth()"><span class="material-icons">chevron_left</span></button>
+            <button class="bulk-btn-outline" (click)="goToToday()">Today</button>
+            <button class="bulk-btn-outline" (click)="nextMonth()"><span class="material-icons">chevron_right</span></button>
+          </div>
+        </div>
+        
+        <div class="calendar-grid">
+          <div class="day-header" *ngFor="let day of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']">{{ day }}</div>
+          
+          <div class="calendar-day" *ngFor="let day of calendarDays()" [class.muted]="!day.isCurrentMonth" [class.today]="day.isToday">
+            <span class="day-num">{{ day.date.getDate() }}</span>
+            <div class="day-stats" *ngIf="day.isCurrentMonth && (day.present > 0 || day.absent > 0 || day.halfDay > 0)">
+              <div class="stat-pill present" *ngIf="day.present > 0">
+                <span class="stat-val">{{ day.present }}</span>
+                <span class="stat-label">P</span>
+              </div>
+              <div class="stat-pill absent" *ngIf="day.absent > 0">
+                <span class="stat-val">{{ day.absent }}</span>
+                <span class="stat-label">A</span>
+              </div>
+              <div class="stat-pill half" *ngIf="day.halfDay > 0">
+                <span class="stat-val">{{ day.halfDay }}</span>
+                <span class="stat-label">H</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="calendar-legend">
+          <div class="legend-item"><span class="dot present"></span> Present</div>
+          <div class="legend-item"><span class="dot absent"></span> Absent</div>
+          <div class="legend-item"><span class="dot half"></span> Half Day</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <div class="footer-left">
+        &copy; 2026 SSManagement HRMS &bull; Enterprise Attendance Portal
+      </div>
+      <div class="footer-links">
+        <a href="#">Audit Logs</a>
+        <a href="#">Privacy</a>
+        <a href="#">Support</a>
+      </div>
+    </footer>
+  </main>
+</div>

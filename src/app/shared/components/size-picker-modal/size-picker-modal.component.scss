@@ -1,3 +1,21 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed widths (e.g., width: 300px) break on mobile screens smaller than the width.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Replaced large fixed widths with `width: 100%; max-width: [value]px;` for fluid resizing.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../../shared/styles/responsive';
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -12,7 +30,7 @@
 
 .modal-container {
   width: 100%;
-  max-width: 440px;
+  max-width: 100%; max-width: 500px;
   background: white;
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
@@ -23,7 +41,7 @@
 }
 
 .modal-header {
-  padding: 24px;
+  padding: 24px 24px 16px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -31,69 +49,103 @@
 
   .header-left {
     h2 {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--text-main);
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
       margin: 0;
-    }
-    p {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin: 4px 0 0 0;
     }
   }
 
   .btn-close {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: transparent;
     border: none;
-    color: var(--text-muted);
+    color: #94a3b8;
     cursor: pointer;
-    border-radius: 50%;
     transition: background 0.2s ease;
 
     &:hover {
-      background: #F1F5F9;
-      color: var(--text-main);
+      color: #1e293b;
     }
   }
 }
 
+.info-alert {
+  display: flex;
+  align-items: center;
+  background: #f0f7ff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  gap: 8px;
+  
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid #3b82f6;
+    color: #3b82f6;
+    font-size: 11px;
+    font-weight: bold;
+    font-family: serif;
+  }
+  
+  p {
+    font-size: 12px;
+    color: #475569;
+    margin: 0;
+  }
+}
+
 .modal-content {
-  padding: 24px;
   max-height: 60vh;
   overflow-y: auto;
 }
 
-.select-all-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: rgba(66, 165, 245, 0.05);
-  }
-
-  .label {
-    font-size: 14px;
+.sizes-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th {
+    text-align: left;
+    font-size: 11px;
     font-weight: 700;
-    color: var(--text-main);
+    color: #64748b;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  
+  td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 600;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .col-checkbox {
+    width: 40px;
+    padding-right: 0;
   }
 }
 
 .custom-checkbox {
-  width: 22px;
-  height: 22px;
-  border: 2px solid var(--border);
-  border-radius: 6px;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,118 +153,63 @@
   color: white;
 
   &.checked {
-    background: var(--primary);
-    border-color: var(--primary);
-    box-shadow: 0 4px 10px rgba(66, 165, 245, 0.3);
+    background: #2563eb;
+    border-color: #2563eb;
   }
-}
-
-.divider {
-  height: 1px;
-  background: var(--border);
-  margin: 16px 0;
-}
-
-.size-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.size-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: var(--primary);
-    background: rgba(66, 165, 245, 0.02);
-  }
-
-  &.selected {
-    border-color: var(--primary);
-    background: rgba(66, 165, 245, 0.05);
-    
-    .size-label {
-      color: var(--primary);
-      font-weight: 700;
-    }
-  }
-}
-
-.size-checkbox {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  color: white;
-
-  &.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    transform: scale(1.1);
-  }
-}
-
-.size-label {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-main);
 }
 
 .modal-footer {
-  padding: 24px;
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  border-top: 1px solid var(--border);
-}
-
-.btn-cancel-modal {
-  padding: 10px 20px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radius-md);
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: #F1F5F9;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+  
+  .footer-left {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+  }
+  
+  .footer-right {
+    display: flex;
+    gap: 12px;
   }
 }
 
 .btn-confirm-modal {
-  padding: 10px 24px;
-  background: var(--primary);
+  padding: 8px 16px;
+  background: #2563eb;
   color: #FFFFFF;
   border: none;
-  border-radius: var(--radius-md);
-  font-weight: 700;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(66, 165, 245, 0.2);
-
+  
   &:hover:not(:disabled) {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(66, 165, 245, 0.35);
+    background: #1d4ed8;
   }
-
+  
   &:disabled {
-    background: #CBD5E1;
+    background: #93c5fd;
     cursor: not-allowed;
-    box-shadow: none;
+  }
+}
+
+.btn-cancel-modal {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  
+  &:hover {
+    background: #f1f5f9;
   }
 }
 

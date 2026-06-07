@@ -63,6 +63,19 @@
   animation: pageEnter var(--motion-medium);
 }
 
+/* App Layout Full-Width Breakout */
+.app-layout {
+  position: relative;
+  width: 100vw !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  margin-top: -40px !important;
+  margin-bottom: -40px !important;
+  border-radius: 0 !important;
+  min-height: calc(100vh - 72px) !important;
+  box-sizing: border-box;
+}
+
 .dashboard-container {
   width: 90%;
   max-width: 1200px;
@@ -291,4 +304,58 @@ button:active:not(:disabled),
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Global Responsive Rules */
+html {
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+table {
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 100%;
+  padding-inline: clamp(12px, 2vw, 24px);
+}
+
+.text-wrap {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.flex-responsive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
 }

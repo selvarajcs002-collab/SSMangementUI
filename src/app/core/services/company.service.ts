@@ -14,23 +14,23 @@ export class CompanyService {
   constructor(private api: ApiService) { }
 
   getCompanies(): Observable<CompanySummary[]> {
-    return this.api.get<CompanySummary[]>('get-company-list');
+    return this.api.get<CompanySummary[]>('company/get-company-list');
   }
 
   getCompanyById(id: number): Observable<any> { // Modified for generic retrieval
-    return this.api.get<any>(`get-company-by-id/${id}`);
+    return this.api.get<any>(`company/get-company-by-id/${id}`);
   }
 
   saveCompany(data: CompanyRequest): Observable<CommonResponse> {
     return this.api.post<CommonResponse>(
-      'save-company',
+      'company/save-company',
       data
     );
   }
 
   updateCompany(data: CompanyRequest): Observable<CommonResponse> {
     return this.api.put<CommonResponse>(
-      'update-company',
+      'company/update-company',
       data
     );
   }

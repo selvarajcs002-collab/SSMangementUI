@@ -19,6 +19,7 @@
       <div class="card inward-card">
         <form [formGroup]="inwardForm" (ngSubmit)="onSubmit()">
           
+
           <!-- Primary Form Fields -->
           <div class="form-grid">
             
@@ -98,8 +99,36 @@
             </div>
           </div>
 
-          <!-- Dynamic Sizes Section -->
-          <div class="size-breakdown-section">
+          <!-- Entry Type Toggle (below image upload, matching Outward style) -->
+          <div class="entry-type-section">
+            <label class="entry-type-label">Entry Type <span class="required">*</span></label>
+            <div class="entry-type-toggle">
+              <button type="button"
+                class="entry-type-btn"
+                [class.active]="inwardForm.get('entryType')?.value === 'S'"
+                (click)="inwardForm.get('entryType')?.setValue('S')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Size Based
+              </button>
+              <button type="button"
+                class="entry-type-btn"
+                [class.active]="inwardForm.get('entryType')?.value === 'M'"
+                (click)="inwardForm.get('entryType')?.setValue('M')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/>
+                  <path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/>
+                  <path d="M2 12h20"/><path d="M12 2v20"/>
+                </svg>
+                Meter Based
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Sizes Section (Visible if Size Based) -->
+          <div class="size-breakdown-section" *ngIf="inwardForm.get('entryType')?.value === 'S'">
             <div class="section-header-inline">
               <h3>Sizes <span class="required">*</span></h3>
               <button type="button" class="btn-add-size" (click)="addSizeRow()" [disabled]="!isCompanySelected">
@@ -126,6 +155,92 @@
             <div class="total-summary">
               <span class="label">Total Inward Quantity:</span>
               <span class="value">{{ totalQuantity || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Meters Section (Visible if Meter Based) -->
+          <div class="size-breakdown-section" *ngIf="inwardForm.get('entryType')?.value === 'M'">
+            <div class="section-header-inline">
+              <div>
+                <h3>Meter Based Entry</h3>
+                <p class="section-desc" style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Enter meter and bits details. System will calculate total meter automatically.</p>
+              </div>
+              <button type="button" class="btn-add-meter" (click)="addEmptyMeterRow()" [disabled]="!isCompanySelected">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                Add Meter Row
+              </button>
+            </div>
+
+            <div formArrayName="meterDetails" class="meter-list mt-4">
+              <!-- Grid Header -->
+              <div class="meter-grid-header" *ngIf="meterDetails.length > 0">
+                <div class="col-row-num">#</div>
+                <div class="col-meter">
+                  <div>Meter (in Mtr) <span class="required">*</span></div>
+                  <small>Enter meter value</small>
+                </div>
+                <div class="col-bits">
+                  <div>Bits Count <span class="required">*</span></div>
+                  <small>Enter bits</small>
+                </div>
+                <div class="col-total">
+                  <div>Total Meter</div>
+                  <small>(Meter x Bits)</small>
+                </div>
+                <div class="col-action">Action</div>
+              </div>
+
+              <!-- Grid Body -->
+              <div *ngFor="let row of meterDetails.controls; let i=index" [formGroupName]="i" class="meter-row animate-in">
+                <div class="field-col col-row-num">
+                  {{ i + 1 }}
+                </div>
+                <div class="field-col col-meter">
+                  <input type="number" formControlName="meterPerBit" class="form-control" [class.invalid]="row.get('meterPerBit')?.touched && row.get('meterPerBit')?.invalid" step="0.01" min="0.01">
+                </div>
+                <div class="field-col col-bits">
+                  <input type="number" formControlName="bitsCount" class="form-control" [class.invalid]="row.get('bitsCount')?.touched && row.get('bitsCount')?.invalid" min="1">
+                </div>
+                <div class="field-col col-total">
+                  <span class="total-meter-val">{{ row.get('totalMeter')?.value | number:'1.2-2' }}</span>
+                </div>
+                <div class="field-col col-action">
+                  <button type="button" class="btn-delete-row" (click)="removeMeterRow(i)" title="Delete row" [disabled]="meterDetails.length <= 1">
+                    <span [innerHTML]="icons.trash | safeHtml"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Total Calculation Bar for Meters -->
+            <div class="meter-summary-container">
+              <div class="summary-box">
+                <div class="icon-wrap clipboard-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 14h6"></path><path d="M9 10h6"></path></svg>
+                </div>
+                <div class="summary-info">
+                  <span class="title">Total Rows</span>
+                  <span class="value">{{ meterDetails.length || 0 }}</span>
+                </div>
+              </div>
+              <div class="summary-box">
+                <div class="icon-wrap bits-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="16" width="18" height="4" rx="1"></rect><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="m8 8-2 8"></path><path d="m16 8-2 8"></path><path d="m12 8-2 8"></path></svg>
+                </div>
+                <div class="summary-info">
+                  <span class="title">Total Bits</span>
+                  <span class="value blue">{{ totalBitsQuantity | number:'1.2-2' }}</span>
+                </div>
+              </div>
+              <div class="summary-box">
+                <div class="icon-wrap meter-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"></path><path d="M12 2a10 10 0 0 1 10 10"></path><path d="M22 12a10 10 0 0 1-10 10"></path><path d="M12 22a10 10 0 0 1-10-10"></path><path d="M2 12h20"></path><path d="M12 2v20"></path></svg>
+                </div>
+                <div class="summary-info">
+                  <span class="title">Total Meter</span>
+                  <span class="value green">{{ totalMeterQuantity | number:'1.2-2' }} Mtr</span>
+                </div>
+              </div>
             </div>
           </div>
 

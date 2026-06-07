@@ -18,13 +18,29 @@ export interface InwardSavePayload {
   }[];
 }
 
+export interface MeterInwardSavePayload {
+  entryType: string;
+  companyId: number;
+  colour: string;
+  designName: string;
+  styleNo: string;
+  inwardDcNo: string;
+  uploadURL: string;
+  createdBy: number;
+  meterDetails: {
+    meterValue: number;
+    bitsCount: number;
+    totalMeter: number;
+  }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class InwardService {
   private editDataSubject = new BehaviorSubject<any>(null);
   editData$ = this.editDataSubject.asObservable();
   private selectionCache = new Map<number, any[]>();
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   setEditData(data: any): void {
     this.editDataSubject.next(data);
@@ -35,12 +51,21 @@ export class InwardService {
   }
 
   saveInward(payload: InwardSavePayload): Observable<any> {
-    return this.api.post<any>('save', payload);
+    return this.api.post<any>('inward/save', payload);
+  }
+
+  saveMeterInward(payload: MeterInwardSavePayload): Observable<any> {
+    return this.api.post<any>('inward/save-meter-inward', payload);
   }
 
   getSizes(companyId: number, colour: string, styleNo: string): Observable<any[]> {
     const params = { companyId, colour, styleNo };
-    return this.api.get<any[]>('sizes', params);
+    return this.api.get<any[]>('inward/sizes', params);
+  }
+
+  getMeters(companyId: number, colour: string, styleNo: string): Observable<any[]> {
+    const params = { companyId, colour, styleNo };
+    return this.api.get<any[]>('inward/meters', params);
   }
 
   getDesignStyleColour(companyId: number): Observable<any[]> {
@@ -49,13 +74,13 @@ export class InwardService {
     }
 
     const params = { companyId };
-    return this.api.get<any[]>('design-style-colour', params).pipe(
+    return this.api.get<any[]>('inward/design-style-colour', params).pipe(
       tap(data => this.selectionCache.set(companyId, data))
     );
   }
 
   updateInward(payload: any): Observable<any> {
-    return this.api.put<any>('update', payload);
+    return this.api.put<any>('inward/update', payload);
   }
 
   clearCache(): void {

@@ -1,0 +1,103 @@
+<div class="manage-container">
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Manage Employees</h1>
+      <p>Edit or remove personnel records in the system</p>
+    </div>
+    <div class="search-box">
+      <span class="material-icons">search</span>
+      <input type="text" placeholder="Search by name or employee ID..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
+    </div>
+  </div>
+
+  <div class="table-card" *ngIf="!isLoading()">
+    <table class="employee-table">
+      <thead>
+        <tr>
+          <th>Employee Info</th>
+          <th>Designation</th>
+          <th>Mobile Number</th>
+          <th>Salary Details</th>
+          <th class="actions-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let emp of filteredEmployees()" class="employee-row">
+          <td>
+            <div class="emp-profile">
+              <div class="avatar">{{ getInitials(emp.fullName) }}</div>
+              <div class="info">
+                <span class="name">{{ emp.fullName }}</span>
+                <span class="id">ID: {{ emp.employeeId }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="role-badge">{{ emp.designation }}</span>
+          </td>
+          <td>{{ emp.mobileNumber }}</td>
+          <td>
+            <div class="salary-info">
+              <span class="amount">₹{{ emp.monthlySalary | number:'1.2-2' }}</span>
+              <span class="period">/ month</span>
+            </div>
+          </td>
+          <td class="actions-col">
+            <div class="action-buttons">
+              <button class="btn-icon edit" (click)="openEditModal(emp)" title="Edit Employee">
+                <span class="material-icons">edit</span>
+              </button>
+              <button class="btn-icon delete" (click)="onDelete(emp.employeeId)" title="Delete Employee">
+                <span class="material-icons">delete_outline</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        
+        <tr *ngIf="filteredEmployees().length === 0">
+          <td colspan="5" class="empty-state">
+            <div class="empty-content">
+              <span class="material-icons">group_off</span>
+              <p>No employees found matching the search criteria.</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Edit Modal Overlay -->
+  <div class="edit-overlay" *ngIf="isModalOpen()">
+    <div class="edit-card">
+      <div class="edit-header">
+        <div class="header-left">
+          <h2>Edit Employee Record</h2>
+          <p class="subtitle">Update details for ID: {{ selectedEmployeeId() }}</p>
+        </div>
+        <button class="close-btn" (click)="closeModal()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <form [formGroup]="editForm" (ngSubmit)="onUpdate()" class="edit-form">
+        <div class="form-grid">
+          <app-input-field label="Full Name" placeholder="Enter full name" formControlName="fullName" [required]="true"></app-input-field>
+          <app-select-field label="Gender" [options]="[{label:'Male', value:'Male'}, {label:'Female', value:'Female'}, {label:'Other', value:'Other'}]" formControlName="gender" [required]="true"></app-select-field>
+          <app-date-picker label="Date of Birth" formControlName="dob" [required]="true"></app-date-picker>
+          <app-input-field label="Mobile Number" placeholder="9876543210" formControlName="mobileNumber" [required]="true"></app-input-field>
+          <app-input-field label="Designation" placeholder="Designation" formControlName="designation" [required]="true"></app-input-field>
+          <app-date-picker label="Joining Date" formControlName="joiningDate" [required]="true"></app-date-picker>
+          <app-input-field label="Monthly Salary" type="number" placeholder="0.00" formControlName="monthlySalary" [required]="true"></app-input-field>
+          <app-input-field label="Bank Name" placeholder="e.g. HDFC Bank" formControlName="bankName"></app-input-field>
+          <app-input-field label="Account Number" placeholder="Enter account number" formControlName="accountNumber"></app-input-field>
+          <app-input-field label="IFSC Code" placeholder="IFSC Code" formControlName="ifscCode"></app-input-field>
+        </div>
+
+        <div class="form-actions">
+          <app-button variant="secondary" label="Cancel" (btnClick)="closeModal()"></app-button>
+          <app-button type="submit" label="Save Changes" [isLoading]="isLoading()" [disabled]="editForm.invalid"></app-button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

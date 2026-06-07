@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package configuration files
 COPY package.json package-lock.json ./
 
-# Install dependencies using clean install for reproducible builds
-RUN npm ci
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application code
 COPY . .

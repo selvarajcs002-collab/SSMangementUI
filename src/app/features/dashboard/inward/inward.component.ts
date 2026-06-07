@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { CompanyService, CompanySummary } from '../../../core/services/company.service';
 import { InwardService } from '../../../core/services/inward.service';
@@ -30,6 +30,11 @@ export class InwardComponent implements OnInit {
   isCompanySelected: boolean = false;
   isEditMode: boolean = false;
   editId: number | null = null;
+  
+  // Meter-Based Properties
+  totalMeterQuantity: number = 0;
+  totalBitsQuantity: number = 0;
+
   private destroy$ = new Subject<void>();
 
   // Icons (Lucide inspired SVG strings)
@@ -107,11 +112,17 @@ export class InwardComponent implements OnInit {
         // Fallback to API via OutwardService's shared method for both modes
         this.outwardService.getOutwardByDcNo(id, 'INWARD').pipe(takeUntil(this.destroy$)).subscribe({
           next: (res) => {
-            if (res) this.patchForm(res);
-            this.loading = false;
-            this.cdr.markForCheck();
+            try {
+              if (res) this.patchForm(res);
+            } catch (err: any) {
+              console.error('Error in patchForm:', err);
+              this.messageService.error('Error patching form: ' + err.message);
+            } finally {
+              this.loading = false;
+              this.cdr.markForCheck();
+            }
           },
-          error: () => {
+          error: (err: any) => {
             this.messageService.error('Failed to load edit details');
             this.loading = false;
             this.cdr.markForCheck();
@@ -125,29 +136,50 @@ export class InwardComponent implements OnInit {
   private patchForm(data: any): void {
     this.onCompanyChange(data.companyId);
     
+    // Check if it's meter based payload based on response shape, default to 'S'
+    const isMeterBased = data.entryType === 'M' || (data.meterDetails && data.meterDetails.length > 0);
+
     this.inwardForm.patchValue({
+      entryType: isMeterBased ? 'M' : 'S',
       companyId: data.companyId,
       colour: data.colour,
       designName: data.designName,
       styleNo: data.styleNo,
       inwardDcNo: data.dcNo || data.inwardDcNo,
       uploadURL: data.uploadURL
-    });
+    }, { emitEvent: false });
 
-    this.sizes.clear();
-    if (data.sizeCounts && data.sizeCounts.length > 0) {
-      data.sizeCounts.forEach((sc: any) => {
-        const row = this.fb.group({
-          size: [sc.size, Validators.required],
-          count: [sc.count, [Validators.required, Validators.min(1)]]
+    if (isMeterBased) {
+      this.meterDetails.clear();
+      if (data.meterDetails && data.meterDetails.length > 0) {
+        data.meterDetails.forEach((md: any) => {
+          const row = this.fb.group({
+            meterPerBit: [md.meterValue || md.meterPerBit, [Validators.required, Validators.min(0.01)]],
+            bitsCount: [md.bitsCount, [Validators.required, Validators.min(1)]],
+            totalMeter: [{ value: md.totalMeter, disabled: true }]
+          });
+          this.meterDetails.push(row);
         });
-        this.sizes.push(row);
-      });
+      } else {
+        this.addEmptyMeterRow();
+      }
     } else {
-      this.addSizeRow();
+      this.sizes.clear();
+      if (data.sizeCounts && data.sizeCounts.length > 0) {
+        data.sizeCounts.forEach((sc: any) => {
+          const row = this.fb.group({
+            size: [sc.size, Validators.required],
+            count: [sc.count, [Validators.required, Validators.min(1)]]
+          });
+          this.sizes.push(row);
+        });
+      } else {
+        this.addSizeRow();
+      }
     }
 
     this.calculateTotal();
+    this.calculateMeterTotal();
     this.cdr.markForCheck();
   }
 
@@ -163,21 +195,53 @@ export class InwardComponent implements OnInit {
   }
 
   private initForm(): void {
+    const duplicateMeterValidator = (control: any) => {
+      const formArray = control as FormArray;
+      const meters = formArray.controls.map(ctrl => Number(ctrl.get('meterPerBit')?.value));
+      const validMeters = meters.filter(m => !isNaN(m) && m > 0);
+      const uniqueMeters = new Set(validMeters);
+      if (uniqueMeters.size !== validMeters.length) {
+        return { duplicateMeter: true };
+      }
+      return null;
+    };
+
     this.inwardForm = this.fb.group({
+      entryType: ['S', Validators.required], // 'S' for Size, 'M' for Meter
       companyId: [null, Validators.required],
       colour: [{ value: '', disabled: true }, Validators.required],
       designName: [{ value: '', disabled: true }, Validators.required],
       styleNo: [{ value: '', disabled: true }, Validators.required],
       inwardDcNo: [{ value: '', disabled: true }, Validators.required],
       uploadURL: [{ value: '', disabled: true }],
-      sizes: this.fb.array([])
+      sizes: this.fb.array([]),
+      meterDetails: this.fb.array([], duplicateMeterValidator)
     });
 
     this.addSizeRow();
+    
+    // Switch validation/view logic based on entry type
+    this.inwardForm.get('entryType')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(type => {
+      if (type === 'S') {
+        this.meterDetails.clear();
+        if (this.sizes.length === 0) this.addSizeRow();
+      } else if (type === 'M') {
+        this.sizes.clear();
+        if (this.meterDetails.length === 0) this.addEmptyMeterRow();
+      }
+      // If we switch, clear the totals
+      this.calculateTotal();
+      this.calculateMeterTotal();
+      this.cdr.markForCheck();
+    });
   }
 
   get sizes(): FormArray {
     return this.inwardForm.get('sizes') as FormArray;
+  }
+
+  get meterDetails(): FormArray {
+    return this.inwardForm.get('meterDetails') as FormArray;
   }
 
   addSizeRow(): void {
@@ -196,10 +260,41 @@ export class InwardComponent implements OnInit {
     }
   }
 
+  addEmptyMeterRow(): void {
+    const row = this.fb.group({
+      meterPerBit: [null, [Validators.required, Validators.min(0.01)]],
+      bitsCount: [null, [Validators.required, Validators.min(1)]],
+      totalMeter: [{ value: 0, disabled: true }]
+    });
+    this.meterDetails.push(row);
+  }
+
+  removeMeterRow(index: number): void {
+    if (this.meterDetails.length > 1) {
+      this.meterDetails.removeAt(index);
+    } else {
+      this.meterDetails.at(0).reset();
+    }
+  }
+
   private trackChanges(): void {
     // Auto sum counts
     this.sizes.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.calculateTotal();
+    });
+
+    this.meterDetails.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
+      values.forEach((val: any, index: number) => {
+        const bits = val.bitsCount || 0;
+        const meter = val.meterPerBit || 0;
+        const total = bits * meter;
+        
+        const control = this.meterDetails.at(index).get('totalMeter');
+        if (control?.value !== total) {
+          control?.setValue(total, { emitEvent: false });
+        }
+      });
+      this.calculateMeterTotal();
     });
   }
 
@@ -223,10 +318,57 @@ export class InwardComponent implements OnInit {
     }, 0);
   }
 
+  calculateMeterTotal(): void {
+    this.totalBitsQuantity = 0;
+    this.totalMeterQuantity = 0;
+    this.meterDetails.controls.forEach(control => {
+      const bits = Number(control.get('bitsCount')?.value) || 0;
+      const meter = Number(control.get('meterPerBit')?.value) || 0;
+      this.totalBitsQuantity += bits;
+      this.totalMeterQuantity += (bits * meter);
+    });
+  }
+
   alertMessage: string | null = null;
   alertType: 'success' | 'error' = 'success';
 
   onSubmit(): void {
+    const entryType = this.inwardForm.get('entryType')?.value;
+    
+    // Additional Validation for Meter Based
+    if (entryType === 'M') {
+      if (this.meterDetails.length === 0) {
+        this.showAlert('Please add at least one meter row.', 'error');
+        return;
+      }
+      
+      let valid = true;
+      let duplicateMeters = false;
+      const meters = new Set();
+
+      this.meterDetails.controls.forEach(ctrl => {
+        const meterVal = Number(ctrl.get('meterPerBit')?.value);
+        if (meters.has(meterVal)) {
+          duplicateMeters = true;
+        }
+        if (meterVal > 0) {
+          meters.add(meterVal);
+        }
+
+        if (ctrl.invalid) valid = false;
+      });
+
+      if (duplicateMeters) {
+        this.showAlert('Duplicate meter entries are not allowed.', 'error');
+        return;
+      }
+
+      if (!valid) {
+        this.inwardForm.markAllAsTouched();
+        return;
+      }
+    }
+
     if (this.inwardForm.invalid && !this.isEditMode) {
       this.inwardForm.markAllAsTouched();
       return;
@@ -244,7 +386,14 @@ export class InwardComponent implements OnInit {
         design_name: formVal.designName,
         style_no: formVal.styleNo,
         inward_dc_no: formVal.inwardDcNo,
-        updated_by: userId
+        updated_by: userId,
+        entry_type: entryType,
+        sizes: entryType === 'S' ? formVal.sizes : [],
+        meter_details: entryType === 'M' ? formVal.meterDetails.map((md: any) => ({
+            meterValue: Number(md.meterPerBit),
+            bitsCount: Number(md.bitsCount),
+            totalMeter: Number(md.meterPerBit) * Number(md.bitsCount)
+        })) : []
       };
 
       this.inwardService.updateInward(updatePayload).subscribe({
@@ -261,32 +410,65 @@ export class InwardComponent implements OnInit {
         }
       });
     } else {
-      const payload = {
-        inward: {
+      if (entryType === 'M') {
+        const meterPayload = {
+          entryType: 'M',
           companyId: Number(formVal.companyId),
           colour: formVal.colour,
           designName: formVal.designName,
           styleNo: formVal.styleNo,
           inwardDcNo: formVal.inwardDcNo,
           uploadURL: this.fileName || '',
-          createdBy: userId
-        },
-        sizes: formVal.sizes
-      };
+          createdBy: userId,
+          meterDetails: formVal.meterDetails.map((md: any) => ({
+            meterValue: Number(md.meterPerBit),
+            bitsCount: Number(md.bitsCount),
+            totalMeter: Number(md.meterPerBit) * Number(md.bitsCount)
+          }))
+        };
+        
+        this.inwardService.saveMeterInward(meterPayload).subscribe({
+          next: () => {
+            this.loading = false;
+            this.messageService.success('Saved Successfully');
+            this.resetForm();
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.loading = false;
+            this.messageService.error('Something went wrong');
+            this.cdr.markForCheck();
+          }
+        });
 
-      this.inwardService.saveInward(payload).subscribe({
-        next: () => {
-          this.loading = false;
-          this.messageService.success('Saved Successfully');
-          this.resetForm();
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          this.loading = false;
-          this.messageService.error('Something went wrong');
-          this.cdr.markForCheck();
-        }
-      });
+      } else {
+        const payload = {
+          inward: {
+            companyId: Number(formVal.companyId),
+            colour: formVal.colour,
+            designName: formVal.designName,
+            styleNo: formVal.styleNo,
+            inwardDcNo: formVal.inwardDcNo,
+            uploadURL: this.fileName || '',
+            createdBy: userId
+          },
+          sizes: formVal.sizes
+        };
+
+        this.inwardService.saveInward(payload).subscribe({
+          next: () => {
+            this.loading = false;
+            this.messageService.success('Saved Successfully');
+            this.resetForm();
+            this.cdr.markForCheck();
+          },
+          error: () => {
+            this.loading = false;
+            this.messageService.error('Something went wrong');
+            this.cdr.markForCheck();
+          }
+        });
+      }
     }
   }
 
@@ -299,7 +481,8 @@ export class InwardComponent implements OnInit {
   }
 
   private resetForm(): void {
-    this.inwardForm.reset();
+    const defaultEntry = this.inwardForm.get('entryType')?.value || 'S';
+    this.inwardForm.reset({ entryType: defaultEntry });
     
     // Lock fields back down
     const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL'];
@@ -308,9 +491,14 @@ export class InwardComponent implements OnInit {
 
     this.sizes.clear();
     this.addSizeRow();
+    
+    this.meterDetails.clear();
+    
     this.fileName = null;
     this.imagePreview = null;
     this.totalQuantity = 0;
+    this.totalBitsQuantity = 0;
+    this.totalMeterQuantity = 0;
     this.cdr.markForCheck();
   }
 

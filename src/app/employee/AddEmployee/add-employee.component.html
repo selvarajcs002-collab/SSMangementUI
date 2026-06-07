@@ -1,0 +1,390 @@
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" [@sidebarAnimation]="isSidebarCollapsed() ? 'collapsed' : 'expanded'">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed()">SS Management <span class="pro-badge">PRO</span></span>
+      </div>
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          [class.rotated]="isSidebarCollapsed()">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav" [@staggerList]>
+      <div class="nav-item" *ngFor="let item of menuItems" [class.active]="item.active" [routerLink]="item.route">
+        <div class="nav-icon" [title]="item.label">
+          <svg *ngIf="item.label === 'Dashboard'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <rect width="7" height="9" x="3" y="3" rx="1" />
+            <rect width="7" height="5" x="14" y="3" rx="1" />
+            <rect width="7" height="9" x="14" y="12" rx="1" />
+            <rect width="7" height="5" x="3" y="16" rx="1" />
+          </svg>
+
+          <svg *ngIf="item.label === 'New Registration'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="16" y1="11" x2="22" y2="11" />
+          </svg>
+          <svg *ngIf="item.label === 'Attendance'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <svg *ngIf="item.label === 'Payroll'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+          <svg *ngIf="item.label === 'Shift Management'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2v10l4.5 4.5" />
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          <svg *ngIf="item.label === 'Reports'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+        </div>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed()">{{ item.label }}</span>
+        <div class="active-indicator" *ngIf="item.active"></div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-container">
+
+
+    <!-- Registration Content -->
+    <div class="content-wrapper">
+      <div class="page-header">
+        <div class="title-section">
+          <h1>Employee Registration</h1>
+          <p>Create a new personnel record in the system</p>
+        </div>
+        <div class="autosave-indicator">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Draft saved
+        </div>
+      </div>
+
+      <!-- Multi-step Stepper -->
+      <div class="stepper-container">
+        <div class="step-progress-line">
+          <div class="progress-fill" [style.width.%]="(currentStep() - 1) * (100 / (totalSteps - 1))"></div>
+        </div>
+        <div class="steps-wrapper">
+          <div class="step-item" *ngFor="let step of steps" [class.active]="currentStep() === step.id"
+            [class.completed]="currentStep() > step.id" (click)="goToStep(step.id)">
+            <div class="step-icon-wrapper">
+              <span class="step-number" *ngIf="currentStep() <= step.id">{{ step.id }}</span>
+              <svg *ngIf="currentStep() > step.id" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <span class="step-title">{{ step.title }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Card -->
+      <div class="form-card" [formGroup]="employeeForm">
+
+        <!-- Inline Error Alert -->
+        <div class="error-alert-banner" *ngIf="isStepInvalid()">
+          <div class="alert-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <div class="alert-message">
+            Please complete all required fields correctly before proceeding.
+          </div>
+        </div>
+        <!-- Step 1: Basic Details -->
+        <div class="step-content" *ngIf="currentStep() === 1" [@stepTransition] formGroupName="basicDetails">
+          <div class="section-layout">
+            <div class="fields-grid">
+              <app-input-field label="Employee ID" placeholder="Generating ID..." formControlName="employeeId"
+                [required]="true" [error]="getFieldError('basicDetails', 'employeeId')"></app-input-field>
+              <app-input-field label="Full Name" placeholder="Enter full name" formControlName="fullName"
+                [required]="true" [error]="getFieldError('basicDetails', 'fullName')"></app-input-field>
+              <app-select-field label="Gender" [options]="genderOptions()" formControlName="gender" [required]="true"
+                [error]="getFieldError('basicDetails', 'gender')"></app-select-field>
+              <app-date-picker label="Date of Birth" formControlName="dob" [required]="true"
+                [error]="getFieldError('basicDetails', 'dob')"></app-date-picker>
+              <app-input-field label="Mobile Number" placeholder="9876543210" formControlName="mobileNumber"
+                [required]="true" [error]="getFieldError('basicDetails', 'mobileNumber')"></app-input-field>
+              <app-select-field label="Designation" [options]="designationOptions()" formControlName="designation"
+                [required]="true" [error]="getFieldError('basicDetails', 'designation')"></app-select-field>
+              <app-date-picker label="Joining Date" formControlName="joiningDate" [required]="true"
+                [error]="getFieldError('basicDetails', 'joiningDate')"></app-date-picker>
+              <app-input-field label="Monthly Salary" type="number" placeholder="0.00" formControlName="monthlySalary"
+                [required]="true" [error]="getFieldError('basicDetails', 'monthlySalary')"></app-input-field>
+              <app-input-field label="Daily Salary (Auto)" type="number" placeholder="0.00"
+                formControlName="dailySalary"></app-input-field>
+              <app-input-field label="Monthly Incentive" type="number" placeholder="0.00"
+                formControlName="incentive"></app-input-field>
+              <app-input-field label="Aadhaar Number" placeholder="0000 0000 0000" formControlName="aadhaarNumber"
+                [error]="getFieldError('basicDetails', 'aadhaarNumber')"></app-input-field>
+              <app-input-field label="PAN Number" placeholder="ABCDE1234F" formControlName="panNumber"
+                [error]="getFieldError('basicDetails', 'panNumber')"></app-input-field>
+            </div>
+
+            <div class="upload-section">
+              <label class="section-label">Profile Photo</label>
+              <div class="profile-upload-card" [class.has-image]="profilePreview()">
+                <div class="preview-overlay" *ngIf="profilePreview()">
+                  <button class="remove-btn" (click)="removeProfileImage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <img [src]="profilePreview()" *ngIf="profilePreview()" class="profile-img-preview">
+                <div class="upload-placeholder" *ngIf="!profilePreview()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span>Drag & Drop or Click</span>
+                  <p>JPG, PNG up to 2MB</p>
+                </div>
+                <input type="file" (change)="onProfileUpload($event)" accept="image/*">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Bank Details -->
+        <div class="step-content" *ngIf="currentStep() === 2" [@stepTransition] formGroupName="bankDetails">
+          <div class="section-header-inline">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="14" x="2" y="5" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+            <h2>Banking Information</h2>
+          </div>
+          <div class="fields-grid mt-6">
+            <app-input-field label="Account Holder Name" placeholder="As per bank records"
+              formControlName="accountHolderName" [required]="true"
+              [error]="getFieldError('bankDetails', 'accountHolderName')"></app-input-field>
+            <app-input-field label="Bank Name" placeholder="e.g. HDFC Bank" formControlName="bankName" [required]="true"
+              [error]="getFieldError('bankDetails', 'bankName')"></app-input-field>
+            <app-input-field label="IFSC Code" placeholder="HDFC0001234" formControlName="ifscCode" [required]="true"
+              [error]="getFieldError('bankDetails', 'ifscCode')"></app-input-field>
+            <app-input-field label="Account Number" type="password" placeholder="Enter account number"
+              formControlName="accountNumber" [required]="true"
+              [error]="getFieldError('bankDetails', 'accountNumber')"></app-input-field>
+            <app-input-field label="Confirm Account Number" placeholder="Re-enter account number"
+              formControlName="confirmAccountNumber" [required]="true"
+              [error]="getFieldError('bankDetails', 'confirmAccountNumber')"></app-input-field>
+            <app-select-field label="Account Type"
+              [options]="[{label:'Savings', value:'Savings'}, {label:'Current', value:'Current'}]"
+              formControlName="accountType"></app-select-field>
+          </div>
+        </div>
+
+        <!-- Step 3: Documents -->
+        <div class="step-content" *ngIf="currentStep() === 3" [@stepTransition]>
+          <div class="doc-grid">
+            <div class="doc-card"
+              *ngFor="let doc of ['Aadhaar Card', 'PAN Card', 'Educational Certificates', 'Previous Experience Letter', 'Resume']"
+              [class.uploaded]="isDocUploaded(doc)">
+              <div class="doc-icon">
+                <svg *ngIf="!isDocUploaded(doc)" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <svg *ngIf="isDocUploaded(doc)" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <div class="doc-info">
+                <h3>{{ doc }}</h3>
+                <p>{{ isDocUploaded(doc) ? 'Document Uploaded' : 'Upload PDF or Image' }}</p>
+              </div>
+              <div class="upload-action">
+                <input type="file" #fileInput hidden (change)="onDocumentUpload($event, doc)">
+                <button class="upload-btn-small" (click)="fileInput.click()" [class.success]="isDocUploaded(doc)">
+                  <svg *ngIf="!isDocUploaded(doc)" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span *ngIf="!isDocUploaded(doc)">Upload</span>
+                  <span *ngIf="isDocUploaded(doc)">Uploaded</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Address -->
+        <div class="step-content" *ngIf="currentStep() === 4" [@stepTransition] formGroupName="addressDetails">
+          <div class="address-section">
+            <h3>Permanent Address</h3>
+            <div class="full-width-field">
+              <app-input-field label="Street Address" placeholder="Door No, Street, Locality"
+                formControlName="permanentAddress" [required]="true"
+                [error]="getFieldError('addressDetails', 'permanentAddress')"></app-input-field>
+            </div>
+            <div class="fields-grid mt-4">
+              <app-input-field label="City" placeholder="City" formControlName="city" [required]="true"
+                [error]="getFieldError('addressDetails', 'city')"></app-input-field>
+              <app-input-field label="State" placeholder="State" formControlName="state" [required]="true"
+                [error]="getFieldError('addressDetails', 'state')"></app-input-field>
+              <app-input-field label="Pincode" placeholder="600001" formControlName="pincode" [required]="true"
+                [error]="getFieldError('addressDetails', 'pincode')"></app-input-field>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="address-section mt-6">
+            <div class="section-header-inline">
+              <h3>Current Address</h3>
+              <label class="checkbox-container">
+                <input type="checkbox">
+                <span class="checkmark"></span>
+                Same as Permanent
+              </label>
+            </div>
+            <div class="full-width-field">
+              <app-input-field label="Street Address" placeholder="Door No, Street, Locality"
+                formControlName="currentAddress" [required]="true"></app-input-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5: Review & Submit -->
+        <div class="step-content" *ngIf="currentStep() === 5" [@stepTransition]>
+          <div class="review-layout">
+            <div class="review-header">
+              <div class="review-profile">
+                <img
+                  [src]="profilePreview() || 'https://ui-avatars.com/api/?name=' + (employeeForm.get('basicDetails.fullName')?.value || 'User')"
+                  class="large-avatar">
+                <div class="review-main-info">
+                  <h2>{{ employeeForm.get('basicDetails.fullName')?.value || 'Enter Name' }}</h2>
+                  <span class="review-id">{{ employeeForm.get('basicDetails.employeeId')?.value }}</span>
+                  <span class="badge">{{ employeeForm.get('basicDetails.designation')?.value || 'Enter Designation'
+                    }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-grid">
+              <div class="review-section">
+                <h4>Personal Details</h4>
+                <ul>
+                  <li><span>Gender:</span> {{ employeeForm.get('basicDetails.gender')?.value || 'N/A' }}</li>
+                  <li><span>DOB:</span> {{ employeeForm.get('basicDetails.dob')?.value || 'N/A' }}</li>
+                  <li><span>Mobile:</span> {{ employeeForm.get('basicDetails.mobileNumber')?.value || 'N/A' }}</li>
+                  <li><span>Joining:</span> {{ employeeForm.get('basicDetails.joiningDate')?.value || 'N/A' }}</li>
+                </ul>
+              </div>
+
+              <div class="review-section">
+                <h4>Bank & Salary</h4>
+                <ul>
+                  <li><span>Holder:</span> {{ employeeForm.get('bankDetails.accountHolderName')?.value || 'N/A' }}</li>
+                  <li><span>Monthly:</span> ₹{{ employeeForm.get('basicDetails.monthlySalary')?.value || '0' }}</li>
+                  <li><span>Bank:</span> {{ employeeForm.get('bankDetails.bankName')?.value || 'N/A' }}</li>
+                  <li><span>Account:</span> {{ employeeForm.get('bankDetails.accountNumber')?.value ? '****' +
+                    employeeForm.get('bankDetails.accountNumber')?.value.toString().slice(-4) : 'N/A' }}</li>
+                  <li><span>IFSC:</span> {{ employeeForm.get('bankDetails.ifscCode')?.value || 'N/A' }}</li>
+                </ul>
+              </div>
+
+              <div class="review-section full-width">
+                <h4>Address Details</h4>
+                <p>{{ employeeForm.get('addressDetails.permanentAddress')?.value || 'Address not provided' }}</p>
+                <p>{{ employeeForm.get('addressDetails.city')?.value }}, {{
+                  employeeForm.get('addressDetails.state')?.value }} - {{
+                  employeeForm.get('addressDetails.pincode')?.value }}</p>
+              </div>
+            </div>
+
+            <div class="confirmation-box" [formGroup]="reviewAndSubmitGroup">
+              <label class="checkbox-container">
+                <input type="checkbox" formControlName="confirmInformation">
+                <span class="checkmark"></span>
+                I confirm that all the information provided above is correct.
+              </label>
+              <div class="error-message" *ngIf="getFieldError('reviewAndSubmit', 'confirmInformation')">
+                {{ getFieldError('reviewAndSubmit', 'confirmInformation') }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="form-footer">
+          <app-button variant="secondary" label="Back" (btnClick)="prevStep()" *ngIf="currentStep() > 1"></app-button>
+          <div class="spacer"></div>
+          <app-button variant="secondary" label="Cancel" class="mr-3"></app-button>
+          <app-button [label]="currentStep() === totalSteps ? 'Complete Registration' : 'Continue'"
+            [isLoading]="isLoading()" (btnClick)="currentStep() === totalSteps ? onSubmit() : nextStep()">
+          </app-button>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="app-footer">
+        <div class="footer-left">
+          &copy; 2026 SSManagement HRMS. All rights reserved.
+        </div>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Help Center</a>
+        </div>
+      </footer>
+    </div>
+  </main>
+</div>

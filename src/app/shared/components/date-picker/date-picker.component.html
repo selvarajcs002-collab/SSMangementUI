@@ -1,0 +1,68 @@
+<div class="date-picker-container" [class.disabled]="disabled" [class.has-error]="error">
+  <label *ngIf="label" [for]="id" class="date-picker-label">
+    {{ label }} <span *ngIf="required" class="required">*</span>
+  </label>
+
+  <div class="input-wrapper" (click)="toggleCalendar()" [class.active]="isOpen || displayValue">
+    <input
+      [id]="id"
+      type="text"
+      [value]="displayValue"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      readonly
+      class="date-input"
+    />
+    <span class="calendar-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+    </span>
+  </div>
+
+  <!-- Glassmorphism Calendar Dropdown Popup -->
+  <div class="calendar-popup animate-fade-in" *ngIf="isOpen">
+<div class="calendar-header">
+  <select class="month-select" [(ngModel)]="currentMonth" (change)="onMonthChange($event)" aria-label="Select month">
+    <option *ngFor="let month of months; let i = index" [value]="i">{{ month }}</option>
+  </select>
+  <div class="year-stepper">
+    <button type="button" class="step-btn" (click)="changeYear(-1)" aria-label="Previous year">&#9650;</button>
+    <input class="year-input" type="number" [(ngModel)]="currentYear" (change)="onYearChange($event)" min="1900" max="2100" aria-label="Year" />
+    <button type="button" class="step-btn" (click)="changeYear(1)" aria-label="Next year">&#9660;</button>
+  </div>
+</div>
+
+    <div class="weekday-grid">
+      <span *ngFor="let day of weekdays" class="weekday-cell">{{ day }}</span>
+    </div>
+
+    <div class="date-grid">
+      <div
+        *ngFor="let item of gridDays"
+        class="date-cell"
+        [class.current-month]="item.isCurrentMonth"
+        [class.outside-month]="!item.isCurrentMonth"
+        [class.weekend]="item.isWeekend"
+        [class.today]="item.isToday"
+        [class.selected]="item.isSelected"
+        [class.disabled]="item.isDisabled"
+        (click)="selectDate(item); $event.stopPropagation()"
+      >
+        <span class="day-number">{{ item.day }}</span>
+      </div>
+    </div>
+
+    <!-- Modern Footer Quick Actions -->
+    <div class="calendar-footer">
+      <button type="button" class="footer-btn clear-btn" (click)="clearValue($event)">
+        Clear
+      </button>
+      <button type="button" class="footer-btn today-btn" (click)="selectToday($event)">
+        Today
+      </button>
+    </div>
+  </div>
+  
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+</div>

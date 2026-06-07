@@ -14,6 +14,7 @@ import { OutwardService } from '../../../../core/services/outward.service';
 import { InwardService } from '../../../../core/services/inward.service';
 import { CompanyService } from '../../../../core/services/company.service';
 import { OutwardPreviewService, ChallanData } from '../../../../core/services/outward-preview.service';
+import { StatusFilterService, StatusFilterRequest } from '../../../../core/services/status-filter.service';
 
 @Component({
   selector: 'app-dc-filter-container',
@@ -26,7 +27,9 @@ import { OutwardPreviewService, ChallanData } from '../../../../core/services/ou
 export class DcFilterContainerComponent implements OnInit {
 
   activeView: string = 'inward';
+  currentViewType: string = 'S';
   isLoading: boolean = false;
+  showNoDataModal: boolean = false;
 
   toggleConfig: ToggleConfig = {
     type: 'view-switcher',
@@ -44,21 +47,35 @@ export class DcFilterContainerComponent implements OnInit {
     ]
   };
 
-  tableColumns: TableColumn[] = [
-    { key: 'sno', label: 'S.No' },
-    { key: 'date', label: 'Date' },
-    { key: 'styleNo', label: 'Style No' },
-    { key: 'designName', label: 'Design Name' },
-    { key: 'colour', label: 'Colour' },
-    { key: 'count', label: 'Count', align: 'right' },
-    { key: 'dcNo', label: 'DC No', align: 'right' },
-    { key: 'action', label: 'Action', align: 'center' }
-  ];
+  viewTypeToggleConfig: ToggleConfig = {
+    type: 'view-switcher',
+    options: [
+      {
+        label: 'Size Based',
+        value: 'S',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/></svg>`
+      },
+      {
+        label: 'Meter Based',
+        value: 'M',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>`
+      }
+    ]
+  };
+
+  tableColumns: TableColumn[] = [];
 
   tableData: any[] = [];
   totalRecords: number = 0;
   pageNumber: number = 1;
   pageSize: number = 10;
+  totalPages: number = 0;
+  
+  summaryTotals = { totalBitsCount: 0, totalMeter: 0 };
+  currentFilters: any = {};
+  Math = Math;
+
+  showFilter: boolean = true;
 
   constructor(
     private apiService: ApiService,
@@ -66,38 +83,96 @@ export class DcFilterContainerComponent implements OnInit {
     private inwardService: InwardService,
     private companyService: CompanyService,
     private outwardPreviewService: OutwardPreviewService,
+    private statusFilterService: StatusFilterService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) { }
 
   ngOnInit(): void {
+    this.updateColumns();
     this.loadData();
+  }
+
+  toggleFilter(): void {
+    this.showFilter = !this.showFilter;
   }
 
   onToggleChange(newMode: string): void {
     this.activeView = newMode;
+    this.pageNumber = 1;
     this.loadData();
+  }
+
+  onViewTypeChange(newType: string): void {
+    this.currentViewType = newType;
+    this.pageNumber = 1;
+    this.updateColumns();
+    this.loadData();
+  }
+
+  updateColumns(): void {
+    if (this.currentViewType === 'S') {
+      this.tableColumns = [
+        { key: 'sno', label: 'S.No' },
+        { key: 'date', label: 'Date' },
+        { key: 'styleNo', label: 'Style No' },
+        { key: 'designName', label: 'Design Name' },
+        { key: 'colour', label: 'Colour' },
+        { key: 'bitsCount', label: 'Bits Count', align: 'right' },
+        { key: 'dcNo', label: 'DC No', align: 'right' },
+        { key: 'action', label: 'Action', align: 'center' }
+      ];
+    } else {
+      this.tableColumns = [
+        { key: 'sno', label: 'S.No' },
+        { key: 'date', label: 'Date' },
+        { key: 'styleNo', label: 'Style No' },
+        { key: 'designName', label: 'Design Name' },
+        { key: 'colour', label: 'Colour' },
+        { key: 'bitsCount', label: 'Bits Count', align: 'right' },
+        { key: 'totalMeter', label: 'Total Meter', align: 'right' },
+        { key: 'dcNo', label: 'DC No', align: 'right' },
+        { key: 'action', label: 'Action', align: 'center' }
+      ];
+    }
   }
 
   loadData(): void {
     this.isLoading = true;
     this.cdr.markForCheck();
 
-    this.getData(this.pageNumber, this.pageSize).subscribe({
-      next: (response: HttpResponse<any>) => {
-        const status = response.status;
-        const res = response.body;
-        const mode = this.activeView.toUpperCase();
+    const payload: StatusFilterRequest = {
+      transactionType: this.activeView.toUpperCase(),
+      viewType: this.currentViewType === 'S' ? 'SIZE' : 'METER',
+      fromDate: this.currentFilters.fromDate || null,
+      toDate: this.currentFilters.toDate || null,
+      companyId: this.currentFilters.companyId || null,
+      styleId: this.currentFilters.styleNo || null,
+      designId: this.currentFilters.designName || null,
+      pageNumber: this.pageNumber,
+      pageSize: this.pageSize,
+      sortColumn: 'Date',
+      sortDirection: 'DESC'
+    };
 
-        if (res && res.data) {
-          const selectedData = mode === 'INWARD' ? res.data.inward : res.data.outward;
-          this.handleResponse(selectedData || []);
-          this.messageService.success(`Successfully fetched ${mode} data (Status: ${status})`);
+    this.statusFilterService.search(payload).subscribe({
+      next: (res: any) => {
+        if (res && res.success && res.data && res.data.length > 0) {
+          this.handleResponse(res.data);
+          this.totalRecords = res.totalRecords || 0;
+          this.totalPages = res.totalPages || 0;
+          this.summaryTotals = res.summary || { totalBitsCount: 0, totalMeter: 0 };
         } else {
           this.tableData = [];
           this.totalRecords = 0;
-          this.messageService.success(`Empty response (Status: ${status})`);
+          this.totalPages = 0;
+          this.summaryTotals = { totalBitsCount: 0, totalMeter: 0 };
+          
+          if (res && res.success) {
+             // Success but no data
+             this.showNoDataModal = true;
+          }
         }
         this.isLoading = false;
         this.cdr.markForCheck();
@@ -105,27 +180,27 @@ export class DcFilterContainerComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         const errorMsg = err.error?.message || err.message || 'Unknown error';
         this.messageService.error(`Error (Status: ${err.status}): ${errorMsg}`);
-        console.error('Error loading DC data:', err);
+        console.error('Error loading filter data:', err);
         this.tableData = [];
         this.totalRecords = 0;
+        this.totalPages = 0;
+        this.summaryTotals = { totalBitsCount: 0, totalMeter: 0 };
         this.isLoading = false;
         this.cdr.markForCheck();
       }
     });
   }
 
-  getData(pageNumber: number, pageSize: number) {
-    const mode = this.activeView.toUpperCase();
-    return this.apiService.getWithResponse<any>(`get-all`, {
-      mode: mode,
-      pageNumber: pageNumber,
-      pageSize: pageSize
-    });
+  closeNoDataModal(): void {
+    this.showNoDataModal = false;
+    this.cdr.markForCheck();
   }
 
   nextPage(): void {
-    this.pageNumber++;
-    this.loadData();
+    if (this.pageNumber < this.totalPages) {
+      this.pageNumber++;
+      this.loadData();
+    }
   }
 
   prevPage(): void {
@@ -136,62 +211,31 @@ export class DcFilterContainerComponent implements OnInit {
   }
 
   private handleResponse(data: any[]): void {
-    this.tableData = data.map((item, index) => ({
-      sno: index + 1, // Reverted to simple index-based numbering
-      date: item.createdDate,
-      styleNo: item.styleNo,
-      designName: item.designName,
-      colour: item.colourName || item.colour || '-',
-      count: this.getTotalCount(item.sizeCounts),
-      dcNo: item.dcNo || '-',
-      authorizedBy: item.createdBy,
-      fullData: item
-    }));
-    this.totalRecords = this.tableData.length;
-  }
+    this.tableData = data.map((item, index) => {
+      const parsedDate = new Date(item.date || item.createdDate);
+      const formattedDate = !isNaN(parsedDate.getTime()) 
+        ? `${parsedDate.getDate().toString().padStart(2, '0')}-${(parsedDate.getMonth() + 1).toString().padStart(2, '0')}-${parsedDate.getFullYear()}` 
+        : (item.date || item.createdDate);
 
-  private getTotalCount(sizeCounts: any[]): number {
-    if (!sizeCounts || sizeCounts.length === 0) return 0;
-    return sizeCounts.reduce((sum, x) => sum + (Number(x.count) || 0), 0);
+      return {
+        sno: index + 1,
+        date: formattedDate,
+        styleNo: item.styleNo,
+        designName: item.designName,
+        colour: item.colour || '-',
+        bitsCount: item.totalBitsCount || 0,
+        totalMeter: item.totalMeter || 0,
+        dcNo: item.dcNo || '-',
+        authorizedBy: item.createdBy || 'Unknown',
+        fullData: item
+      };
+    });
   }
 
   onSearch(filterPayload: any): void {
-    this.isLoading = true;
-    this.cdr.markForCheck();
-
-    const payload = {
-      mode: this.activeView.toUpperCase(),
-      fromDate: this.formatDate(filterPayload.fromDate),
-      toDate: this.formatDate(filterPayload.toDate),
-      companyId: filterPayload.companyId || null,
-      styleNo: filterPayload.styleNo || null,
-      designName: filterPayload.designName || null
-    };
-
-    this.apiService.post<any>('get-details', payload).subscribe({
-      next: (res) => {
-        if (res && res.success && res.data) {
-          const mode = this.activeView.toUpperCase();
-          const selectedData = mode === 'INWARD' ? res.data.inward : res.data.outward;
-          this.handleResponse(selectedData || []);
-          this.showMessage('success', 'Search results loaded successfully');
-        } else {
-          this.tableData = [];
-          this.totalRecords = 0;
-          this.showMessage('success', 'No records found for the selected criteria');
-        }
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        this.showMessage('error', 'Failed to fetch search results');
-        console.error('Search error:', err);
-        this.tableData = [];
-        this.totalRecords = 0;
-        this.isLoading = false;
-        this.cdr.markForCheck();
-      }
-    });
+    this.currentFilters = filterPayload;
+    this.pageNumber = 1;
+    this.loadData();
   }
 
   private formatDate(value: any): string | null {

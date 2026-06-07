@@ -34,7 +34,7 @@ export class DashboardHomeComponent {
       icon: '👤',
       title: 'Add Employee',
       description: 'Onboard new staff, manage employee records, and assign roles',
-      route: '/employee'
+      route: '/dashboard/employee'
     },
     {
       icon: '📁',

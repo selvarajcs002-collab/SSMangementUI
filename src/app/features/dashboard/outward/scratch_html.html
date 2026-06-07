@@ -1,0 +1,313 @@
+﻿<div class="dashboard-page animate-fade-in">
+  <div class="dashboard-container">
+    <!-- Page Header -->
+    <app-section-header [title]="isEditMode ? 'Edit Outward Entry' : 'Outward Entry'" actionText="Update" [actionIcon]="icons.update"
+      (actionClick)="updateModalService.open()">
+    </app-section-header>
+
+
+    <div class="form-card-wrapper">
+      <div class="card outward-card">
+        <form [formGroup]="outwardForm" (ngSubmit)="onSubmit()">
+
+          <div class="form-grid">
+
+            <!-- Company Selection -->
+            <div class="input-group">
+              <label>Select Company <span class="required">*</span></label>
+              <app-custom-select formControlName="companyId" [options]="companies$ | async" [icon]="icons.company"
+                [loading]="isOptionsLoading" placeholder="Choose a company..." (change)="onCompanyChange($event)">
+              </app-custom-select>
+              <div class="error-text"
+                *ngIf="outwardForm.get('companyId')?.touched && outwardForm.get('companyId')?.invalid">
+                Company selection is required
+              </div>
+            </div>
+
+            <!-- Outward Date -->
+            <div class="input-group app-date-filter">
+              <app-date-picker 
+                label="Outward Date" 
+                formControlName="outwardDate" 
+                placeholder="Select Outward Date"
+                [required]="true"
+                [error]="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid ? true : false">
+              </app-date-picker>
+              <div class="error-text"
+                *ngIf="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid">
+                Please select a valid date
+              </div>
+            </div>
+
+
+            <!-- Style Number (Dropdown) -->
+            <div class="input-group">
+              <label>Style Number <span class="required">*</span></label>
+              <app-custom-select formControlName="styleNo" [options]="styleSelectOptions" placeholder="Select Style..."
+                (change)="onSelectionChange()">
+              </app-custom-select>
+              <div class="error-text"
+                *ngIf="outwardForm.get('styleNo')?.touched && outwardForm.get('styleNo')?.invalid">Style is required
+              </div>
+            </div>
+
+            <!-- Colour (Dropdown) -->
+            <div class="input-group">
+              <label>Colour <span class="required">*</span></label>
+              <app-custom-select formControlName="colour" [options]="colourSelectOptions" placeholder="Select Colour..."
+                (change)="onSelectionChange()">
+              </app-custom-select>
+              <div class="error-text" *ngIf="outwardForm.get('colour')?.touched && outwardForm.get('colour')?.invalid">
+                Colour is required</div>
+            </div>
+
+            <!-- Design Reference (Dropdown) -->
+            <div class="input-group">
+              <label>Design Reference</label>
+              <app-custom-select formControlName="designRef" [options]="designSelectOptions"
+                placeholder="Select Design Reference..." (change)="onSelectionChange()">
+              </app-custom-select>
+            </div>
+
+            <!-- Item Type (Dropdown) -->
+            <div class="input-group">
+              <label>Item Type</label>
+              <app-custom-select formControlName="itemType" [options]="itemTypeSelectOptions"
+                placeholder="Select Item Type..." (change)="onSelectionChange()">
+              </app-custom-select>
+            </div>
+
+            <!-- Remarks -->
+            <div class="input-group full-width">
+              <label>Remarks</label>
+              <textarea formControlName="remarks" class="form-control" rows="3" placeholder="Add any remarks or notes here..."></textarea>
+            </div>
+
+          </div>
+
+
+          <!-- Image Upload Section -->
+          <div class="upload-section">
+            <label>Design Image</label>
+            <div class="upload-container" [class.has-file]="fileName" [class.disabled]="!isDataLoaded"
+              (click)="!fileName && isDataLoaded && outwardFileInput.click()">
+              <input type="file" #outwardFileInput (change)="onFileSelect($event)" accept="image/*" hidden>
+
+              <div class="upload-placeholder" *ngIf="!fileName">
+                <span class="upload-icon" [innerHTML]="icons.image | safeHtml"></span>
+                <div class="upload-text">
+                  <span class="primary-text">Click to upload design image</span>
+                </div>
+              </div>
+
+              <div class="file-success-badge" *ngIf="fileName">
+                <span class="file-icon" [innerHTML]="icons.check | safeHtml"></span>
+                <span class="file-name-text">{{ fileName }}</span>
+                <button type="button" class="btn-remove-file" (click)="removeImage(); $event.stopPropagation()"
+                  title="Remove file">
+                  <span [innerHTML]="icons.x | safeHtml"></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- â”€â”€ NEW: Entry Type Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+          <div class="entry-type-section">
+            <label class="entry-type-label">Entry Type <span class="required">*</span></label>
+            <div class="entry-type-toggle">
+              <button type="button"
+                class="entry-type-btn"
+                [class.active]="entryType === 'size'"
+                (click)="setEntryType('size')"
+                [disabled]="!isDataLoaded">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Size Based
+              </button>
+              <button type="button"
+                class="entry-type-btn"
+                [class.active]="entryType === 'meter'"
+                (click)="setEntryType('meter')"
+                [disabled]="!isDataLoaded">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>
+                Meter Based
+              </button>
+            </div>
+          </div>
+
+          <!-- Existing: Dynamic Size Breakdown Section (Size Based only) -->
+          <div class="size-breakdown-section" *ngIf="entryType === 'size' && outwardForm.get('itemType')?.value === 'size'">
+            <div class="section-header-inline">
+              <div class="title-group">
+                <h3>Size Breakdown</h3>
+                <p *ngIf="sizeBreakdown.length === 0" class="empty-hint">No sizes selected. Click the button to start.
+                </p>
+              </div>
+              <button type="button" class="btn-select-sizes" (click)="selectSizes()"
+                [disabled]="!isDataLoaded || isSizesLoading">
+                <span *ngIf="!isSizesLoading" class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
+                <span *ngIf="isSizesLoading" class="loading-spinner small"></span>
+                {{ isSizesLoading ? 'Fetching Sizes...' : 'Select Sizes' }}
+              </button>
+            </div>
+
+            <div formArrayName="sizeBreakdown" class="size-list">
+              <div *ngFor="let row of sizeBreakdown.controls; let i=index" [formGroupName]="i"
+                class="size-row animate-in">
+                <div class="field-col size-label-display">
+                  <div class="size-badge">{{ row.get('size')?.value }}</div>
+                </div>
+                <div class="field-col size-qty">
+                  <input type="number" formControlName="quantity" placeholder="Enter Count" class="form-control"
+                    [class.invalid]="row.get('quantity')?.touched && row.get('quantity')?.invalid">
+                </div>
+                <button type="button" class="btn-delete-row" (click)="removeSizeRow(i)"
+                  [disabled]="sizeBreakdown.length === 0" title="Delete row">
+                  <span [innerHTML]="icons.trash | safeHtml"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Total Calculation Bar -->
+            <div class="total-summary" *ngIf="sizeBreakdown.length > 0">
+              <span class="label">Total Outward Quantity:</span>
+              <span class="value">{{ totalQuantity }}</span>
+            </div>
+          </div>
+
+          <!-- â”€â”€ NEW: Meter Based Entry Section (completely isolated) â”€â”€â”€â”€â”€ -->
+          <div class="size-breakdown-section" *ngIf="entryType === 'meter'">
+            <div class="section-header-inline">
+              <div class="title-group">
+                <h3>Meter Based Entry</h3>
+                <p class="empty-hint">Select meter and enter bits details. Total Meter is auto-calculated.</p>
+              </div>
+              <button type="button" class="btn-add-meter-row" (click)="selectMeters()" [disabled]="!isDataLoaded || isMetersLoading">
+                <svg *ngIf="isMetersLoading" class="spinner" style="width: 14px; height: 14px; border-width: 2px; border-color: var(--primary) transparent var(--primary) transparent;" viewBox="0 0 24 24"></svg>
+                <svg *ngIf="!isMetersLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                {{ isMetersLoading ? 'Loading...' : 'Select Meter' }}
+              </button>
+            </div>
+
+            <!-- Grid Header -->
+            <div class="meter-grid" formArrayName="meterBreakdown">
+              <div class="meter-grid-head" *ngIf="meterBreakdown.length > 0">
+                <div class="mg-col mg-num">#</div>
+                <div class="mg-col mg-meter">
+                  <div>Meter (in Mtr) <span class="required">*</span></div>
+                  <small>Enter meter value</small>
+                </div>
+                <div class="mg-col mg-bits">
+                  <div>Bits Count <span class="required">*</span></div>
+                  <small>Enter bits</small>
+                </div>
+                <div class="mg-col mg-total">
+                  <div>Total Meter</div>
+                  <small>(Meter Ã— Bits)</small>
+                </div>
+                <div class="mg-col mg-action">Action</div>
+              </div>
+
+              <!-- Grid Rows -->
+              <div *ngFor="let row of meterBreakdown.controls; let i = index"
+                [formGroupName]="i"
+                class="meter-grid-row animate-in">
+                <div class="mg-col mg-num">{{ i + 1 }}</div>
+                <div class="mg-col mg-meter">
+                  <div class="size-badge">{{ row.get('meterPerBit')?.value | number:'1.2-2' }} Mtr</div>
+                </div>
+                <div class="mg-col mg-bits">
+                  <input type="number" formControlName="bitsCount" class="form-control"
+                    min="1" step="1" placeholder="e.g. 100"
+                    [class.invalid]="row.get('bitsCount')?.touched && row.get('bitsCount')?.invalid">
+                  <div class="error-text" *ngIf="row.get('bitsCount')?.touched && row.get('bitsCount')?.errors?.['required']">Required</div>
+                  <div class="error-text" *ngIf="row.get('bitsCount')?.touched && row.get('bitsCount')?.errors?.['min']">Must be â‰¥ 1</div>
+                </div>
+                <div class="mg-col mg-total">
+                  <span class="meter-total-val">{{ row.get('totalMeter')?.value | number:'1.2-3' }}</span>
+                </div>
+                <div class="mg-col mg-action">
+                  <button type="button" class="btn-delete-row"
+                    (click)="removeMeterRow(i)" title="Delete row"
+                    [disabled]="meterBreakdown.length <= 1">
+                    <span [innerHTML]="icons.trash | safeHtml"></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div class="meter-empty-state" *ngIf="meterBreakdown.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>
+                <p>No meter rows added. Click <strong>Select Meter</strong> to start.</p>
+              </div>
+            </div>
+
+            <!-- Footer Summary Cards -->
+            <div class="meter-summary-bar" *ngIf="meterBreakdown.length > 0">
+              <div class="msb-card">
+                <div class="msb-icon" style="background: rgba(99,102,241,0.1); color: #6366F1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 10h6"/></svg>
+                </div>
+                <div class="msb-info">
+                  <span class="msb-title">Total Rows</span>
+                  <span class="msb-value">{{ meterBreakdown.length }}</span>
+                </div>
+              </div>
+              <div class="msb-card">
+                <div class="msb-icon" style="background: rgba(59,130,246,0.1); color: #3B82F6;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="16" width="18" height="4" rx="1"/><rect x="3" y="4" width="18" height="4" rx="1"/><path d="m8 8-2 8"/><path d="m16 8-2 8"/><path d="m12 8-2 8"/></svg>
+                </div>
+                <div class="msb-info">
+                  <span class="msb-title">Total Bits</span>
+                  <span class="msb-value" style="color: #3B82F6;">{{ totalBitsQuantity | number }}</span>
+                </div>
+              </div>
+              <div class="msb-card">
+                <div class="msb-icon" style="background: rgba(16,185,129,0.1); color: #10B981;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M2 12h20"/><path d="M12 2v20"/></svg>
+                </div>
+                <div class="msb-info">
+                  <span class="msb-title">Total Meter</span>
+                  <span class="msb-value" style="color: #10B981;">{{ totalMeterQuantity | number:'1.2-3' }} Mtr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lot Completion Toggle -->
+          <div class="completion-section animate-in">
+            <div class="toggle-wrapper">
+              <div class="toggle-info">
+                <h3>Lot is Completed</h3>
+                <p>Toggle ON to confirm this lot is now fully completed</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" formControlName="isLotCompleted">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-footer">
+            <button type="button" class="btn-cancel" (click)="onCancel()" [disabled]="isSubmitting">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="(!isEditMode && !isFormValid()) || isSubmitting">
+              <span *ngIf="!isSubmitting" class="btn-icon" [innerHTML]="icons.check | safeHtml"></span>
+              <span *ngIf="isSubmitting" class="spinner"></span>
+              {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Entry' : 'Submit Entry') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multiselect Size Picker Modal -->
+  <app-size-picker-modal *ngIf="isSizePickerOpen" [availableSizes]="sizes" (confirm)="onSizesSelected($event)"
+    (cancel)="isSizePickerOpen = false">
+  </app-size-picker-modal>
+
+  <!-- Multiselect Meter Picker Modal -->
+  <app-meter-picker-modal *ngIf="isMeterPickerOpen" [availableMeters]="availableMeters" (confirm)="onMetersSelected($event)"
+    (cancel)="isMeterPickerOpen = false">
+  </app-meter-picker-modal>
+</div>

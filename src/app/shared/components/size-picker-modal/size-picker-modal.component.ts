@@ -11,7 +11,8 @@ import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SizePickerModalComponent implements OnInit {
-  @Input() availableSizes: string[] = [];
+  @Input() availableSizes: any[] = [];
+  @Input() colourName: string = '';
   @Input() alreadySelected: string[] = [];
   @Output() confirm = new EventEmitter<string[]>();
   @Output() cancel = new EventEmitter<void>();
@@ -40,7 +41,7 @@ export class SizePickerModalComponent implements OnInit {
     if (this.selectedSizes.size === this.availableSizes.length) {
       this.selectedSizes.clear();
     } else {
-      this.availableSizes.forEach(s => this.selectedSizes.add(s));
+      this.availableSizes.forEach(s => this.selectedSizes.add(s.size));
     }
   }
 

@@ -1,0 +1,75 @@
+<div class="monitoring-container">
+  <div class="monitoring-header">
+    <div class="stats-summary">
+      <div class="stat-pill running">
+        <span class="dot"></span> 42 Running
+      </div>
+      <div class="stat-pill idle">
+        <span class="dot"></span> 8 Idle
+      </div>
+      <div class="stat-pill down">
+        <span class="dot"></span> 3 Down
+      </div>
+    </div>
+    <div class="view-controls">
+      <button class="btn-icon"><span class="material-icons">grid_view</span></button>
+      <button class="btn-icon"><span class="material-icons">list</span></button>
+    </div>
+  </div>
+
+  <div class="machine-grid">
+    <div class="machine-card" *ngFor="let machine of machines()" [ngClass]="getStatusClass(machine.status)">
+      <div class="card-glow"></div>
+      
+      <div class="card-top">
+        <div class="machine-icon-wrap">
+          <span class="material-icons">precision_manufacturing</span>
+          <div class="pulse-indicator"></div>
+        </div>
+        <div class="machine-meta">
+          <span class="m-id">{{ machine.id }}</span>
+          <h3 class="m-name">{{ machine.name }}</h3>
+        </div>
+        <div class="status-badge">
+          {{ machine.status | uppercase }}
+        </div>
+      </div>
+
+      <div class="card-metrics">
+        <div class="metric">
+          <span class="label">OEE</span>
+          <span class="value">{{ machine.efficiency }}%</span>
+          <div class="progress-mini">
+            <div class="progress-bar" [style.width.%]="machine.efficiency"></div>
+          </div>
+        </div>
+        <div class="metric">
+          <span class="label">UPTIME</span>
+          <span class="value">{{ machine.uptime }}</span>
+        </div>
+      </div>
+
+      <div class="card-info-rows">
+        <div class="info-row">
+          <span class="material-icons">person</span>
+          <span>{{ machine.operator }}</span>
+        </div>
+        <div class="info-row">
+          <span class="material-icons">schedule</span>
+          <span>Shift {{ machine.shift }}</span>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="action-btn up-btn" (click)="markActive(machine)" [disabled]="machine.status === 'running'">
+          <span class="material-icons">play_arrow</span>
+          UP TIME
+        </button>
+        <button class="action-btn down-btn" (click)="markDown(machine)" [disabled]="machine.status === 'breakdown'">
+          <span class="material-icons">stop</span>
+          DOWN TIME
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,375 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed widths (e.g., width: 300px) break on mobile screens smaller than the width.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Replaced large fixed widths with `width: 100%; max-width: [value]px;` for fluid resizing.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../shared/styles/responsive';
+
+.manage-container {
+  padding: 32px;
+  min-height: calc(100vh - 72px);
+  background: #F8FAFC;
+  position: relative;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+
+  .title-section {
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    p {
+      color: #64748B;
+      margin: 4px 0 0;
+      font-size: 15px;
+    }
+  }
+
+  .search-box {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%; max-width: 350px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s;
+
+    &:focus-within {
+      border-color: #3B82F6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+
+    .material-icons {
+      color: #94A3B8;
+      font-size: 20px;
+    }
+
+    input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+      color: #1E293B;
+
+      &::placeholder {
+        color: #94A3B8;
+      }
+    }
+  }
+}
+
+.table-card {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.employee-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  th {
+    background: #F8FAFC;
+    padding: 16px 24px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #E2E8F0;
+  }
+
+  td {
+    padding: 20px 24px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: middle;
+  }
+
+  .employee-row {
+    transition: background 0.2s;
+    &:hover {
+      background: #F1F5F9;
+    }
+  }
+
+  .emp-profile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      .name {
+        font-weight: 700;
+        color: #0F172A;
+        font-size: 15px;
+      }
+      .id {
+        font-size: 12px;
+        color: #64748B;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .role-badge {
+    padding: 6px 12px;
+    background: #EFF6FF;
+    color: #1E40AF;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .salary-info {
+    .amount {
+      font-weight: 700;
+      color: #0F172A;
+    }
+    .period {
+      font-size: 12px;
+      color: #64748B;
+    }
+  }
+
+  .actions-col {
+    text-align: right;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid #E2E8F0;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+
+      .material-icons {
+        font-size: 18px;
+      }
+
+      &.edit {
+        color: #3B82F6;
+        &:hover {
+          background: #EFF6FF;
+          border-color: #3B82F6;
+        }
+      }
+
+      &.delete {
+        color: #EF4444;
+        &:hover {
+          background: #FEF2F2;
+          border-color: #EF4444;
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    padding: 80px 0;
+    text-align: center;
+    .empty-content {
+      color: #94A3B8;
+      .material-icons {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+      p {
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+.edit-overlay {
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.edit-card {
+  background: white;
+  width: 100%;
+  max-width: 100%; max-width: 900px;
+  max-height: 90vh;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .edit-header {
+    padding: 24px 32px;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #3B82F6;
+      h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        color: #0F172A;
+      }
+      .subtitle {
+        margin: 0;
+        font-size: 13px;
+        color: #64748B;
+        font-weight: 500;
+      }
+    }
+
+    .close-btn {
+      background: #F1F5F9;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748B;
+      transition: all 0.2s;
+      &:hover {
+        background: #E2E8F0;
+        color: #0F172A;
+      }
+    }
+  }
+
+  .edit-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 0 32px;
+    border-bottom: 1px solid #E2E8F0;
+    background: #F8FAFC;
+
+    button {
+      padding: 16px 24px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 600;
+      color: #64748B;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+
+      &:hover {
+        color: #3B82F6;
+      }
+
+      &.active {
+        color: #3B82F6;
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: #3B82F6;
+        }
+      }
+    }
+  }
+
+  .edit-form {
+    padding: 32px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 20px;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    padding-top: 24px;
+    border-top: 1px solid #F1F5F9;
+  }
+}
+
+.loader-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  border-radius: inherit;
+}

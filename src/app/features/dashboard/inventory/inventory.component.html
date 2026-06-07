@@ -1,0 +1,389 @@
+<div class="module-layout animate-fade-in">
+  
+  <!-- Shared Module Sidebar -->
+  <div class="module-sidebar">
+    <div class="sidebar-header">
+      <span class="icon" [innerHTML]="icons.package | safeHtml"></span>
+      <h2>Inventory Module</h2>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-title">MANAGEMENT</div>
+      <a routerLink="/dashboard/inventory" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon" [innerHTML]="icons.box | safeHtml"></span> Stock Dashboard
+      </a>
+      
+      <div class="nav-section-title mt-4">CONFIGURATION</div>
+      <a routerLink="/dashboard/masters" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon" [innerHTML]="icons.settings | safeHtml"></span> Master Data
+      </a>
+    </div>
+  </div>
+
+  <div class="module-content inventory-page">
+    <div class="inventory-container">
+      
+      <div class="inventory-header">
+        <div class="header-content">
+          <div class="breadcrumb"><span>Dashboard</span><span class="separator">/</span><span class="active">Material & Inventory Management</span></div>
+          <h1 class="page-title">Embroidery Materials</h1>
+          <p class="page-subtitle">Track raw materials, smart SKU codes, and detailed machine consumption.</p>
+        </div>
+        
+        <div class="header-actions">
+          <div class="datetime-badge"><span class="time">{{ currentDate | date:'shortTime' }}</span><span class="date">{{ currentDate | date:'mediumDate' }}</span></div>
+          <button class="btn-action btn-outline"><span class="btn-icon" [innerHTML]="icons.download | safeHtml"></span> Export</button>
+          <button class="btn-action btn-primary" (click)="openAddDialog()"><span class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span> Add Purchase</button>
+        </div>
+      </div>
+  
+      <app-alert *ngIf="alertMessage" [message]="alertMessage" [type]="alertType" (close)="alertMessage = null"></app-alert>
+  
+      <div class="kpi-grid">
+        <div class="kpi-card card-blue">
+          <div class="kpi-icon"><span [innerHTML]="icons.package | safeHtml"></span></div>
+          <div class="kpi-details"><span class="kpi-label">Unique Master SKUs</span><span class="kpi-value">{{ metrics.totalItems | number }}</span></div>
+        </div>
+        <div class="kpi-card card-green">
+        <div class="kpi-icon"><span [innerHTML]="icons.box | safeHtml"></span></div>
+        <div class="kpi-details"><span class="kpi-label">Total Available Units</span><span class="kpi-value">{{ metrics.totalAvailable | number }}</span></div>
+      </div>
+      <div class="kpi-card card-warning">
+        <div class="kpi-icon"><span [innerHTML]="icons.warning | safeHtml"></span></div>
+        <div class="kpi-details"><span class="kpi-label">Low Stock SKUs</span><span class="kpi-value">{{ metrics.lowStock }}</span></div>
+      </div>
+      <div class="kpi-card card-danger">
+        <div class="kpi-icon"><span [innerHTML]="icons.warning | safeHtml"></span></div>
+        <div class="kpi-details"><span class="kpi-label">Out of Stock SKUs</span><span class="kpi-value">{{ metrics.outOfStock }}</span></div>
+      </div>
+    </div>
+
+    <div class="dashboard-main-grid">
+      <div class="main-column">
+        
+        <!-- Category Tabs -->
+        <div class="category-tabs">
+          <button class="cat-tab" [class.active]="activeCategory === 'All'" (click)="setCategoryTab('All')">All Materials</button>
+          <button class="cat-tab" [class.active]="activeCategory === 'Thread'" (click)="setCategoryTab('Thread')">Threads (By Shade)</button>
+          <button class="cat-tab" [class.active]="activeCategory === 'Needle'" (click)="setCategoryTab('Needle')">Needles (By Size)</button>
+          <button class="cat-tab" [class.active]="activeCategory === 'Foam'" (click)="setCategoryTab('Foam')">Foams (By Thickness)</button>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="filter-panel glass-panel mt-3">
+          <form [formGroup]="filterForm" class="filter-form">
+            <div class="search-box">
+              <span class="search-icon" [innerHTML]="icons.search | safeHtml"></span>
+              <input type="text" formControlName="search" placeholder="Search SKU, Shade Code, Brand, Size..." class="search-input">
+            </div>
+            <div class="filter-dropdowns">
+              <select formControlName="status" class="glass-select"><option value="">All Statuses</option><option *ngFor="let stat of statuses" [value]="stat">{{ stat }}</option></select>
+              <select formControlName="warehouse" class="glass-select"><option value="">All Locations</option><option *ngFor="let w of warehouses" [value]="w">{{ w }}</option></select>
+              <button type="button" class="btn-text" (click)="resetFilters()" *ngIf="filterForm.dirty">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Data Grid -->
+        <div class="data-grid-container">
+          <div class="grid-header-actions">
+            <h3>Inventory Table <span class="badge badge-sub">{{ activeCategory }}</span></h3>
+            <span class="record-count">Showing {{ filteredData.length }} SKUs</span>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>SKU / Identity</th>
+                  
+                  <!-- DYNAMIC COLUMNS based on category -->
+                  <ng-container *ngIf="activeCategory === 'All' || activeCategory === 'Thread'">
+                    <th>Brand & Shade Name</th>
+                    <th>Shade Code</th>
+                  </ng-container>
+
+                  <ng-container *ngIf="activeCategory === 'Needle'">
+                    <th>Brand & System</th>
+                    <th>Needle Size</th>
+                  </ng-container>
+
+                  <ng-container *ngIf="activeCategory === 'Foam'">
+                    <th>Foam Type</th>
+                    <th>Thickness & Density</th>
+                  </ng-container>
+
+                  <th class="text-right">Available</th>
+                  <th class="text-right">Remaining</th>
+                  <th class="text-center">Status</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of filteredData" (click)="openDrawer(item)" class="clickable-row">
+                  <td>
+                    <div class="sku-cell">
+                      <span class="sku-badge">{{ item.id }}</span>
+                      <span class="unit-badge">{{ item.unit }}</span>
+                    </div>
+                  </td>
+                  
+                  <!-- DYNAMIC DATA CELLS -->
+                  <ng-container *ngIf="activeCategory === 'All' || activeCategory === 'Thread'">
+                    <td>
+                      <div class="item-details-cell">
+                        <span class="company-name" *ngIf="item.category === 'Thread'">{{ asThread(item).brand }}</span>
+                        <span class="item-name" *ngIf="item.category === 'Thread'">{{ asThread(item).shadeName }}</span>
+                        <span class="company-name text-muted" *ngIf="item.category !== 'Thread'">N/A</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="style-cell" *ngIf="item.category === 'Thread'">
+                        <span class="style-no">{{ asThread(item).shadeCode }}</span>
+                      </div>
+                      <span class="text-muted" *ngIf="item.category !== 'Thread'">-</span>
+                    </td>
+                  </ng-container>
+
+                  <ng-container *ngIf="activeCategory === 'Needle'">
+                    <td>
+                      <div class="item-details-cell">
+                        <span class="company-name">{{ asNeedle(item).brand }}</span>
+                        <span class="item-name">{{ asNeedle(item).needleSystem }}</span>
+                      </div>
+                    </td>
+                    <td><span class="style-no">{{ asNeedle(item).needleSize }}</span></td>
+                  </ng-container>
+
+                  <ng-container *ngIf="activeCategory === 'Foam'">
+                    <td>
+                      <div class="item-details-cell">
+                        <span class="item-name">{{ asFoam(item).foamType }}</span>
+                        <span class="company-name">{{ asFoam(item).colour }}</span>
+                      </div>
+                    </td>
+                    <td><span class="style-no">{{ asFoam(item).thickness }}</span> <span class="badge-sm">{{ asFoam(item).density }}</span></td>
+                  </ng-container>
+
+                  <td class="text-right"><span class="qty-highlight total">{{ item.totalAvailableUnits }}</span></td>
+                  <td class="text-right"><span class="qty-highlight remaining">{{ item.remainingUnits }}</span></td>
+                  <td class="text-center"><span class="status-badge" [ngClass]="getStatusClass(item.status)">{{ item.status }}</span></td>
+                  <td class="text-center" (click)="$event.stopPropagation()">
+                    <div class="action-buttons">
+                      <button class="btn-action-icon primary" title="Issue Material" (click)="openIssueDialog(item)"><span [innerHTML]="icons.send | safeHtml"></span></button>
+                      <button class="btn-action-icon warning" title="Return Material" (click)="openReturnDialog(item)"><span [innerHTML]="icons.return | safeHtml"></span></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredData.length === 0"><td colspan="8" class="empty-state">No matching SKUs found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-column">
+        <div class="timeline-card">
+          <div class="chart-header"><h3>Recent Activity</h3></div>
+          <div class="timeline-list">
+            <div class="timeline-item" *ngFor="let log of activityFeed">
+              <div class="timeline-marker" [style.backgroundColor]="log.color"></div>
+              <div class="timeline-content">
+                <div class="log-header"><span class="log-type" [style.color]="log.color">{{ log.type }}</span><span class="log-time">{{ log.date | date:'shortTime' }}</span></div>
+                <p class="log-desc">{{ log.description }}</p><span class="log-user">by {{ log.user }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAILS DRAWER with Barcode/QR -->
+  <div class="drawer-overlay" [class.open]="isDrawerOpen" (click)="closeDrawer()"></div>
+  <div class="details-drawer" [class.open]="isDrawerOpen">
+    <div class="drawer-header">
+      <h2>Item Smart Identity</h2>
+      <button class="btn-close" (click)="closeDrawer()"><span [innerHTML]="icons.close | safeHtml"></span></button>
+    </div>
+    <div class="drawer-content" *ngIf="selectedItemDetails">
+      
+      <!-- Smart Identification Header -->
+      <div class="drawer-hero">
+        <div class="barcode-container">
+          <div class="barcode-lines"></div>
+          <span class="barcode-text">{{ selectedItemDetails.id }}</span>
+        </div>
+        <div class="qr-container">
+          <div class="qr-code"></div>
+        </div>
+        <div class="mt-3">
+          <span class="status-badge" [ngClass]="getStatusClass(selectedItemDetails.status)">{{ selectedItemDetails.status }}</span>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <h4>Stock Summary ({{ selectedItemDetails.unit }})</h4>
+        <div class="stock-stats-grid">
+          <div class="stat-box"><span>Purchased</span><strong>{{ selectedItemDetails.totalAvailableUnits }}</strong></div>
+          <div class="stat-box"><span>Issued</span><strong class="text-blue">{{ selectedItemDetails.issuedUnits }}</strong></div>
+          <div class="stat-box"><span>Used</span><strong class="text-purple">{{ selectedItemDetails.productionUsed }}</strong></div>
+          <div class="stat-box highlight"><span>Remaining</span><strong [ngClass]="{'text-danger': selectedItemDetails.remainingUnits === 0}">{{ selectedItemDetails.remainingUnits }}</strong></div>
+        </div>
+      </div>
+
+      <!-- Category Specific Details -->
+      <div class="drawer-section">
+        <h4>Master Data Attributes</h4>
+        <ul class="detail-list" *ngIf="selectedItemDetails.category === 'Thread'">
+          <li><span>Brand:</span> <strong>{{ asThread(selectedItemDetails).brand }}</strong></li>
+          <li><span>Shade Code:</span> <strong>{{ asThread(selectedItemDetails).shadeCode }}</strong></li>
+          <li><span>Shade Name:</span> <strong>{{ asThread(selectedItemDetails).shadeName }}</strong></li>
+          <li><span>Colour Family:</span> <strong>{{ asThread(selectedItemDetails).colourFamily }}</strong></li>
+        </ul>
+        <ul class="detail-list" *ngIf="selectedItemDetails.category === 'Needle'">
+          <li><span>Brand:</span> <strong>{{ asNeedle(selectedItemDetails).brand }}</strong></li>
+          <li><span>System:</span> <strong>{{ asNeedle(selectedItemDetails).needleSystem }}</strong></li>
+          <li><span>Size:</span> <strong>{{ asNeedle(selectedItemDetails).needleSize }}</strong></li>
+          <li><span>Point Type:</span> <strong>{{ asNeedle(selectedItemDetails).pointType }}</strong></li>
+        </ul>
+        <ul class="detail-list" *ngIf="selectedItemDetails.category === 'Foam'">
+          <li><span>Foam Type:</span> <strong>{{ asFoam(selectedItemDetails).foamType }}</strong></li>
+          <li><span>Thickness:</span> <strong>{{ asFoam(selectedItemDetails).thickness }}</strong></li>
+          <li><span>Density:</span> <strong>{{ asFoam(selectedItemDetails).density }}</strong></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADD PURCHASE DIALOG -->
+  <div class="modal-overlay" *ngIf="isAddDialogOpen" (click)="closeAddDialog()">
+    <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Record Material Purchase</h2>
+        <button class="btn-close" (click)="closeAddDialog()"><span [innerHTML]="icons.close | safeHtml"></span></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="stepper-header">
+          <div class="step" [class.active]="currentStep >= 1" (click)="setStep(1)"><div class="step-circle">1</div><span class="step-label">Master Selection</span></div>
+          <div class="step-line" [class.active]="currentStep >= 2"></div>
+          <div class="step" [class.active]="currentStep >= 2" (click)="setStep(2)"><div class="step-circle">2</div><span class="step-label">Specific Attributes</span></div>
+          <div class="step-line" [class.active]="currentStep >= 3"></div>
+          <div class="step" [class.active]="currentStep >= 3" (click)="setStep(3)"><div class="step-circle">3</div><span class="step-label">Stock Entry</span></div>
+        </div>
+        
+        <form [formGroup]="addForm" class="modal-form">
+          <div class="step-content" *ngIf="currentStep === 1">
+            <div class="form-grid dual-col">
+              <div class="form-group full-width">
+                <label>Material Category <span class="req">*</span></label>
+                <div class="radio-group">
+                  <label class="radio-card" [class.active]="addForm.get('category')?.value === 'Thread'"><input type="radio" formControlName="category" value="Thread"> Thread</label>
+                  <label class="radio-card" [class.active]="addForm.get('category')?.value === 'Needle'"><input type="radio" formControlName="category" value="Needle"> Needle</label>
+                  <label class="radio-card" [class.active]="addForm.get('category')?.value === 'Foam'"><input type="radio" formControlName="category" value="Foam"> Foam</label>
+                </div>
+              </div>
+              <div class="form-group full-width mt-3">
+                <label>Select Master Item <span class="req">*</span></label>
+                <!-- Thread Dropdown -->
+                <select formControlName="selectedMasterId" class="form-control" *ngIf="addForm.get('category')?.value === 'Thread'">
+                  <option value="">-- Select Pre-Approved Thread Shade --</option>
+                  <option *ngFor="let m of masterThreads" [value]="m.id">{{ m.shadeCode }} - {{ m.shadeName }} ({{ m.brand }})</option>
+                </select>
+                <!-- Needle Dropdown -->
+                <select formControlName="selectedMasterId" class="form-control" *ngIf="addForm.get('category')?.value === 'Needle'">
+                  <option value="">-- Select Pre-Approved Needle Size --</option>
+                  <option *ngFor="let m of masterNeedles" [value]="m.id">{{ m.needleSize }} - {{ m.needleSystem }} ({{ m.brand }})</option>
+                </select>
+                <!-- Foam Dropdown -->
+                <select formControlName="selectedMasterId" class="form-control" *ngIf="addForm.get('category')?.value === 'Foam'">
+                  <option value="">-- Select Pre-Approved Foam --</option>
+                  <option *ngFor="let m of masterFoams" [value]="m.id">{{ m.foamType }} - {{ m.thickness }} ({{ m.colour }})</option>
+                </select>
+                <small class="help-text text-muted mt-1">If your item is not listed, it must be created in the Master Data Management console first.</small>
+              </div>
+            </div>
+          </div>
+          
+          <div class="step-content" *ngIf="currentStep === 2">
+            <!-- Master Preview Card -->
+            <div class="master-preview-card" *ngIf="selectedMasterRecord; else noMaster">
+              <div class="preview-header">
+                <h3>Locked Master Attributes</h3>
+                <span class="badge-success">Verified Master ID: {{ selectedMasterRecord.id }}</span>
+              </div>
+              <div class="preview-body">
+                <ul class="detail-list" *ngIf="addForm.get('category')?.value === 'Thread'">
+                  <li><span>Brand:</span> <strong>{{ selectedMasterRecord.brand }}</strong></li>
+                  <li><span>Shade Code:</span> <strong>{{ selectedMasterRecord.shadeCode }}</strong></li>
+                  <li><span>Shade Name:</span> <strong>{{ selectedMasterRecord.shadeName }}</strong></li>
+                  <li><span>Colour Family:</span> <strong>{{ selectedMasterRecord.colourFamily }}</strong></li>
+                  <li><span>Thread Type:</span> <strong>{{ selectedMasterRecord.threadType }}</strong></li>
+                </ul>
+                <ul class="detail-list" *ngIf="addForm.get('category')?.value === 'Needle'">
+                  <li><span>Brand:</span> <strong>{{ selectedMasterRecord.brand }}</strong></li>
+                  <li><span>System:</span> <strong>{{ selectedMasterRecord.needleSystem }}</strong></li>
+                  <li><span>Size:</span> <strong>{{ selectedMasterRecord.needleSize }}</strong></li>
+                  <li><span>Point Type:</span> <strong>{{ selectedMasterRecord.pointType }}</strong></li>
+                </ul>
+                <ul class="detail-list" *ngIf="addForm.get('category')?.value === 'Foam'">
+                  <li><span>Foam Type:</span> <strong>{{ selectedMasterRecord.foamType }}</strong></li>
+                  <li><span>Thickness:</span> <strong>{{ selectedMasterRecord.thickness }}</strong></li>
+                  <li><span>Colour:</span> <strong>{{ selectedMasterRecord.colour }}</strong></li>
+                  <li><span>Density:</span> <strong>{{ selectedMasterRecord.density }}</strong></li>
+                </ul>
+              </div>
+            </div>
+            <ng-template #noMaster>
+              <div class="empty-state">
+                <span class="warning-icon" [innerHTML]="icons.warning | safeHtml"></span>
+                <p>Please go back to Step 1 and select a Master Item from the dropdown.</p>
+              </div>
+            </ng-template>
+          </div>
+
+          <div class="step-content" *ngIf="currentStep === 3">
+            <div class="purchase-type-toggle mb-3">
+              <label>Purchase Format <span class="req">*</span></label>
+              <div class="radio-group">
+                <label class="radio-card" [class.active]="addForm.get('purchaseType')?.value === 'Cone'"><input type="radio" formControlName="purchaseType" value="Cone"> Loose / Single Units</label>
+                <label class="radio-card" [class.active]="addForm.get('purchaseType')?.value === 'Box'"><input type="radio" formControlName="purchaseType" value="Box"> Box / Carton</label>
+              </div>
+            </div>
+            <div class="form-grid dual-col" *ngIf="addForm.get('purchaseType')?.value === 'Box'">
+              <div class="form-group"><label>Total Boxes <span class="req">*</span></label><input type="number" formControlName="totalBoxes" class="form-control"></div>
+              <div class="form-group"><label>Units Per Box <span class="req">*</span></label><input type="number" formControlName="unitsPerBox" class="form-control"></div>
+              <div class="form-group full-width"><label>Auto-Calculated Base Units</label><input type="number" formControlName="calculatedTotal" class="form-control highlight-calc" readonly></div>
+            </div>
+            <div class="form-grid dual-col" *ngIf="addForm.get('purchaseType')?.value === 'Cone'">
+              <div class="form-group"><label>Total Units <span class="req">*</span></label><input type="number" formControlName="totalUnits" class="form-control"></div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="currentStep === 1 ? closeAddDialog() : prevStep()">{{ currentStep === 1 ? 'Cancel' : 'Back' }}</button>
+        <button class="btn-primary" (click)="currentStep === 3 ? saveInventory() : nextStep()"><span *ngIf="loading && currentStep === 3" class="spinner"></span>{{ currentStep === 3 ? 'Generate SKU & Save' : 'Next Step' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUE / RETURN DIALOGS RETAINED FROM PREVIOUS IMPLEMENTATION -->
+  <div class="modal-overlay" *ngIf="isIssueDialogOpen" (click)="closeIssueDialog()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h2>Issue Material to Production</h2><button class="btn-close" (click)="closeIssueDialog()"><span [innerHTML]="icons.close | safeHtml"></span></button></div>
+      <div class="modal-body">
+        <form [formGroup]="issueForm" class="modal-form p-0">
+          <div class="form-grid dual-col">
+            <div class="form-group"><label>Worker <span class="req">*</span></label><select formControlName="workerId" class="form-control"><option value="">Select Worker</option><option *ngFor="let w of workers" [value]="w.id">{{ w.name }}</option></select></div>
+            <div class="form-group"><label>Machine <span class="req">*</span></label><select formControlName="machineNo" class="form-control"><option value="">Select Machine</option><option *ngFor="let m of machines" [value]="m.id">{{ m.name }}</option></select></div>
+            <div class="form-group"><label>Issue Quantity <span class="req">*</span></label><input type="number" formControlName="issueQty" class="form-control"></div>
+            <div class="form-group"><label>Design No <span class="req">*</span></label><input type="text" formControlName="designNo" class="form-control"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer"><button class="btn-cancel" (click)="closeIssueDialog()">Cancel</button><button class="btn-primary" (click)="saveIssue()">Issue Material</button></div>
+    </div>
+  </div>
+
+</div>

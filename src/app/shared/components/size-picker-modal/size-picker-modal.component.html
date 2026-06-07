@@ -4,8 +4,11 @@
     <!-- Modal Header -->
     <div class="modal-header">
       <div class="header-left">
-        <h2>Select Sizes</h2>
-        <p>Choose sizes to add to your outward entry</p>
+        <h2>Select Sizes - {{ colourName }}</h2>
+        <div class="info-alert">
+          <span class="info-icon">i</span>
+          <p>These sizes are available in the inward for the selected style, design and colour.</p>
+        </div>
       </div>
       <button class="btn-close" (click)="onCancel()" title="Close">
         <span [innerHTML]="icons.x | safeHtml"></span>
@@ -13,42 +16,44 @@
     </div>
 
     <!-- Modal Content -->
-    <div class="modal-content">
+    <div class="modal-content" style="padding: 0;">
       
-      <!-- Select All Toggle -->
-      <div class="select-all-row" (click)="toggleSelectAll()">
-        <div class="custom-checkbox" [class.checked]="isAllSelected()">
-          <span *ngIf="isAllSelected()" [innerHTML]="icons.check | safeHtml"></span>
-        </div>
-        <span class="label">Select All Available Sizes</span>
-      </div>
+      <table class="sizes-table">
+        <thead>
+          <tr>
+            <th class="col-checkbox"></th>
+            <th>SIZE</th>
+            <th>AVAILABLE QUANTITY (PCS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of availableSizes" (click)="toggleSize(item.size)">
+            <td class="col-checkbox">
+              <div class="custom-checkbox" [class.checked]="selectedSizes.has(item.size)">
+                <span *ngIf="selectedSizes.has(item.size)" [innerHTML]="icons.check | safeHtml"></span>
+              </div>
+            </td>
+            <td>{{ item.size }}</td>
+            <td>{{ item.availableQty }}</td>
+          </tr>
+        </tbody>
+      </table>
 
-      <div class="divider"></div>
-
-      <!-- Size Checklist Grid -->
-      <div class="size-grid">
-        <div *ngFor="let size of availableSizes" 
-             class="size-item" 
-             [class.selected]="selectedSizes.has(size)"
-             (click)="toggleSize(size)">
-          
-          <div class="size-checkbox" [class.active]="selectedSizes.has(size)">
-            <span *ngIf="selectedSizes.has(size)" [innerHTML]="icons.check | safeHtml"></span>
-          </div>
-          
-          <span class="size-label">{{ size }}</span>
-        </div>
-      </div>
     </div>
 
     <!-- Modal Footer -->
     <div class="modal-footer">
-      <button class="btn-cancel-modal" (click)="onCancel()">Cancel</button>
-      <button class="btn-confirm-modal" 
-              (click)="onConfirm()" 
-              [disabled]="selectedSizes.size === 0">
-        Add {{ selectedSizes.size }} Size{{ selectedSizes.size !== 1 ? 's' : '' }}
-      </button>
+      <div class="footer-left">
+        Available Sizes : {{ availableSizes.length }}
+      </div>
+      <div class="footer-right">
+        <button class="btn-cancel-modal" (click)="onCancel()">Cancel</button>
+        <button class="btn-confirm-modal" 
+                (click)="onConfirm()" 
+                [disabled]="selectedSizes.size === 0">
+          Add Selected {{ selectedSizes.size > 0 ? '(' + selectedSizes.size + ')' : '' }}
+        </button>
+      </div>
     </div>
 
   </div>

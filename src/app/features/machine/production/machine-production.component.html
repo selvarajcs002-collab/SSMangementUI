@@ -1,0 +1,392 @@
+<div class="page-container">
+  <!-- Premium Sticky Header -->
+  <header class="main-header sticky-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="title-section">
+          <h1>Machine Production Entry</h1>
+          <p class="subtitle">Log daily production data and track manufacturing history</p>
+        </div>
+        <div class="active-badge">
+          <span class="pulse-dot"></span>
+          {{ productionHistory().length }} Entries Logged
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn-outline" (click)="exportData()">
+          <span class="material-icons">download</span>
+          Export
+        </button>
+        <button class="btn-primary" (click)="openAddModal()">
+          <span class="material-icons">add</span>
+          Add Production
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI Summary Section -->
+  <section class="kpi-section">
+    <div class="kpi-grid">
+      <div class="kpi-card" *ngFor="let card of kpiCards" [attr.data-color]="card.color">
+        <div class="kpi-card-inner">
+          <div class="kpi-header">
+            <div class="kpi-icon-wrap">
+              <span class="material-icons">{{ card.icon }}</span>
+            </div>
+            <div class="kpi-trend" [class.up]="card.up" [class.down]="!card.up">
+              <span class="material-icons">{{ card.up ? 'trending_up' : 'trending_down' }}</span>
+              {{ card.trend }}
+            </div>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-label">{{ card.title }}</span>
+            <h2 class="kpi-value">{{ card.value }}</h2>
+          </div>
+          <div class="kpi-footer">
+            <div class="mini-progress-bar">
+              <div class="progress-fill" [style.width.%]="card.progress"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter Toolbar -->
+  <section class="toolbar-section">
+    <div class="glass-panel toolbar-panel">
+      <div class="filter-group">
+        <div class="search-box">
+          <span class="material-icons">search</span>
+          <input type="text" placeholder="Search by machine, design or style...">
+        </div>
+        <div class="filter-controls">
+          <div class="filter-item">
+            <span class="material-icons">calendar_today</span>
+            <app-date-picker placeholder="Select date"></app-date-picker>
+          </div>
+          <div class="filter-item">
+            <span class="material-icons">filter_list</span>
+            <select>
+              <option>All Machines</option>
+              <option>CNC Machines</option>
+              <option>Lathe Machines</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <span class="material-icons">schedule</span>
+            <select>
+              <option>All Shifts</option>
+              <option>Shift A</option>
+              <option>Shift B</option>
+              <option>Shift C</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Production History Grid -->
+  <section class="grid-section">
+    <div class="glass-panel table-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="material-icons">history</span>
+          <h3>Production History</h3>
+        </div>
+        <div class="panel-actions">
+
+        </div>
+      </div>
+
+      <div class="table-scroll custom-scrollbar">
+        <table class="enterprise-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Machine</th>
+              <th>Design / Style</th>
+              <th>Shift</th>
+              <th>Produced</th>
+              <th>Expected</th>
+              <th>Achievement</th>
+              <th>Efficiency</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody @listAnimation>
+            <tr *ngFor="let entry of productionHistory()">
+              <td><span class="date-val">{{ entry.date }}</span></td>
+              <td>
+                <div class="machine-cell">
+                  <div class="machine-icon"><span class="material-icons">precision_manufacturing</span></div>
+                  <div class="machine-info">
+                    <strong>{{ entry.machine }}</strong>
+                    <span>{{ entry.machineId }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="style-cell">
+                  <span class="design-name">{{ entry.design }}</span>
+                  <span class="style-num">{{ entry.style }}</span>
+                </div>
+              </td>
+              <td><span class="shift-pill">{{ entry.shift }}</span></td>
+              <td><span class="qty-val">{{ entry.produced }}</span></td>
+              <td><span class="qty-val expected">{{ entry.expected }}</span></td>
+              <td>
+                <div class="achievement-wrap">
+                  <span class="ach-text" [class.success]="entry.achievement >= 95" [class.danger]="entry.achievement < 70">
+                    {{ entry.achievement }}%
+                  </span>
+                  <div class="ach-bar-mini">
+                    <div class="ach-fill" [style.width.%]="entry.achievement" [class.success]="entry.achievement >= 95" [class.danger]="entry.achievement < 70"></div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="efficiency-pill">{{ entry.efficiency }}%</div>
+              </td>
+              <td>
+                <span class="status-badge" [class]="getStatusClass(entry.status)">
+                  <span class="status-dot"></span>
+                  {{ entry.status }}
+                </span>
+              </td>
+              <td class="text-right">
+                <div class="action-buttons">
+                  <button class="act-icon-btn view" (click)="viewDetails(entry)" title="View Details"><span class="material-icons">visibility</span></button>
+                  <button class="act-icon-btn edit" title="Edit"><span class="material-icons">edit</span></button>
+                  <button class="act-icon-btn delete" title="Delete"><span class="material-icons">delete_outline</span></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Add Production Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal()" (click)="closeAddModal()" @overlayAnimation>
+    <div class="modal-container" (click)="$event.stopPropagation()" @modalAnimation>
+      <header class="modal-header">
+        <div class="modal-title-area">
+          <h2>Add Daily Production</h2>
+          <p>Record machine output and shift performance metrics</p>
+        </div>
+        <div class="modal-header-actions">
+          <div class="ai-badge">
+            <span class="material-icons">auto_awesome</span>
+            AI Assistant Active
+          </div>
+          <button class="close-btn" (click)="closeAddModal()"><span class="material-icons">close</span></button>
+        </div>
+      </header>
+
+      <div class="modal-body custom-scrollbar">
+        <form [formGroup]="productionForm" class="dialog-form">
+          <!-- Section 1: Basic Details -->
+          <div class="form-section">
+            <div class="section-title">
+              <span class="material-icons">info</span>
+              <h3>Basic Details</h3>
+            </div>
+            <div class="form-grid">
+              <div class="form-field">
+                <label>Production Date <span class="req">*</span></label>
+                <app-date-picker formControlName="productionDate" placeholder="Select date"></app-date-picker>
+              </div>
+              <div class="form-field">
+                <label>Machine Name <span class="req">*</span></label>
+                <select formControlName="machineName">
+                  <option value="">Select Machine</option>
+                  <option value="CNC-01">CNC-01 (Milling)</option>
+                  <option value="LATH-04">LATH-04 (Turning)</option>
+                  <option value="MILL-02">MILL-02 (Drilling)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Machine ID</label>
+                <input type="text" formControlName="machineId" readonly class="readonly">
+              </div>
+              <div class="form-field">
+                <label>Design Name <span class="req">*</span></label>
+                <input type="text" formControlName="designName" placeholder="e.g. Gear Plate V3">
+              </div>
+              <div class="form-field">
+                <label>Style Number <span class="req">*</span></label>
+                <input type="text" formControlName="styleNumber" placeholder="e.g. S-902-A">
+              </div>
+              <div class="form-field">
+                <label>Shift <span class="req">*</span></label>
+                <select formControlName="shift">
+                  <option value="A">Shift A (Morning)</option>
+                  <option value="B">Shift B (Evening)</option>
+                  <option value="C">Shift C (Night)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Operator Name <span class="req">*</span></label>
+                <input type="text" formControlName="operatorName">
+              </div>
+              <div class="form-field">
+                <label>Supervisor</label>
+                <input type="text" formControlName="supervisorName">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Production Details -->
+          <div class="form-section">
+            <div class="section-title">
+              <span class="material-icons">precision_manufacturing</span>
+              <h3>Production Metrics</h3>
+            </div>
+            <div class="form-grid">
+              <div class="form-field highlight">
+                <label>Produced Quantity <span class="req">*</span></label>
+                <input type="number" formControlName="producedQty" class="large-input">
+              </div>
+              <div class="form-field">
+                <label>Expected Quantity <span class="req">*</span></label>
+                <input type="number" formControlName="expectedQty">
+              </div>
+              <div class="form-field danger">
+                <label>Rejected Qty</label>
+                <input type="number" formControlName="rejectedQty">
+              </div>
+              <div class="form-field warning">
+                <label>Rework Qty</label>
+                <input type="number" formControlName="reworkQty">
+              </div>
+              <div class="form-field">
+                <label>Efficiency %</label>
+                <input type="number" formControlName="efficiency" readonly class="readonly success">
+              </div>
+              <div class="form-field">
+                <label>Downtime (Minutes)</label>
+                <input type="number" formControlName="downtimeMinutes">
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Insight in Modal -->
+          <div class="ai-form-panel">
+            <div class="ai-panel-header">
+              <div class="ai-label">
+                <span class="material-icons">psychology</span>
+                <h4>AI Real-time Validation</h4>
+              </div>
+            </div>
+            <div class="ai-validation-message" *ngIf="productionForm.value.producedQty < productionForm.value.expectedQty">
+              <span class="material-icons">warning</span>
+              <p>Warning: Production is {{ 100 - productionForm.value.efficiency }}% below target. High production loss predicted.</p>
+            </div>
+            <div class="ai-validation-message success" *ngIf="productionForm.value.producedQty >= productionForm.value.expectedQty">
+              <span class="material-icons">verified</span>
+              <p>Great! Production meets or exceeds expected targets. No major bottlenecks detected.</p>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <footer class="modal-footer">
+        <div class="footer-left">
+          <button class="btn-text" (click)="productionForm.reset()">Reset Form</button>
+        </div>
+        <div class="footer-right">
+          <button class="btn-outline" (click)="closeAddModal()">Cancel</button>
+          <button class="btn-primary" (click)="saveProduction()" [disabled]="productionForm.invalid || isLoading()">
+            <span class="material-icons" *ngIf="!isLoading()">save</span>
+            <span class="loader-spinner" *ngIf="isLoading()"></span>
+            {{ isLoading() ? 'Saving...' : 'Save Production' }}
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- View Details Modal -->
+  <div class="modal-overlay" *ngIf="showViewModal()" (click)="closeViewModal()" @overlayAnimation>
+    <div class="modal-container detail-modal" (click)="$event.stopPropagation()" @modalAnimation>
+      <header class="modal-header">
+        <div class="modal-title-area">
+          <h2>Production Details</h2>
+          <p>Detailed analysis for {{ selectedEntry()?.machine }} on {{ selectedEntry()?.date }}</p>
+        </div>
+        <button class="close-btn" (click)="closeViewModal()"><span class="material-icons">close</span></button>
+      </header>
+      <div class="modal-body custom-scrollbar">
+        <div class="detail-grid" *ngIf="selectedEntry() as entry">
+          <div class="detail-main">
+            <div class="detail-kpi-row">
+              <div class="detail-kpi">
+                <label>Produced</label>
+                <strong>{{ entry.produced }}</strong>
+              </div>
+              <div class="detail-kpi">
+                <label>Expected</label>
+                <strong>{{ entry.expected }}</strong>
+              </div>
+              <div class="detail-kpi">
+                <label>Achievement</label>
+                <strong [class.success]="entry.achievement >= 100">{{ entry.achievement }}%</strong>
+              </div>
+              <div class="detail-kpi">
+                <label>Efficiency</label>
+                <strong>{{ entry.efficiency }}%</strong>
+              </div>
+            </div>
+            <div class="detail-info-grid">
+              <div class="info-item">
+                <label>Design</label>
+                <span>{{ entry.design }}</span>
+              </div>
+              <div class="info-item">
+                <label>Style</label>
+                <span>{{ entry.style }}</span>
+              </div>
+              <div class="info-item">
+                <label>Shift</label>
+                <span>Shift {{ entry.shift }}</span>
+              </div>
+              <div class="info-item">
+                <label>Downtime</label>
+                <span>{{ entry.downtime }} Min</span>
+              </div>
+            </div>
+          </div>
+          <div class="detail-side">
+            <div class="ai-box">
+              <header><span class="material-icons">auto_awesome</span> AI Analysis</header>
+              <p>Machine {{ entry.machineId }} performed with high efficiency during Shift {{ entry.shift }}. Achievement rate is stable.</p>
+              <div class="risk-meter">
+                <label>Breakdown Risk</label>
+                <div class="meter-bar"><div class="meter-fill" style="width: 15%;"></div></div>
+                <span>Low (15%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Quick Actions -->
+  <div class="floating-action-menu">
+    <button class="main-fab">
+      <span class="material-icons">bolt</span>
+    </button>
+    <div class="fab-options">
+      <button class="fab-opt" (click)="exportData()" title="Export PDF"><span class="material-icons">picture_as_pdf</span></button>
+      <button class="fab-opt" title="Print Labels"><span class="material-icons">print</span></button>
+      <button class="fab-opt" (click)="openAddModal()" title="Quick Entry"><span class="material-icons">add_box</span></button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,381 @@
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="isSidebarCollapsed()">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed()">SS Management <span class="pro-badge">PRO</span></span>
+      </div>
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          [class.rotated]="isSidebarCollapsed()">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item" *ngFor="let item of menuItems" [class.active]="item.active" [routerLink]="item.route">
+        <div class="nav-icon" [title]="item.label">
+          <svg *ngIf="item.label === 'Dashboard'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <rect width="7" height="9" x="3" y="3" rx="1" />
+            <rect width="7" height="5" x="14" y="3" rx="1" />
+            <rect width="7" height="9" x="14" y="12" rx="1" />
+            <rect width="7" height="5" x="3" y="16" rx="1" />
+          </svg>
+          <svg *ngIf="item.label === 'New Registration'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="16" y1="11" x2="22" y2="11" />
+          </svg>
+          <svg *ngIf="item.label === 'Attendance'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <svg *ngIf="item.label === 'Payroll'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+          <svg *ngIf="item.label === 'Shift Management'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2v10l4.5 4.5" />
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          <svg *ngIf="item.label === 'Reports'" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg>
+        </div>
+        <span class="nav-label" *ngIf="!isSidebarCollapsed()">{{ item.label }}</span>
+        <div class="active-indicator" *ngIf="item.active"></div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-container">
+    <div class="content-wrapper-scroll">
+      
+      <!-- Premium Page Header -->
+      <div class="premium-header" [@fadeSlide]>
+        <div class="header-titles">
+          <div class="title-row">
+            <h1>Workforce Allocation</h1>
+            <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </div>
+          <p>Assign employees to shifts and machines for <span class="date-badge">{{ now | date:'EEEE, d MMM yyyy' }} <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span></p>
+        </div>
+        
+        <div class="kpi-cards">
+          <div class="kpi-card">
+            <div class="kpi-icon total"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value">{{ stats().total }}</span>
+              <span class="kpi-label">Total Workers</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon allocated"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value">{{ stats().total - stats().unassigned }}</span>
+              <span class="kpi-label">Allocated</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon unallocated"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="23" y1="11" x2="17" y2="11"></line></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value">{{ stats().unassigned }}</span>
+              <span class="kpi-label">Unallocated</span>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon machines"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value">{{ stats().machinesActive }}</span>
+              <span class="kpi-label">Active Machines</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky Floating Toolbar -->
+      <div class="premium-toolbar" [@fadeSlide]>
+        <div class="toolbar-left">
+          <span class="toolbar-label">Bulk Selection:</span>
+          <button class="btn-primary" (click)="bulkConfirm()">Confirm</button>
+          <button class="btn-outline" (click)="autoSave()">Update</button>
+        </div>
+        
+        <div class="toolbar-center">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search workers, machines..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)">
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <div class="view-toggles">
+            <button class="toggle-btn" [class.active]="currentView() === 'machine'" (click)="switchView('machine')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Grid View
+            </button>
+            <button class="toggle-btn" [class.active]="currentView() === 'table'" (click)="switchView('table')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> List View
+            </button>
+          </div>
+          <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+          <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></button>
+        </div>
+      </div>
+
+      <!-- VIEW 1: Premium List View (Table) -->
+      <div class="premium-list-view" *ngIf="currentView() === 'table'" [@fadeSlide]>
+        <div class="table-card">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox"></th>
+                <th class="col-id">#</th>
+                <th class="col-machine">Machine / Station</th>
+                <th class="col-shift">Shift</th>
+                <th class="col-workers">Assigned Workers (Count)</th>
+                <th class="col-status">Status</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of machines(); let i = index">
+                <td class="col-check"><input type="checkbox"></td>
+                <td class="col-id">{{ i + 1 }}</td>
+                <td class="col-machine">
+                  <div class="machine-info">
+                    <div class="machine-icon" [class]="m.name.toLowerCase().includes('cnc') ? 'purple' : m.name.toLowerCase().includes('press') ? 'orange' : m.name.toLowerCase().includes('welding') ? 'red' : 'blue'">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    </div>
+                    <div class="machine-text">
+                      <span class="m-name">{{ m.name }} - 01</span>
+                      <span class="m-type">{{ m.name }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="col-shift">
+                  <div class="shift-wrapper">
+                    <div class="shift-badge" [class.day]="selectedShiftForMachineView() === '1'" [class.night]="selectedShiftForMachineView() !== '1'">
+                      {{ selectedShiftForMachineView() === '1' ? 'Day Shift' : 'Night Shift' }}
+                    </div>
+                    <span class="shift-time">{{ selectedShiftForMachineView() === '1' ? '06:00 AM - 02:00 PM' : '02:00 PM - 10:00 PM' }}</span>
+                  </div>
+                </td>
+                <td class="col-workers">
+                  <div class="worker-avatars">
+                    <ng-container *ngFor="let emp of getEmployeesByMachineAndShift(m.id, selectedShiftForMachineView()); let idx = index">
+                       <img *ngIf="idx < 4" class="avatar-img" [src]="emp.photo" [title]="emp.name">
+                    </ng-container>
+                    <div class="avatar-circle more" *ngIf="getEmployeesByMachineAndShift(m.id, selectedShiftForMachineView()).length > 4">
+                      +{{ getEmployeesByMachineAndShift(m.id, selectedShiftForMachineView()).length - 4 }}
+                    </div>
+                    <span class="worker-count">{{ m.capacity }} Workers</span>
+                  </div>
+                </td>
+                <td class="col-status">
+                  <div class="status-pill active" *ngIf="m.status === 'Active'">
+                     <div class="dot"></div> Active
+                  </div>
+                  <div class="status-pill maintenance" *ngIf="m.status === 'Maintenance'">
+                     <div class="dot"></div> Maintenance
+                  </div>
+                </td>
+                <td class="col-actions">
+                  <div class="action-buttons">
+                    <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                    <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                    <button class="icon-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer">
+            <span class="showing-text">Showing 1 to {{ machines().length }} of {{ machines().length }} machines</span>
+            <div class="pagination">
+              <button class="page-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <span class="ellipsis">...</span>
+              <button class="page-btn">5</button>
+              <button class="page-btn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
+            </div>
+            <div class="rows-per-page">
+              <span>Rows per page:</span>
+              <select><option>10</option><option>20</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Premium Grid View (Machine Cards) -->
+      <div class="premium-grid-view" *ngIf="currentView() === 'machine'" [@fadeSlide]>
+        <div class="grid-header">
+           <div class="gh-left">
+             <h2>Machines / Stations <span class="badge">{{ machines().length }}</span></h2>
+             <p>Manage machines and view assigned workers</p>
+           </div>
+           <div class="gh-right">
+             <button class="btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add New Machine</button>
+           </div>
+        </div>
+
+        <div class="grid-filters">
+           <div class="search-input-wrapper">
+             <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+             <input type="text" placeholder="Search machines...">
+           </div>
+           <button class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></button>
+           
+           <div class="spacer" style="flex: 1;"></div>
+
+           <div class="filter-dropdown">
+             <label>Filter by Shift:</label>
+             <select [ngModel]="selectedShiftForMachineView()" (ngModelChange)="setShiftForMachineView($event)">
+                <option value="1">Day Shift</option>
+                <option value="2">Night Shift</option>
+                <option value="All">All Shifts</option>
+             </select>
+           </div>
+
+           <div class="filter-dropdown">
+             <label>Status:</label>
+             <select>
+                <option>All Status</option>
+                <option>Active</option>
+             </select>
+           </div>
+           
+           <div class="layout-toggles">
+             <button class="v-btn active"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></button>
+             <button class="v-btn"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>
+           </div>
+        </div>
+
+        <div class="grid-layout">
+          <!-- Left Panel: Available Workers (Modified to overlay/drawer or fit the full screen layout based on user's grid screenshot) -->
+          <!-- Actually, the screenshot for Grid View only shows Machine Cards. But the prompt specifically asked for Workers Panel | Action Panel | Machine Panel. I will include them to meet the prompt requirements. -->
+          
+          <!-- Left Panel: Available Workers -->
+          <div class="panel workers-panel">
+            <div class="panel-header">
+              <h3>Available Workers</h3>
+              <span class="badge">{{ getAvailableEmployees().length }}</span>
+            </div>
+            <div class="worker-list">
+              <div class="worker-card" *ngFor="let emp of getAvailableEmployees()" 
+                   [class.selected]="emp.selected" (click)="emp.selected = !emp.selected">
+                 <img class="avatar-img" [src]="emp.photo">
+                 <div class="worker-info">
+                   <span class="w-name">{{ emp.name }} <svg *ngIf="emp.selected" class="check" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></span>
+                   <span class="w-role">{{ emp.id }}</span>
+                 </div>
+                 <div class="worker-status available">Available</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center Panel: Action Panel -->
+          <div class="panel action-panel">
+            <div class="action-sticky">
+               <div class="target-machine-selector">
+                 <label>Target Machine:</label>
+                 <select #targetMachine>
+                   <option *ngFor="let m of machines()" [value]="m.id">{{ m.name }}</option>
+                 </select>
+               </div>
+
+               <button class="btn-assign" (click)="bulkAssignToMachine(targetMachine.value)">
+                  Assign <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+               </button>
+               <button class="btn-remove-action" (click)="bulkRemoveFromMachine()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Remove
+               </button>
+            </div>
+          </div>
+
+          <!-- Right Panel: Machine Cards Grid -->
+          <div class="panel machines-panel">
+            <div class="machines-grid">
+              <div class="machine-card-premium" *ngFor="let m of machines()">
+                
+                <div class="m-card-header">
+                  <div class="m-icon-wrapper" [class]="m.name.toLowerCase().includes('cnc') ? 'purple' : m.name.toLowerCase().includes('press') ? 'green' : m.name.toLowerCase().includes('welding') ? 'orange' : 'blue'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                  </div>
+                  <div class="m-card-titles">
+                    <h4>{{ m.name }}</h4>
+                    <span class="shift-badge-small day" *ngIf="selectedShiftForMachineView() === '1'">Day Shift</span>
+                    <span class="shift-badge-small night" *ngIf="selectedShiftForMachineView() !== '1'">Night Shift</span>
+                  </div>
+                  <button class="btn-more"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></button>
+                </div>
+
+                <div class="m-card-stats">
+                  <div class="stat-row">
+                    <span class="assigned-count"><b>{{ getPendingLoadForMachine(m.id, selectedShiftForMachineView()) }} / {{ m.capacity }}</b> Assigned</span>
+                    <span class="percentage">{{ (getPendingLoadForMachine(m.id, selectedShiftForMachineView()) / m.capacity) * 100 | number:'1.0-0' }}%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="fill" [class]="m.name.toLowerCase().includes('cnc') ? 'purple' : m.name.toLowerCase().includes('press') ? 'green' : m.name.toLowerCase().includes('welding') ? 'orange' : 'blue'"
+                         [style.width.%]="(getPendingLoadForMachine(m.id, selectedShiftForMachineView()) / m.capacity) * 100"
+                         [class.full]="getPendingLoadForMachine(m.id, selectedShiftForMachineView()) >= m.capacity"></div>
+                  </div>
+                </div>
+
+                <div class="m-card-workers">
+                  <span class="section-label">ASSIGNED WORKERS</span>
+                  <div class="worker-avatars">
+                    <ng-container *ngFor="let emp of getEmployeesByMachineAndShift(m.id, selectedShiftForMachineView()); let idx = index">
+                       <img *ngIf="idx < 4" class="avatar-img" [src]="emp.photo" [title]="emp.name">
+                    </ng-container>
+                    <div class="avatar-circle more" *ngIf="getEmployeesByMachineAndShift(m.id, selectedShiftForMachineView()).length > 4">
+                      +{{ getEmployeesByMachineAndShift(m.id, selectedShiftForMachineView()).length - 4 }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="m-card-footer">
+                   <button class="btn-view-details">
+                     View Details <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                   </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>

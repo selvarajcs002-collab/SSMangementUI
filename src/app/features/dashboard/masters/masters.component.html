@@ -1,0 +1,118 @@
+<div class="module-layout animate-fade-in">
+  
+  <!-- Shared Module Sidebar -->
+  <div class="module-sidebar">
+    <div class="sidebar-header">
+      <span class="icon" [innerHTML]="icons.package | safeHtml"></span>
+      <h2>Inventory Module</h2>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-title">MANAGEMENT</div>
+      <a routerLink="/dashboard/inventory" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon" [innerHTML]="icons.box | safeHtml"></span> Stock Dashboard
+      </a>
+      
+      <div class="nav-section-title mt-4">CONFIGURATION</div>
+      <a routerLink="/dashboard/masters" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon" [innerHTML]="icons.settings | safeHtml"></span> Master Data
+      </a>
+    </div>
+  </div>
+
+  <div class="module-content masters-page">
+    <div class="masters-container">
+      <app-section-header 
+        title="Master Data Management" 
+        subtitle="Configure precise industry standards for Threads, Needles, Foam, and Entities" 
+        [icon]="icons.settings">
+      </app-section-header>
+
+      <div class="masters-layout">
+        <!-- Left Sidebar Tabs -->
+        <div class="sidebar-tabs">
+        <div class="tab-group-title">INVENTORY MASTERS</div>
+        <button class="tab-btn" [class.active]="activeTab === 'thread'" (click)="setTab('thread')">Thread Master</button>
+        <button class="tab-btn" [class.active]="activeTab === 'needle'" (click)="setTab('needle')">Needle Master</button>
+        <button class="tab-btn" [class.active]="activeTab === 'foam'" (click)="setTab('foam')">Foam Master</button>
+        
+        <div class="tab-group-title mt-4">ENTITY MASTERS</div>
+        <button class="tab-btn" [class.active]="activeTab === 'supplier'" (click)="setTab('supplier')">Supplier Master</button>
+        <button class="tab-btn" [class.active]="activeTab === 'machine'" (click)="setTab('machine')">Machine Master</button>
+        <button class="tab-btn" [class.active]="activeTab === 'worker'" (click)="setTab('worker')">Worker Master</button>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="content-area">
+        
+        <!-- THREAD MASTER -->
+        <div *ngIf="activeTab === 'thread'" class="master-panel">
+          <div class="panel-header">
+            <h2>Define Thread Configuration</h2>
+            <button class="btn-primary" (click)="saveThread()"><span [innerHTML]="icons.save | safeHtml"></span> Save Master</button>
+          </div>
+          <form [formGroup]="threadForm" class="master-form">
+            <div class="form-grid">
+              <div class="form-group"><label>Brand Name</label><input type="text" formControlName="brandName" class="form-control" placeholder="e.g. Madeira"></div>
+              <div class="form-group"><label>Shade Code (UNIQUE)</label><input type="text" formControlName="shadeCode" class="form-control" placeholder="e.g. M-1023"></div>
+              <div class="form-group"><label>Shade Name</label><input type="text" formControlName="shadeName" class="form-control" placeholder="e.g. Crimson Red"></div>
+              <div class="form-group"><label>Colour Family</label><input type="text" formControlName="colourFamily" class="form-control"></div>
+              <div class="form-group"><label>Thread Type</label><select formControlName="threadType" class="form-control"><option>Viscose Rayon</option><option>Polyester</option><option>Metallic</option><option>Cotton</option></select></div>
+              <div class="form-group"><label>Thickness / Ticket No</label><input type="text" formControlName="thickness" class="form-control" placeholder="e.g. 40"></div>
+            </div>
+          </form>
+
+          <h3 class="mt-4">Existing Thread Masters</h3>
+          <table class="modern-table">
+            <thead><tr><th>Brand</th><th>Shade Code</th><th>Shade Name</th><th>Type</th></tr></thead>
+            <tbody><tr *ngFor="let t of threadsList"><td>{{ t.BrandName }}</td><td><strong>{{ t.ShadeCode }}</strong></td><td>{{ t.ShadeName }}</td><td>{{ t.ThreadType }}</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- NEEDLE MASTER -->
+        <div *ngIf="activeTab === 'needle'" class="master-panel">
+          <div class="panel-header">
+            <h2>Define Needle Configuration</h2>
+            <button class="btn-primary" (click)="saveNeedle()"><span [innerHTML]="icons.save | safeHtml"></span> Save Master</button>
+          </div>
+          <form [formGroup]="needleForm" class="master-form">
+            <div class="form-grid">
+              <div class="form-group"><label>Brand Name</label><input type="text" formControlName="brandName" class="form-control" placeholder="e.g. Organ"></div>
+              <div class="form-group"><label>Needle System</label><input type="text" formControlName="needleSystem" class="form-control" placeholder="e.g. DBxK5"></div>
+              <div class="form-group"><label>Needle Size</label><input type="text" formControlName="needleSize" class="form-control" placeholder="e.g. #11/75"></div>
+              <div class="form-group"><label>Point Type</label><select formControlName="pointType" class="form-control"><option>Ball Point</option><option>Sharp</option></select></div>
+            </div>
+          </form>
+
+          <h3 class="mt-4">Existing Needle Masters</h3>
+          <table class="modern-table">
+            <thead><tr><th>Brand</th><th>System</th><th>Size</th><th>Point</th></tr></thead>
+            <tbody><tr *ngFor="let n of needlesList"><td>{{ n.BrandName }}</td><td><strong>{{ n.NeedleSystem }}</strong></td><td><strong>{{ n.NeedleSize }}</strong></td><td>{{ n.PointType }}</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- FOAM MASTER -->
+        <div *ngIf="activeTab === 'foam'" class="master-panel">
+          <div class="panel-header">
+            <h2>Define Foam Configuration</h2>
+            <button class="btn-primary" (click)="saveFoam()"><span [innerHTML]="icons.save | safeHtml"></span> Save Master</button>
+          </div>
+          <form [formGroup]="foamForm" class="master-form">
+            <div class="form-grid">
+              <div class="form-group"><label>Foam Type</label><input type="text" formControlName="foamType" class="form-control" placeholder="e.g. EVA Foam"></div>
+              <div class="form-group"><label>Thickness</label><input type="text" formControlName="thickness" class="form-control" placeholder="e.g. 3mm"></div>
+              <div class="form-group"><label>Colour</label><input type="text" formControlName="colour" class="form-control" placeholder="e.g. White"></div>
+              <div class="form-group"><label>Density</label><select formControlName="density" class="form-control"><option>High</option><option>Medium</option><option>Low</option></select></div>
+            </div>
+          </form>
+          
+          <h3 class="mt-4">Existing Foam Masters</h3>
+          <table class="modern-table">
+            <thead><tr><th>Type</th><th>Thickness</th><th>Colour</th><th>Density</th></tr></thead>
+            <tbody><tr *ngFor="let f of foamsList"><td>{{ f.FoamType }}</td><td><strong>{{ f.Thickness }}</strong></td><td>{{ f.Colour }}</td><td>{{ f.Density }}</td></tr></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

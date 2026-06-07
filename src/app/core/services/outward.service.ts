@@ -14,9 +14,32 @@ export interface OutwardSaveRequest {
     createdBy: string;
     status: string;
   };
-  sizes: {
+  sizes?: {
     size: string;
     count: number;
+  }[];
+  colourBreakdowns?: any[];
+}
+
+// NEW: Meter Based Outward Payload - isolated from size-based
+export interface MeterOutwardSavePayload {
+  outwardId?: number;
+  mode?: string;
+  entryType: 'M';
+  companyId: number;
+  colour: string;
+  designName: string;
+  styleNo: string;
+  uploadURL: string;
+  createdBy: string;
+  status: string;
+  remarks: string;
+  outwardDate: string;
+  meterDetails: {
+    meterPerBit: number;
+    bitsCount: number;
+    piecesCount: number;
+    totalMeter: number;
   }[];
 }
 
@@ -28,16 +51,21 @@ export class OutwardService {
   constructor(private api: ApiService) { }
 
   saveOutward(payload: OutwardSaveRequest): Observable<any> {
-    return this.api.post<any>('save-outward', payload);
+    return this.api.post<any>('outward/save-outward', payload);
+  }
+
+  // NEW: Save Meter Based Outward - does not affect existing saveOutward
+  saveMeterOutward(payload: MeterOutwardSavePayload): Observable<any> {
+    return this.api.post<any>('outward/save-meter-outward', payload);
   }
 
   updateOutward(payload: any): Observable<any> {
-    return this.api.post<any>('outward-update', payload);
+    return this.api.post<any>('outward/outward-update', payload);
   }
 
   getOutwardByDcNo(id: number, mode: string): Observable<any> {
     const params = { id, mode };
-    return this.api.get<any>('outward_get_by_dcno', params).pipe(
+    return this.api.get<any>('outward/outward_get_by_dcno', params).pipe(
       tap(data => this.setEditData(data))
     );
   }

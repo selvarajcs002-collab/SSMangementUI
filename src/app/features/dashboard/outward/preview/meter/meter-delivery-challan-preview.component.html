@@ -1,0 +1,108 @@
+<div class="dc-card meter-dc-card" *ngIf="data">
+  <!-- ── HEADER ─────────────────────────────────────── -->
+  <div class="dc-header">
+    <div class="header-left">
+      <img *ngIf="data.company.logo" [src]="data.company.logo" alt="Logo" />
+      <div class="company-details">
+        <div class="company-name">{{ data.company.name || 'S.S.EMBROIDERY' }}</div>
+        <div class="company-address">No:12, Discovery Nagar<br/>2nd Street, Kangarainagaram<br/>TIRUPUR - 641 666, Tamil Nadu India<br/><b>GST:</b> {{ data.company.gst || '33AEMFS9121J1ZF' }} &nbsp; <b>Phone:</b> -</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="doc-title">DELIVERY CHALLAN</div>
+      <div class="meta-text">DC No: {{ data.dcNo || 'DC_Unknown' }}</div>
+      <div class="meta-text">Date: {{ (data.date | date:'dd-MMM-yyyy') || 'Date_Unknown' }}</div>
+      <div class="badge green">ORIGINAL</div>
+    </div>
+  </div>
+
+  <!-- ── RECEIVER AND JOB INFO ─────────────────────── -->
+  <div class="info-section">
+    <div class="receiver">
+      <div class="info-label">Party Name</div>
+      <div class="name">{{ data.receiverName }}</div>
+      <div class="address" style="white-space: pre-wrap;">{{ data.receiverAddress }}</div>
+    </div>
+    
+    <!-- Top Right Job Details Section -->
+    <div class="job-info meter-job-info">
+      <div class="job-row"><span class="job-lbl">Design</span> <span class="job-val">: {{ data.items[0]?.designName || '—' }}</span></div>
+      <div class="job-row"><span class="job-lbl">Style</span> <span class="job-val">: {{ data.items[0]?.styleNo || '—' }}</span></div>
+      <div class="job-row"><span class="job-lbl">Color</span> <span class="job-val">: {{ data.items[0]?.colour || '—' }}</span></div>
+      <div class="job-row"><span class="job-lbl">Machine</span> <span class="job-val">: Embroidery Machine</span></div>
+      <div class="job-row"><span class="job-lbl">DC Type</span> <span class="job-val bold-type">: Meter Based</span></div>
+    </div>
+  </div>
+
+  <!-- ── METER DETAILS TABLE WITH ROWSPAN ────────────── -->
+  <div class="items-section meter-table-section" *ngIf="data.meterDetails && data.meterDetails.length > 0">
+    <table class="items-table meter-preview-table">
+      <thead>
+        <tr>
+          <th class="col-style">Style</th>
+          <th class="col-design">Design</th>
+          <th class="col-color">Color</th>
+          <th class="col-meter">Meter / Bit</th>
+          <th class="col-bits">Bits Count</th>
+          <th class="col-pieces">No of Pieces</th>
+          <th class="col-total">Total Meter</th>
+          <th class="col-qty">Qty</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of data.meterDetails; let i = index">
+          <!-- Rowspan columns: Style, Design, Color, and Qty. Span is meterDetails.length + 1 to account for the Grand Total row -->
+          <td *ngIf="i === 0" [rowSpan]="data.meterDetails.length + 1" class="col-style align-center-val font-bold">
+            {{ data.items[0]?.styleNo || '—' }}
+          </td>
+          <td *ngIf="i === 0" [rowSpan]="data.meterDetails.length + 1" class="col-design align-center-val">
+            {{ data.items[0]?.designName || '—' }}
+          </td>
+          <td *ngIf="i === 0" [rowSpan]="data.meterDetails.length + 1" class="col-color align-center-val">
+            {{ data.items[0]?.colour || '—' }}
+          </td>
+
+          <!-- Meter Details -->
+          <td class="col-meter align-right-val">{{ item.meterPerBit | number:'1.2-2' }} Mtr</td>
+          <td class="col-bits align-center-val">{{ item.bitsCount }}</td>
+          <td class="col-pieces align-center-val">{{ item.piecesCount }}</td>
+          <td class="col-total align-right-val">{{ item.totalMeter | number:'1.2-2' }}</td>
+
+          <!-- Qty (Rowspan) -->
+          <td *ngIf="i === 0" [rowSpan]="data.meterDetails.length + 1" class="col-qty align-center-val font-bold">
+            {{ data.totalMeterSum | number:'1.2-2' }}
+          </td>
+        </tr>
+
+        <!-- Grand Total row nested inside the table -->
+        <tr>
+          <td colspan="2" class="col-grand-lbl align-center-val font-bold">Grand Total ( Meter )</td>
+          <td class="col-pieces align-center-val font-bold">{{ data.totalPiecesSum || 0 }}</td>
+          <td class="col-total align-right-val font-bold">{{ data.totalMeterSum | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── REMARKS BOX ────────────────────────────────── -->
+  <div class="remarks-box">
+    <div class="remarks-title">Remarks</div>
+    <div class="remarks-content">{{ data.remarks || '-' }}</div>
+  </div>
+
+  <!-- ── FOOTER SIGNATURES ─────────────────────────── -->
+  <div class="dc-footer three-cols">
+    <div class="sign-col">
+      <div class="sig-line"></div>
+      <span class="sig-label">Receiver Signature</span>
+    </div>
+    <div class="sign-col">
+      <div class="sig-line"></div>
+      <span class="sig-label">Prepared By</span>
+    </div>
+    <div class="sign-col">
+      <div class="sig-line"></div>
+      <span class="sig-label">Authorised Signatory</span>
+    </div>
+  </div>
+</div>

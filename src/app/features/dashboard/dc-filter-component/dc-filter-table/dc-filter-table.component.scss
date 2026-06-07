@@ -1,3 +1,21 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed `min-width` can cause overflow if the screen is narrower than the value.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Wrapped `min-width: Xpx` with `min(100%, Xpx)`.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../../../shared/styles/responsive';
+
 .table-card {
   background: #FFFFFF;
   border-radius: 8px;
@@ -195,7 +213,7 @@
 }
 
 .btn-page {
-  min-width: 32px;
+  min-width: min(100%, 32px);
   height: 32px;
   border-radius: 8px;
   display: flex;
@@ -224,7 +242,7 @@
   }
 
   &.nav {
-    min-width: 60px;
+    min-width: min(100%, 60px);
     background: #F8FAFC;
     
     &:disabled {

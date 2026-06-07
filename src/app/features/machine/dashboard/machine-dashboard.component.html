@@ -1,0 +1,98 @@
+<div class="dashboard-content">
+  <!-- Top KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let card of kpiCards" [attr.data-color]="card.color">
+      <div class="kpi-icon-box">
+        <span class="material-icons">{{ card.icon }}</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">{{ card.title }}</span>
+        <h2 class="kpi-value">{{ card.count }}</h2>
+        <div class="kpi-trend" [class.up]="card.trendUp" [class.down]="!card.trendUp">
+          <span class="material-icons">{{ card.trendUp ? 'trending_up' : 'trending_down' }}</span>
+          <span>{{ card.trend }}</span>
+        </div>
+      </div>
+      <div class="kpi-chart-mini">
+        <!-- Placeholder for mini sparkline -->
+        <div class="spark-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Middle Section: AI & Alerts -->
+  <div class="dashboard-middle">
+    <!-- AI Recommendations -->
+    <div class="ai-recommendations glass-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <span class="material-icons ai-sparkle">psychology</span>
+          <h3>AI Smart Insights</h3>
+        </div>
+        <button class="view-all">See All</button>
+      </div>
+      <div class="ai-list">
+        <div class="ai-card" *ngFor="let insight of aiInsights">
+          <div class="ai-icon">
+            <span class="material-icons">auto_awesome</span>
+          </div>
+          <div class="ai-content">
+            <h4>{{ insight.title }}</h4>
+            <p>{{ insight.message }}</p>
+          </div>
+          <button class="ai-action">{{ insight.action }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Status / Alerts -->
+    <div class="alerts-panel glass-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <span class="material-icons text-red">warning</span>
+          <h3>Critical Alerts</h3>
+        </div>
+        <span class="alert-count">3 Active</span>
+      </div>
+      <div class="alert-list">
+        <div class="alert-item" *ngFor="let alert of recentAlerts" [attr.data-severity]="alert.severity">
+          <div class="alert-indicator"></div>
+          <div class="alert-body">
+            <div class="alert-top">
+              <span class="machine-id">{{ alert.machine }}</span>
+              <span class="alert-time">{{ alert.time }}</span>
+            </div>
+            <p class="alert-msg">{{ alert.message }}</p>
+          </div>
+          <button class="alert-resolve">Resolve</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Section: Production Overview -->
+  <div class="production-overview glass-panel">
+    <div class="panel-header">
+      <h3>Shift-wise Production Performance</h3>
+      <div class="panel-actions">
+        <button class="btn-outline">Daily</button>
+        <button class="btn-outline active">Weekly</button>
+        <button class="btn-outline">Monthly</button>
+      </div>
+    </div>
+    <div class="chart-placeholder">
+      <div class="mock-chart">
+        <div class="bar" style="height: 60%" data-label="Shift A"></div>
+        <div class="bar" style="height: 85%" data-label="Shift B"></div>
+        <div class="bar" style="height: 45%" data-label="Shift C"></div>
+        <div class="bar" style="height: 70%" data-label="Shift A (Yest)"></div>
+        <div class="bar" style="height: 90%" data-label="Shift B (Yest)"></div>
+        <div class="bar" style="height: 55%" data-label="Shift C (Yest)"></div>
+      </div>
+      <div class="chart-legend">
+        <span><i class="dot blue"></i> Actual Output</span>
+        <span><i class="dot gray"></i> Target Output</span>
+      </div>
+    </div>
+  </div>
+</div>

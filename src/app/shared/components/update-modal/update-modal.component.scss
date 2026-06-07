@@ -1,3 +1,21 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed widths (e.g., width: 300px) break on mobile screens smaller than the width.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Replaced large fixed widths with `width: 100%; max-width: [value]px;` for fluid resizing.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../../shared/styles/responsive';
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -15,7 +33,7 @@
 .modal-container {
   background: #ffffff;
   width: 100%;
-  max-width: 600px;
+  max-width: 100%; max-width: 600px;
   border-radius: 20px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -68,8 +86,9 @@
 
 .modal-body {
   padding: 24px;
-  max-height: 70vh;
-  overflow-y: auto;
+  min-height: 350px; /* Added to ensure dropdowns have space */
+  max-height: 80vh;
+  overflow: visible; /* Changed from overflow-y: auto to let dropdowns overflow */
 }
 
 .form-grid {

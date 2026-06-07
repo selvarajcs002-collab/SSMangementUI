@@ -10,14 +10,14 @@ export class UserService {
 
   saveUser(data: UserRequest): Observable<CommonResponse> {
     return this.api.post<CommonResponse>(
-      'save-user',
+      'login/save-user',
       data
     );
   }
 
   updateUser(data: UserRequest): Observable<CommonResponse> {
     return this.api.put<CommonResponse>(
-      'update-user',
+      'login/update-user',
       data
     );
   }

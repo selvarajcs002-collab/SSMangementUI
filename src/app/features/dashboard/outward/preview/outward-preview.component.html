@@ -9,123 +9,173 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
       Delivery Challan Preview
     </div>
-    <button class="btn-print" (click)="printPage()" [disabled]="isSaving">
-      <svg *ngIf="!isSaving" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      <span *ngIf="isSaving" class="spinner"></span>
-      {{ isSaving ? 'Saving PDF...' : 'Print Challan' }}
-    </button>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-download" (click)="downloadDC()" [disabled]="isDownloading">
+        <svg *ngIf="!isDownloading" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span *ngIf="isDownloading" class="spinner"></span>
+        {{ isDownloading ? 'Downloading...' : 'Download PDF' }}
+      </button>
+      <button class="btn-print" (click)="printPage()" [disabled]="isSaving">
+        <svg *ngIf="!isSaving" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span *ngIf="isSaving" class="spinner"></span>
+        {{ isSaving ? 'Saving PDF...' : 'Print Challan' }}
+      </button>
+    </div>
   </div>
 </div>
 
 <!-- Main preview container -->
 <div class="preview-page" *ngIf="data">
-  <div class="dc-card">
+  
+  <!-- ──────────────────────────────────────────────────────────────────────────
+       1. EXISTING SIZE BASED PREVIEW (100% Unchanged)
+       ────────────────────────────────────────────────────────────────────────── -->
+  <div class="dc-card" *ngIf="data.entryType !== 'M'">
 
     <!-- ── HEADER ─────────────────────────────────────── -->
     <div class="dc-header">
-      <!-- Logo (left) -->
-      <div class="logo-col">
-        <img *ngIf="data.company.logo" [src]="data.company.logo" alt="Company Logo" />
-        <div *ngIf="!data.company.logo" class="logo-placeholder">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M21 12H3"/><path d="M12 3v18"/></svg>
+      <div class="header-left">
+        <img *ngIf="data.company.logo" [src]="data.company.logo" alt="Logo" class="company-logo" />
+        <div class="company-details">
+          <div class="company-name">{{ data.company.name || 'S.S.EMBROIDERY' }}</div>
+          <div class="company-address">{{ data.company.address || 'No-12, Deiveega Nagar\n2nd Street, Ranganathapuram\nTIRUPUR-123456, Tamil Nadu India' }}</div>
+          <div class="company-phone" *ngIf="data.company.gst || data.company.phone">
+            <span *ngIf="data.company.gst"><b>GST:</b> {{ data.company.gst }}</span>
+            <span *ngIf="data.company.gst && data.company.phone"> &nbsp; </span>
+            <span *ngIf="data.company.phone"><b>Phone:</b> {{ data.company.phone }}</span>
+          </div>
         </div>
       </div>
-
-      <!-- Company (center) -->
-      <div class="company">
-        <div class="company-name">{{ data.company.name || 'SS Embroidery' }}</div>
-        <div class="company-address">{{ data.company.address || 'H.No: 1-2-3/A, Street Name, Area Name,\nCity, State - PIN' }}</div>
+      <div class="header-center">
+        <div class="doc-title">DELIVERY CHALLAN</div>
+        <div class="doc-title-line"></div>
       </div>
+      <div class="header-right">
+        <table class="header-meta-table">
+          <tr>
+            <td class="meta-label">DC No</td>
+            <td class="meta-value">{{ data.dcNo || 'UNKNOWN' }}</td>
+          </tr>
+          <tr>
+            <td class="meta-label">DC Date</td>
+            <td class="meta-value">{{ (data.date | date:'dd-MMM-yyyy') || 'UNKNOWN' }}</td>
+          </tr>
+          <tr>
+            <td class="meta-label">Page No</td>
+            <td class="meta-value">1 / 1</td>
+          </tr>
+        </table>
+      </div>
+    </div>
 
-      <!-- Meta (right) -->
-      <div class="meta">
-        <div class="meta-row">
-          <span class="meta-label">DATE</span>
-          <span class="meta-value">{{ (data.date | date:'dd-MMM-yyyy') || '09-Apr-2026' }}</span>
+    <!-- ── DETAILS SECTION ───────────────────────────── -->
+    <div class="detail-section">
+      <div class="detail-col">
+        <div class="detail-heading">COMPANY DETAILS</div>
+        <div class="detail-content">
+          <div class="detail-row"><span class="lbl">Company Name</span> <span class="val">{{ data.receiverName || '-' }}</span></div>
+          <div class="detail-row" *ngIf="data.items && data.items.length > 0"><span class="lbl">Style Number</span> <span class="val">{{ data.items[0].styleNo || '-' }}</span></div>
+          <div class="detail-row" *ngIf="data.items && data.items.length > 0"><span class="lbl">Design Reference</span> <span class="val">{{ data.items[0].designName || '-' }}</span></div>
         </div>
-        <div class="meta-row">
-          <span class="meta-label">GSTIN</span>
-          <span class="meta-value">{{ data.company.gst || '—' }}</span>
+      </div>
+      <div class="detail-col">
+        <div class="detail-heading">ITEM DETAILS</div>
+        <div class="detail-content">
+          <div class="detail-row"><span class="lbl">Item Type</span> <span class="val">Garment / Embroidery</span></div>
+          <div class="detail-row"><span class="lbl">Lot Completed</span> <span class="val">Yes</span></div>
         </div>
-        <div class="meta-row">
-          <span class="meta-label">DC NO</span>
-          <span class="meta-value">{{ data.dcNo || 'DC-2023-0-892' }}</span>
+      </div>
+      <div class="detail-col">
+        <div class="detail-heading">CHALLAN DETAILS</div>
+        <div class="detail-content empty-content">
+          <!-- Keep empty for future expansion -->
         </div>
       </div>
     </div>
 
-    <!-- ── RECEIVER BOX ──────────────────────────────── -->
-    <div class="receiver">
-      <div class="receiver-title">To</div>
-      <div class="receiver-body">
-        <div class="receiver-name">{{ data.receiverName || 'Global Retail Solutions' }}</div>
-        <div class="receiver-address">{{ data.receiverAddress || 'Shop No 45, High Street Mall, Main Boulevard\nConnaught Place\nPIN: 110001' }}</div>
-      </div>
+    <!-- ── REMARKS SECTION ───────────────────────────── -->
+    <div class="remarks-section">
+      <div class="remarks-label">Remarks:</div>
+      <div class="remarks-box">{{ data.remarks || '' }}</div>
     </div>
 
-    <!-- ── ITEMS TABLE ───────────────────────────────── -->
-    <div class="items-section">
-      <!-- Watermark behind table -->
-      <div class="watermark" *ngIf="data.company.logo">
-        <img [src]="data.company.logo" alt="watermark" />
-      </div>
-
-      <table class="items-table">
+    <!-- ── MULTI COLOUR SIZE BREAKDOWN ───────────────── -->
+    <div class="table-section">
+      <div class="table-heading">MULTI COLOUR SIZE BREAKDOWN (SIZE BASED)</div>
+      <table class="matrix-table">
         <thead>
           <tr>
-            <th class="col-style">Style Name</th>
-            <th class="col-design">Design</th>
-            <th class="col-colour">Colour</th>
-            <th class="col-sizes">Sizes</th>
-            <th class="col-count">Count</th>
+            <th class="col-sno">S.No</th>
+            <th class="col-color">Colour</th>
+            <th *ngFor="let col of matrixColumns" class="col-size">{{ col }}</th>
+            <th class="col-qty">Total</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of data.items">
-            <td class="col-style">
-              <div class="style-name">{{ item.styleNo }}</div>
+          <tr *ngFor="let row of matrixRows; let i = index; trackBy: trackByFn">
+            <td class="col-sno">{{ i + 1 }}</td>
+            <td class="col-color">{{ row.colour }}</td>
+            <td *ngFor="let col of matrixColumns" class="col-size">
+              {{ row.sizes[col] || '-' }}
             </td>
-            <td class="col-design">{{ item.designName || '—' }}</td>
-            <td class="col-colour">{{ item.colour }}</td>
-            <td class="col-sizes">
-              <div class="sizes-grid">
-                <span class="size-chip" *ngFor="let s of item.sizes">
-                  {{ s.label }} {{ s.qty }}
-                </span>
-              </div>
-            </td>
-            <td class="col-count">{{ item.count }}</td>
+            <td class="col-qty row-total">{{ row.total }}</td>
           </tr>
         </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" class="total-label">TOTAL (QTY)</td>
+            <td *ngFor="let col of matrixColumns" class="col-size col-total">
+              {{ matrixTotals[col] || 0 }}
+            </td>
+            <td class="col-qty grand-total-cell">{{ data.totalQty }}</td>
+          </tr>
+        </tfoot>
       </table>
-
-    </div>
-    
-    <!-- ── TOTALS ─────────────────────────────────────── -->
-    <div class="totals">
-      <div class="totals-row grand">
-        <span class="label">TOTAL QTY:</span>
-        <span class="val">{{ data.totalQty }}</span>
-      </div>
     </div>
 
-    <!-- ── REMARKS ─────────────────────────────────────── -->
-    <div class="remarks-preview" *ngIf="data.remarks">
-      <div class="remarks-title">Remarks</div>
-      <div class="remarks-content">{{ data.remarks }}</div>
+    <!-- ── GRAND TOTAL SECTION ───────────────────────── -->
+    <div class="grand-total-section">
+      <div class="grand-total-text">GRAND TOTAL QUANTITY : <span class="highlight-qty">{{ data.totalQty || 0 }} PCS</span></div>
     </div>
 
-    <!-- ── FOOTER SIGNATURES ─────────────────────────── -->
-    <div class="dc-footer">
-      <div class="sign-left">
+    <!-- ── SIGNATURE SECTION ─────────────────────────── -->
+    <div class="signature-section">
+      <div class="sig-col">
         <div class="sig-line"></div>
-        <span class="sig-label">RECEIVER SIGNATURE</span>
+        <div class="sig-title">Prepared By</div>
+        <div class="sig-date">Date: </div>
       </div>
-      <div class="sign-right">
+      <div class="sig-col">
         <div class="sig-line"></div>
-        <span class="sig-label">AUTHORIZED BY</span>
+        <div class="sig-title">Checked By</div>
+        <div class="sig-date">Date: </div>
       </div>
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <div class="sig-title">Received By</div>
+        <div class="sig-date">Date: </div>
+      </div>
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <div class="sig-title">Authorized Sign</div>
+        <div class="sig-date">Date: </div>
+      </div>
+    </div>
+
+    <!-- ── NOTES SECTION ─────────────────────────────── -->
+    <div class="notes-section">
+      <div class="notes-title">Notes:</div>
+      <ul class="notes-list">
+        <li>Goods once sold will not be taken back.</li>
+        <li>Please verify all details carefully before accepting the challan.</li>
+      </ul>
     </div>
 
   </div>
+
+  <!-- ──────────────────────────────────────────────────────────────────────────
+       2. NEW METER BASED PREVIEW (Isolated)
+       ────────────────────────────────────────────────────────────────────────── -->
+  <app-meter-delivery-challan-preview *ngIf="data.entryType === 'M'" [data]="data"></app-meter-delivery-challan-preview>
 </div>
+

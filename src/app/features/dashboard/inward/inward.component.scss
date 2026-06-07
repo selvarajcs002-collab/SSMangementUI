@@ -1,3 +1,23 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed widths (e.g., width: 300px) break on mobile screens smaller than the width.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Replaced large fixed widths with `width: 100%; max-width: [value]px;` for fluid resizing.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../../shared/styles/responsive';
+
+// ─── Inward Component Styles ────────────────────────────────────────────────
+
 .dashboard-page {
   padding-top: 12px !important;
 }
@@ -6,16 +26,17 @@
   margin-top: 0 !important;
 }
 
+// ── Page Wrapper ─────────────────────────────────────────────────────────────
 .form-card-wrapper {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 16px 0 24px 0; /* Reduced top padding */
+  padding: 16px 0 24px 0;
 }
 
 .inward-card {
   width: 100%;
-  max-width: 880px;
+  max-width: 100%; max-width: 880px;
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
@@ -23,13 +44,68 @@
   border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease;
 
   &:hover {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   }
 }
 
+// ── Entry Type Toggle ─────────────────────────────────────────────────────────
+.entry-type-section {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px dashed var(--border);
+
+  .entry-type-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 10px;
+
+    .required { color: var(--error); }
+  }
+}
+
+.entry-type-toggle {
+  display: inline-flex;
+  gap: 0;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+
+  .entry-type-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 22px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748B;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg { flex-shrink: 0; }
+
+    &.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(66, 165, 245, 0.35);
+    }
+
+    &:hover:not(.active) {
+      color: var(--primary);
+      background: rgba(255, 255, 255, 0.7);
+    }
+  }
+}
+
+// ── Form Grid ─────────────────────────────────────────────────────────────────
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -47,6 +123,18 @@
 .input-group {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .required { color: var(--error); }
+  }
 }
 
 .input-wrapper {
@@ -64,8 +152,6 @@
   }
 }
 
-// Form controls are now styled globally in styles.css
-
 .error-text {
   font-size: 12px;
   color: var(--error);
@@ -73,13 +159,26 @@
   margin-top: 4px;
 }
 
+// ── Image Upload ──────────────────────────────────────────────────────────────
+.upload-section {
+  margin-bottom: 28px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    display: block;
+    margin-bottom: 8px;
+  }
+}
+
 .upload-container {
   border: 2px dashed var(--border);
   border-radius: var(--radius-md);
   background: #FAFAFA;
   transition: all 0.2s ease;
-  min-height: 80px; /* More compact for text-only display */
-  max-width: 400px;
+  min-height: 80px;
+  max-width: 100%; max-width: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -96,6 +195,12 @@
     border-color: var(--success);
     background: rgba(16, 185, 129, 0.02);
     cursor: default;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 }
 
@@ -158,34 +263,7 @@
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.btn-change-image, .btn-remove-image {
-  padding: 6px 14px;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-change-image {
-  background: white;
-  color: var(--text-main);
-  &:hover { background: #f1f1f1; }
-}
-
-.btn-remove-image {
-  background: #EF4444;
-  color: white;
-  &:hover { background: #dc2626; }
-}
-
-/* Size Breakdown Section */
+// ── Size Breakdown Section ────────────────────────────────────────────────────
 .size-breakdown-section {
   border-top: 1px dashed var(--border);
   padding-top: 24px;
@@ -204,6 +282,12 @@
       color: var(--primary);
       margin: 0;
     }
+
+    p.section-desc {
+      font-size: 13px;
+      color: #64748B;
+      margin: 4px 0 0 0;
+    }
   }
 }
 
@@ -221,8 +305,13 @@
   cursor: pointer;
   transition: all 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(66, 165, 245, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .btn-icon {
@@ -241,6 +330,10 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  padding: 12px;
+  background: #F8FAFC;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
 
   .field-col {
     &.size-label { flex: 2; }
@@ -252,14 +345,126 @@
   }
 }
 
+// ── Meter Grid Section ────────────────────────────────────────────────────────
+.btn-add-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E293B;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #F8FAFC;
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.meter-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.meter-grid-header {
+  display: flex;
+  align-items: center;
+  padding: 13px 16px;
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  font-weight: 700;
+  color: #1E293B;
+  font-size: 13px;
+
+  .col-row-num { width: 50px; flex-shrink: 0; }
+
+  .col-meter,
+  .col-bits,
+  .col-total {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+
+    small {
+      color: #64748B;
+      font-weight: 400;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+  }
+
+  .col-action { width: 60px; display: flex; justify-content: center; flex-shrink: 0; }
+}
+
+.meter-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-left: 1px solid #E2E8F0;
+  border-right: 1px solid #E2E8F0;
+  border-bottom: 1px solid #E2E8F0;
+  background: white;
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  &.animate-in {
+    animation: slideInRow 0.25s ease-out;
+  }
+
+  .col-row-num {
+    width: 50px;
+    flex-shrink: 0;
+    text-align: center;
+    font-weight: 600;
+    color: #64748B;
+  }
+
+  .col-meter { flex: 2; padding: 0 12px; }
+  .col-bits  { flex: 2; padding: 0 12px; }
+
+  .col-total {
+    flex: 2;
+    text-align: center;
+
+    .total-meter-val {
+      font-weight: 800;
+      color: #10B981;
+    }
+  }
+
+  .col-action {
+    width: 60px;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+}
+
+// ── Delete Row Button ─────────────────────────────────────────────────────────
 .btn-delete-row {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  background: transparent;
+  border: 1px solid #FEE2E2;
+  background: #FFF5F5;
   color: #FDA4AF;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -267,6 +472,7 @@
 
   &:hover:not(:disabled) {
     background: #FEE2E2;
+    border-color: #FCA5A5;
     color: #EF4444;
   }
 
@@ -276,9 +482,79 @@
   }
 }
 
+// ── Meter Summary Cards ───────────────────────────────────────────────────────
+.meter-summary-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 16px 24px;
+  margin-top: 24px;
+
+  .summary-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+
+    .icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      &.clipboard-icon {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366F1;
+      }
+
+      &.bits-icon {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3B82F6;
+      }
+
+      &.meter-icon {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10B981;
+      }
+    }
+
+    .summary-info {
+      display: flex;
+      flex-direction: column;
+
+      .title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1E293B;
+      }
+
+      .value {
+        font-size: 20px;
+        font-weight: 800;
+        color: #1E293B;
+        margin-top: 2px;
+
+        &.blue  { color: #3B82F6; }
+        &.green { color: #10B981; }
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
+}
+
+// ── Size Total Summary Bar ────────────────────────────────────────────────────
 .total-summary {
   margin-top: 16px;
-  background: var(--bg-main);
+  background: var(--bg-main, #F8FAFC);
   padding: 12px 20px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
@@ -299,7 +575,7 @@
   }
 }
 
-/* Footer Actions */
+// ── Form Footer Actions ───────────────────────────────────────────────────────
 .form-footer {
   display: flex;
   justify-content: flex-end;
@@ -357,36 +633,30 @@
   .btn-icon { display: flex; align-items: center; }
 }
 
-.loading-spinner {
+// ── Spinner ───────────────────────────────────────────────────────────────────
+.spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top: 2px solid white;
   border-radius: 50%;
-  border-top-color: white;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.6s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+// ── Animations ────────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideDownFade {
   from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideInRow {
   from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #fff;
-  border-top: 2px solid transparent;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes spin {

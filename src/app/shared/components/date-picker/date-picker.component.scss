@@ -1,0 +1,292 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed widths (e.g., width: 300px) break on mobile screens smaller than the width.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Replaced large fixed widths with `width: 100%; max-width: [value]px;` for fluid resizing.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../../shared/styles/responsive';
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.date-picker-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  height: 48px;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.input-wrapper:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.input-wrapper.active, .input-wrapper:focus-within {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(59, 130, 246, 0.05);
+}
+
+.date-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1E293B;
+  outline: none;
+  cursor: pointer;
+  padding-top: 10px;
+}
+
+.date-input::placeholder {
+  color: transparent;
+}
+
+.floating-label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748B;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: left top;
+}
+
+.input-wrapper.active .floating-label,
+.date-input:not(:placeholder-shown) ~ .floating-label {
+  transform: translateY(-24px) scale(0.85);
+  background: #FFFFFF;
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.calendar-icon {
+  display: flex;
+  align-items: center;
+  color: #94A3B8;
+  transition: color 0.2s ease;
+  margin-left: 8px;
+}
+
+.calendar-icon .input-wrapper:hover {
+  color: #64748B;
+}
+
+.calendar-icon .input-wrapper.active {
+  color: #3B82F6;
+}
+
+.required {
+  color: #EF4444;
+}
+
+.calendar-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1000;
+  width: 100%; max-width: 320px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08),
+              0 1px 3px 0 rgba(0, 0, 0, 0.02),
+              0 0 0 1px rgba(0, 0, 0, 0.01);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform-origin: top;
+  animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 6px;
+}
+
+.month-year-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.01em;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid #F1F5F9;
+  background: #FFFFFF;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-btn:hover {
+  color: #0F172A;
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+  transform: scale(1.05);
+}
+
+.nav-btn:active { transform: scale(0.95); }
+
+.weekday-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+
+.weekday-cell { font-size: 12px; font-weight: 600; color: #94A3B8; text-transform: uppercase; padding: 4px 0; }
+
+.date-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; }
+
+.date-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.date-cell:hover:not(.disabled) {
+  background: #F1F5F9;
+  color: #0F172A;
+  transform: translateY(-1px);
+}
+
+.date-cell.outside-month { color: #CBD5E1; }
+
+.date-cell.weekend:not(.selected):not(.outside-month) {
+  color: #E11D48;
+  background: rgba(225, 29, 72, 0.02);
+}
+
+.date-cell.weekend:not(.selected):not(.outside-month):hover {
+  background: rgba(225, 29, 72, 0.06);
+}
+
+.date-cell.today:not(.selected) {
+  font-weight: 700;
+  color: #3B82F6;
+}
+
+.date-cell.today:not(.selected)::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  background-color: #3B82F6;
+  border-radius: 50%;
+}
+
+.date-cell.selected {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
+}
+
+.date-cell.disabled { cursor: not-allowed; opacity: 0.3; }
+
+.error-message { font-size: 12px; color: #EF4444; font-weight: 500; margin-top: 2px; }
+
+.date-picker-container.has-error .input-wrapper {
+  border-color: #EF4444;
+}
+
+.date-picker-container.has-error .input-wrapper:focus-within,
+.date-picker-container.has-error .input-wrapper.active {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.date-picker-container.has-error .floating-label { color: #EF4444; }
+
+.disabled { opacity: 0.6; cursor: not-allowed; }
+
+.disabled .input-wrapper { background: #F8FAFC; border-color: #E2E8F0; pointer-events: none; }
+
+.disabled .date-input { color: #94A3B8; }
+
+/* New styles for modern UI */
+.date-picker-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.footer-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+
+.footer-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.footer-btn:active { background: #e2e8f0; }
+
+.input-wrapper .date-input { padding-top: 0; line-height: 48px; }

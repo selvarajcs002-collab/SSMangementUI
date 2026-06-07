@@ -30,6 +30,7 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   @Input() disabled: boolean = false;
   @Input() loading: boolean = false;
   @Input() isInvalid: boolean = false;
+  @Input() multiple: boolean = false;
   
   @Output() change = new EventEmitter<any>();
 
@@ -57,17 +58,43 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   }
 
   selectOption(option: SelectOption) {
-    this.selectedValue = option.key;
-    this.selectedLabel = option.value;
-    this.isOpen = false;
-    this.onChange(this.selectedValue);
-    this.change.emit(this.selectedValue);
+    if (this.multiple) {
+      if (!Array.isArray(this.selectedValue)) {
+        this.selectedValue = [];
+      }
+      const index = this.selectedValue.indexOf(option.key);
+      if (index > -1) {
+        this.selectedValue.splice(index, 1);
+      } else {
+        this.selectedValue.push(option.key);
+      }
+      this.onChange(this.selectedValue);
+      this.change.emit(this.selectedValue);
+      this.updateSelectedLabel();
+    } else {
+      this.selectedValue = option.key;
+      this.isOpen = false;
+      this.onChange(this.selectedValue);
+      this.change.emit(this.selectedValue);
+      this.updateSelectedLabel();
+    }
     this.cdr.markForCheck();
+  }
+
+  isSelected(option: SelectOption): boolean {
+    if (this.multiple) {
+      return Array.isArray(this.selectedValue) && this.selectedValue.includes(option.key);
+    }
+    return option.key === this.selectedValue;
   }
 
   // ControlValueAccessor methods
   writeValue(value: any): void {
-    this.selectedValue = value;
+    if (this.multiple) {
+      this.selectedValue = Array.isArray(value) ? [...value] : (value ? [value] : []);
+    } else {
+      this.selectedValue = value;
+    }
     this.updateSelectedLabel();
     this.cdr.markForCheck();
   }
@@ -94,9 +121,22 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   }
 
   private updateSelectedLabel() {
-    if (this.options && this.selectedValue !== null && this.selectedValue !== undefined && this.selectedValue !== '') {
-      const option = this.options.find(o => String(o.key) === String(this.selectedValue));
-      this.selectedLabel = option ? option.value : '';
+    if (this.options) {
+      if (this.multiple) {
+        if (Array.isArray(this.selectedValue) && this.selectedValue.length > 0) {
+          const selectedOptions = this.options.filter(o => this.selectedValue.includes(o.key));
+          this.selectedLabel = selectedOptions.map(o => o.value).join(', ');
+        } else {
+          this.selectedLabel = '';
+        }
+      } else {
+        if (this.selectedValue !== null && this.selectedValue !== undefined && this.selectedValue !== '') {
+          const option = this.options.find(o => String(o.key) === String(this.selectedValue));
+          this.selectedLabel = option ? option.value : '';
+        } else {
+          this.selectedLabel = '';
+        }
+      }
     } else {
       this.selectedLabel = '';
     }

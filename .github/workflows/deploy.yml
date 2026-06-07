@@ -1,4 +1,4 @@
-name: Angular Deployment
+name: Angular Auto Deploy
 
 on:
 push:
@@ -25,8 +25,8 @@ steps:
   - name: Install Packages
     run: npm install
 
-  - name: Build Angular DEV
-    run: npm run build
+  - name: Build Development
+    run: npm run build:dev
 
   - name: Deploy DEV
     shell: powershell
@@ -50,8 +50,8 @@ steps:
   - name: Install Packages
     run: npm install
 
-  - name: Build Angular TEST
-    run: npm run build
+  - name: Build Test
+    run: npm run build:test
 
   - name: Deploy TEST
     shell: powershell

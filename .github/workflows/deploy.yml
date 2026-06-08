@@ -1,58 +1,52 @@
 name: Angular Auto Deploy
 
 on:
-push:
-branches:
-- dev
-- test
+  push:
+    branches:
+      - dev
+      - test
 
 jobs:
-deploy-dev:
-if: github.ref == 'refs/heads/dev'
-runs-on: self-hosted
+  deploy-dev:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
 
-```
-steps:
-  - name: Checkout Source
-    uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-  - name: Setup Node
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
+      - name: Install Packages
+        run: npm install
 
-  - name: Install Packages
-    run: npm install
+      - name: Build Development
+        run: npm run build:dev
 
-  - name: Build Development
-    run: npm run build:dev
+      - name: Deploy DEV
+        shell: powershell
+        run: 'C:\Deploy\deploy-ui-dev.ps1'
 
-  - name: Deploy DEV
-    shell: powershell
-    run: 'C:\Deploy\deploy-ui-dev.ps1'
-```
+  deploy-test:
+    if: github.ref == 'refs/heads/test'
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
 
-deploy-test:
-if: github.ref == 'refs/heads/test'
-runs-on: self-hosted
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-```
-steps:
-  - name: Checkout Source
-    uses: actions/checkout@v4
+      - name: Install Packages
+        run: npm install
 
-  - name: Setup Node
-    uses: actions/setup-node@v4
-    with:
-      node-version: 20
+      - name: Build Test
+        run: npm run build:test
 
-  - name: Install Packages
-    run: npm install
-
-  - name: Build Test
-    run: npm run build:test
-
-  - name: Deploy TEST
-    shell: powershell
-    run: 'C:\Deploy\deploy-ui-test.ps1'
-```
+      - name: Deploy TEST
+        shell: powershell
+        run: 'C:\Deploy\deploy-ui-test.ps1'

@@ -55,10 +55,14 @@
             <div class="input-group" *ngIf="entryType === 'meter'">
               <label>Colour <span class="required">*</span></label>
               <app-custom-select formControlName="colour" [options]="colourSelectOptions" placeholder="Select Colour..."
-                (change)="onSelectionChange()">
+                (change)="onSelectionChange()"
+                [disabled]="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
               </app-custom-select>
               <div class="error-text" *ngIf="outwardForm.get('colour')?.touched && outwardForm.get('colour')?.invalid">
                 Colour is required</div>
+              <div class="error-text" *ngIf="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
+                Please select Delivery Challan Number first.
+              </div>
             </div>
 
             <!-- Design Reference (Dropdown) -->
@@ -69,13 +73,7 @@
               </app-custom-select>
             </div>
 
-            <!-- Item Type (Dropdown) -->
-            <div class="input-group">
-              <label>Item Type</label>
-              <app-custom-select formControlName="itemType" [options]="itemTypeSelectOptions"
-                placeholder="Select Item Type..." (change)="onSelectionChange()">
-              </app-custom-select>
-            </div>
+
 
             <!-- Remarks -->
             <div class="input-group full-width">
@@ -86,32 +84,40 @@
           </div>
 
 
-          <!-- Image Upload Section -->
-          <div class="upload-section">
-            <label>Design Image</label>
-            <div class="upload-container" [class.has-file]="fileName" [class.disabled]="!isDataLoaded"
-              (click)="!fileName && isDataLoaded && outwardFileInput.click()">
-              <input type="file" #outwardFileInput (change)="onFileSelect($event)" accept="image/*" hidden>
 
-              <div class="upload-placeholder" *ngIf="!fileName">
-                <span class="upload-icon" [innerHTML]="icons.image | safeHtml"></span>
-                <div class="upload-text">
-                  <span class="primary-text">Click to upload design image</span>
-                </div>
-              </div>
 
-              <div class="file-success-badge" *ngIf="fileName">
-                <span class="file-icon" [innerHTML]="icons.check | safeHtml"></span>
-                <span class="file-name-text">{{ fileName }}</span>
-                <button type="button" class="btn-remove-file" (click)="removeImage(); $event.stopPropagation()"
-                  title="Remove file">
-                  <span [innerHTML]="icons.x | safeHtml"></span>
-                </button>
+          <!-- Delivery Challan Toggle -->
+          <div class="completion-section animate-in" style="margin-bottom: 24px;">
+            <div class="toggle-wrapper">
+              <div class="toggle-info">
+                <h3>Delivery Challan</h3>
+                <p>Toggle ON to include Delivery Challan</p>
               </div>
+              <label class="switch">
+                <input type="checkbox" formControlName="isDeliveryChallan">
+                <span class="slider round"></span>
+              </label>
             </div>
           </div>
 
-          <!-- â”€â”€ NEW: Entry Type Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+          <!-- Select the DC No (Multi-select) -->
+          <div class="input-group animate-in" style="width: 50%; margin-bottom: 24px;" *ngIf="outwardForm.get('isDeliveryChallan')?.value">
+             <label>Select the Dc No <span class="required">*</span></label>
+             <app-custom-select 
+               formControlName="selectedDcNos"
+               [options]="dcNoSelectOptions" 
+               [multiple]="true"
+               placeholder="Choose DC Numbers...">
+             </app-custom-select>
+             <div class="selected-badges" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;" *ngIf="outwardForm.get('selectedDcNos')?.value?.length > 0">
+               <span class="badge" *ngFor="let dc of outwardForm.get('selectedDcNos')?.value" 
+                     style="background: var(--primary-light, #e0e7ff); color: var(--primary, #4f46e5); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">
+                 {{ dc }}
+               </span>
+             </div>
+          </div>
+
+          <!-- ── NEW: Entry Type Toggle ────────────────────────────── -->
           <div class="entry-type-section">
             <label class="entry-type-label">Entry Type <span class="required">*</span></label>
             <div class="entry-type-toggle">
@@ -135,14 +141,17 @@
           </div>
 
           <!-- NEW: Dynamic Colour & Size Breakdown Section (Size Based) -->
-          <div class="size-breakdown-section" *ngIf="entryType === 'size' && outwardForm.get('itemType')?.value === 'size'">
+          <div class="size-breakdown-section" *ngIf="entryType === 'size'">
             <div class="section-header-inline">
               <div class="title-group">
                 <h3>Colour Breakdown</h3>
                 <p *ngIf="colourBreakdowns.length === 0" class="empty-hint">No colours selected. Click the button to start.</p>
+                <div class="error-text" style="margin-top: 8px;" *ngIf="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
+                  Please select Delivery Challan Number first.
+                </div>
               </div>
               <button type="button" class="btn-select-sizes" (click)="openAddColourModal()"
-                [disabled]="!isDataLoaded || !selectedStyle">
+                [disabled]="!isDataLoaded || !selectedStyle || (outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0))">
                 <span class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
                 Add Colour
               </button>
@@ -168,19 +177,54 @@
                   </div>
                 </div>
                 
-                <!-- Matrix Table -->
-                <div class="mc-matrix" formArrayName="sizeBreakdowns" *ngIf="getSizeBreakdowns(cIndex).length > 0">
-                  <div class="matrix-row matrix-header-row">
-                    <div class="m-cell m-label">SIZE</div>
-                    <div class="m-cell" *ngFor="let size of getSizeBreakdowns(cIndex).controls">{{ size.get('sizeName')?.value }}</div>
-                    <div class="m-cell m-total">TOTAL</div>
-                  </div>
-                  <div class="matrix-row matrix-input-row">
-                    <div class="m-cell m-label">QUANTITY</div>
-                    <div class="m-cell" *ngFor="let size of getSizeBreakdowns(cIndex).controls; let sIndex=index" [formGroupName]="sIndex">
-                      <input type="number" formControlName="quantity" class="form-control m-input" placeholder="0">
+                <!-- Modern Inventory Grid -->
+                <div class="size-inventory-grid" formArrayName="sizeBreakdowns" *ngIf="getSizeBreakdowns(cIndex).length > 0">
+                  <div class="size-inventory-card animate-in" 
+                       *ngFor="let size of getSizeBreakdowns(cIndex).controls; let sIndex=index" 
+                       [formGroupName]="sIndex"
+                       [class.out-of-stock]="size.get('availableQty')?.value === 0"
+                       [title]="'Original Available Qty: ' + (size.get('availableQty')?.value || 0) + '\nCurrent Selected Qty: ' + (size.get('quantity')?.value || 0) + '\nCurrent Remaining Qty: ' + getRemainingQty(cIndex, sIndex)">
+                    
+                    <div class="sic-header">
+                      <div class="sic-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        {{ size.get('sizeName')?.value }}
+                      </div>
+                      <span class="sic-badge" [ngClass]="size.get('availableQty')?.value === 0 ? 'bg-gray' : 'bg-' + getStockStatus(cIndex, sIndex)">
+                        {{ getStockStatusText(cIndex, sIndex) }}
+                      </span>
                     </div>
-                    <div class="m-cell m-total m-value-green">{{ colour.get('colourTotal')?.value }}</div>
+
+                    <div class="sic-stats">
+                      <div class="sic-stat-row">
+                        <span class="sic-stat-label">Available</span>
+                        <span class="sic-stat-val">{{ size.get('availableQty')?.value || 0 }}</span>
+                      </div>
+                      <div class="sic-stat-row">
+                        <span class="sic-stat-label">Selected</span>
+                        <span class="sic-stat-val">{{ size.get('quantity')?.value || 0 }}</span>
+                      </div>
+                      <div class="sic-stat-row">
+                        <span class="sic-stat-label">Balance</span>
+                        <span class="sic-stat-val">{{ getRemainingQty(cIndex, sIndex) }}</span>
+                      </div>
+                    </div>
+
+                    <div class="sic-progress-wrap">
+                      <div class="sic-progress-bar">
+                        <div class="sic-progress-fill bg-{{ getStockStatus(cIndex, sIndex) }}" [style.width.%]="getStockPercentage(cIndex, sIndex)"></div>
+                      </div>
+                      <span class="sic-progress-text">{{ getStockPercentage(cIndex, sIndex) | number:'1.0-0' }}%</span>
+                    </div>
+
+                    <div class="sic-input-row">
+                      <input type="number" formControlName="quantity" class="form-control" placeholder="0" min="0" step="1"
+                             (input)="onQuantityChange(cIndex, sIndex, $event)">
+                    </div>
+
+                    <button type="button" class="sic-delete-btn" (click)="removeSizeRow(cIndex, sIndex)" title="Remove Size">
+                      Remove Size
+                    </button>
                   </div>
                 </div>
 
@@ -201,7 +245,8 @@
             </div>
 
             <!-- Dashed Add Colour Button (Visible if at least 1 colour exists) -->
-            <button type="button" class="btn-add-colour-dashed" *ngIf="colourBreakdowns.length > 0" (click)="openAddColourModal()">
+            <button type="button" class="btn-add-colour-dashed" *ngIf="colourBreakdowns.length > 0" (click)="openAddColourModal()"
+              [disabled]="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
                <span class="btn-icon">+</span> Add Colour
             </button>
 

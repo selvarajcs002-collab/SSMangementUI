@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, tap, BehaviorSubject } from 'rxjs';
+import { Observable, of, tap, BehaviorSubject, forkJoin } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface InwardSavePayload {
@@ -58,14 +58,30 @@ export class InwardService {
     return this.api.post<any>('inward/save-meter-inward', payload);
   }
 
+  /**
+   * Fetch size stock based on company, colour, and style (legacy flow).
+   */
   getSizes(companyId: number, colour: string, styleNo: string): Observable<any[]> {
     const params = { companyId, colour, styleNo };
     return this.api.get<any[]>('inward/sizes', params);
   }
 
+  getInwardDetailsByDcs(companyId: number, dcNos: string[], colour?: string): Observable<any> {
+    const params: any = { companyId, inwardDcNo: dcNos };
+    if (colour) params.colour = colour;
+    return this.api.get<any>('DcDetail/inward-details', params);
+  }
+
   getMeters(companyId: number, colour: string, styleNo: string): Observable<any[]> {
     const params = { companyId, colour, styleNo };
     return this.api.get<any[]>('inward/meters', params);
+  }
+
+  getInwardDcs(companyId: number, styleNo?: string, designName?: string): Observable<any> {
+    const params: any = {};
+    if (styleNo) params.styleNo = styleNo;
+    if (designName) params.designName = designName;
+    return this.api.get<any>(`DcDetail/inward-dcs/${companyId}`, params);
   }
 
   getDesignStyleColour(companyId: number): Observable<any[]> {

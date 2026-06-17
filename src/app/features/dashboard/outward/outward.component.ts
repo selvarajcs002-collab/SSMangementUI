@@ -6,7 +6,8 @@ import { CompanyService, CompanySummary } from '../../../core/services/company.s
 import { InwardService } from '../../../core/services/inward.service';
 import { OutwardPreviewService, ChallanData, ChallanItem, ChallanSize } from '../../../core/services/outward-preview.service';
 import { OutwardService, MeterOutwardSavePayload } from '../../../core/services/outward.service';
-import { Observable, forkJoin, Subject, takeUntil, take } from 'rxjs';
+import { Observable, forkJoin, Subject, takeUntil, take, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 import { SizePickerModalComponent } from '../../../shared/components/size-picker-modal/size-picker-modal.component';
@@ -45,19 +46,24 @@ export class OutwardComponent implements OnInit {
   isSubmitting: boolean = false; // Used to disable submit button
   isOptionsLoading: boolean = false; // Used for company/options load
   isSizesLoading: boolean = false; // Used for size fetching
-  fileName: string | null = null;
+
   imagePreview: string | null = null;
   isSizePickerOpen: boolean = false;
   isEditMode: boolean = false;
   editId: number | null = null;
   isLoading: boolean = false;
+  isInitializing: boolean = false;
+
+  dcLoadSubject = new Subject<any>();
 
   // Dropdown Lists
   // Dynamic Binding State
   fullData: any[] = [];
+  fullDcData: any[] = [];
   designOptions: string[] = [];
   styleOptions: string[] = [];
   colourOptions: string[] = [];
+  dcNoOptions: string[] = [];
 
   selectedCompanyId: number | null = null;
   selectedCompany: any = null;
@@ -168,11 +174,20 @@ export class OutwardComponent implements OnInit {
   private patchForm(data: any): void {
     if (!data) return;
 
-    // 1. Initial Company Load
-    this.onCompanyChange(data.companyId);
+    this.isInitializing = true;
+    try {
+      // 1. Initial Company Load
+      this.onCompanyChange(data.companyId);
 
-    // 2. We need to wait for onCompanyChange to finish options loading
-    // But since it's a stream, we'll patch values that don't depend on options first
+      // 2. We need to wait for onCompanyChange to finish options loading
+      // But since it's a stream, we'll patch values that don't depend on options first
+      
+      // Setup delivery challan toggle and values if they exist
+      const hasDcs = data.selectedDcNos && data.selectedDcNos.length > 0;
+      this.outwardForm.patchValue({
+        isDeliveryChallan: hasDcs,
+        selectedDcNos: hasDcs ? data.selectedDcNos : []
+      }, { emitEvent: false });
     this.outwardForm.patchValue({
       companyId: data.companyId,
       outwardDate: data.createdDate ? new Date(data.createdDate).toISOString().split('T')[0] : null,
@@ -216,11 +231,11 @@ export class OutwardComponent implements OnInit {
     } else {
       // 3. Clear and build colour breakdown
       this.colourBreakdowns.clear();
-      
+
       if (data.colourBreakdowns && data.colourBreakdowns.length > 0) {
         data.colourBreakdowns.forEach((cb: any) => {
           const sizeBreakdownsArray: any = this.fb.array([]);
-          
+
           const sizesList = cb.sizes || cb.sizeBreakdowns;
           if (sizesList && sizesList.length > 0) {
             sizesList.forEach((sb: any) => {
@@ -228,23 +243,23 @@ export class OutwardComponent implements OnInit {
                 sizeId: [sb.sizeCountId || sb.sizeId || sb.sizeName || sb.size],
                 sizeName: [sb.size || sb.sizeName, Validators.required],
                 availableQty: [sb.availableQty || 9999],
-                quantity: [sb.count || sb.quantity, [Validators.required, Validators.min(1)]]
+                quantity: [sb.count || sb.quantity, [Validators.required, Validators.min(0)]]
               });
-              
+
               sizeGroup.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
                 this.calculateTotal();
               });
               sizeBreakdownsArray.push(sizeGroup);
             });
           }
-          
+
           const colourGroup = this.fb.group({
             colourId: [cb.colourId || cb.colour || cb.colourName],
             colourName: [cb.colour || cb.colourName],
             colourTotal: [cb.colourTotal || 0],
             sizeBreakdowns: sizeBreakdownsArray
           });
-          
+
           this.colourBreakdowns.push(colourGroup);
         });
       } else if (data.sizeCounts && data.sizeCounts.length > 0) {
@@ -255,14 +270,14 @@ export class OutwardComponent implements OnInit {
             sizeId: [sc.size],
             sizeName: [sc.size, Validators.required],
             availableQty: [9999],
-            quantity: [sc.count, [Validators.required, Validators.min(1)]]
+            quantity: [sc.count, [Validators.required, Validators.min(0)]]
           });
           sizeGroup.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.calculateTotal();
           });
           sizeBreakdownsArray.push(sizeGroup);
         });
-        
+
         const colourName = data.colour || 'UNKNOWN';
         const colourGroup = this.fb.group({
           colourId: [colourName],
@@ -273,10 +288,14 @@ export class OutwardComponent implements OnInit {
         this.colourBreakdowns.push(colourGroup);
       }
 
+      }
+
       this.calculateTotal();
+    } finally {
+      this.isInitializing = false;
+      this.onSelectionChange();
+      this.cdr.markForCheck();
     }
-    this.onSelectionChange();
-    this.cdr.markForCheck();
   }
 
   private initForm(): void {
@@ -287,10 +306,11 @@ export class OutwardComponent implements OnInit {
       styleNo: [{ value: '', disabled: true }, Validators.required],
       colour: [{ value: '', disabled: true }, Validators.required],
       designRef: [{ value: '', disabled: true }],
-      itemType: [{ value: 'size', disabled: true }, Validators.required],
-      outwardImage: [{ value: null, disabled: true }],
+
       remarks: [{ value: '', disabled: true }],
       isLotCompleted: [false],
+      isDeliveryChallan: [false],
+      selectedDcNos: [[]],
       colourBreakdowns: this.fb.array([]),
       // NEW: Isolated FormArray for meter-based rows
       meterBreakdown: this.fb.array([])
@@ -317,10 +337,7 @@ export class OutwardComponent implements OnInit {
   get styleSelectOptions() { return this.styleOptions.map(s => ({ key: s, value: s })); }
   get colourSelectOptions() { return this.colourOptions.map(c => ({ key: c, value: c })); }
   get designSelectOptions() { return this.designOptions.map(d => ({ key: d, value: d })); }
-  readonly itemTypeSelectOptions = [
-    { key: 'size', value: 'Size Breakdown' },
-    { key: 'roll', value: 'Roll / Bulk' }
-  ];
+  get dcNoSelectOptions() { return this.dcNoOptions.map(d => ({ key: d, value: d })); }
 
   onCompanyChange(companyId: number) {
     this.resetForm();
@@ -341,15 +358,18 @@ export class OutwardComponent implements OnInit {
         console.log('Data Loaded for Company:', companyId);
         this.fullData = res.options;
         this.selectedCompany = res.company;
-        
+        this.fullDcData = [];
+
         this.designOptions = [...new Set(res.options.map((x: any) => x.designName))];
         this.styleOptions = [...new Set(res.options.map((x: any) => x.styleNo))];
         this.colourOptions = [...new Set(res.options.map((x: any) => x.colour))];
-        
+
+        this.dcNoOptions = [];
+
         // Enable dependent fields
-        const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'itemType', 'outwardImage', 'remarks'];
+        const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'remarks', 'selectedDcNos'];
         fields.forEach(f => this.outwardForm.get(f)?.enable());
-        
+
         this.isDataLoaded = true;
         this.isOptionsLoading = false;
         this.cdr.markForCheck();
@@ -365,7 +385,7 @@ export class OutwardComponent implements OnInit {
 
   onSelectionChange() {
     // Sync form values to component properties
-    const { designRef, styleNo, colour } = this.outwardForm.getRawValue();
+    const { designRef, styleNo, colour, companyId } = this.outwardForm.getRawValue();
     this.selectedDesign = designRef;
     this.selectedStyle = styleNo;
     this.selectedColour = colour;
@@ -388,6 +408,11 @@ export class OutwardComponent implements OnInit {
     this.styleOptions = [...new Set(filtered.map(x => x.styleNo))];
     this.colourOptions = [...new Set(filtered.map(x => x.colour))];
 
+    // Trigger optimized DC Load
+    if (!this.isInitializing) {
+        this.dcLoadSubject.next({ companyId, styleNo: this.selectedStyle, designRef: this.selectedDesign });
+    }
+
     this.selectedInwardId = filtered.length ? filtered[0].inwardId : null;
   }
 
@@ -406,7 +431,7 @@ export class OutwardComponent implements OnInit {
 
   confirmAddColour() {
     if (!this.selectedColoursForModal || this.selectedColoursForModal.length === 0) return;
-    
+
     this.selectedColoursForModal.forEach(colourName => {
       const colourGroup = this.fb.group({
         colourId: [colourName],
@@ -416,7 +441,7 @@ export class OutwardComponent implements OnInit {
       });
       this.colourBreakdowns.push(colourGroup);
     });
-    
+
     this.isAddColourModalOpen = false;
     this.calculateTotal();
   }
@@ -433,17 +458,77 @@ export class OutwardComponent implements OnInit {
   openSizeModal(colourIndex: number) {
     this.activeColourIndexForSize = colourIndex;
     const colourName = this.colourBreakdowns.at(colourIndex).get('colourName')?.value;
-    
+
+    const isDeliveryChallan = this.outwardForm.get('isDeliveryChallan')?.value;
+    const selectedDcNos: string[] = this.outwardForm.get('selectedDcNos')?.value || [];
+
+    if (!isDeliveryChallan) {
+      // Fallback to existing static size fetch if no DC selected
+      this.fetchStaticSizes(colourIndex, colourName);
+      return;
+    }
+
+    if (!selectedDcNos.length) {
+      this.showAlert('Please select Delivery Challan Number first.', 'error');
+      return;
+    }
+
+    this.isSizesLoading = true;
+    this.inwardService.getInwardDetailsByDcs(this.selectedCompanyId!, selectedDcNos, colourName).subscribe({
+      next: (res: any) => {
+        const collectedSizes: any[] = [];
+        if (res && res.success && res.data && Array.isArray(res.data.sizes)) {
+          res.data.sizes.forEach((item: any) => {
+            collectedSizes.push({
+              size: (item.size || item.sizeName || '').toString().toUpperCase(),
+              availableQty: Number(item.availableQty ?? item.count ?? 0),
+              dcNo: item.inwardDcNo || item.dcNo || 'N/A',
+              inwardId: item.inwardId
+            });
+          });
+        }
+        // Build a map of size to availableQty using the first occurrence (i.e., from the first selected DC)
+        const sizeMap: Record<string, number> = {};
+        collectedSizes.forEach(item => {
+          const size = item.size;
+          const qty = item.availableQty;
+          if (size && !(size in sizeMap)) {
+            sizeMap[size] = qty;
+          }
+        });
+        // Convert map to array and filter out sizes already added for this colour
+        const existingSizes = this.getSizeBreakdowns(colourIndex).controls.map(c => c.get('sizeName')?.value);
+        this.sizes = Object.entries(sizeMap)
+          .filter(([size]) => !existingSizes.includes(size))
+          .map(([size, availableQty]) => ({ size, availableQty }));
+        if (this.sizes.length > 0) {
+          this.activeColourName = colourName;
+          this.isSizePickerOpen = true;
+        } else {
+          this.showAlert('No available sizes found for the selected DCs', 'error');
+        }
+        this.isSizesLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.isSizesLoading = false;
+        this.showAlert('Failed to fetch sizes for selected DCs', 'error');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // Helper fallback for static size fetch when no DC selected
+  private fetchStaticSizes(colourIndex: number, colourName: string) {
     this.isSizesLoading = true;
     this.inwardService.getSizes(this.selectedCompanyId!, colourName, this.selectedStyle!).subscribe({
       next: (res: any[]) => {
         const existingSizes = this.getSizeBreakdowns(colourIndex).controls.map(c => c.get('sizeName')?.value);
         this.sizeData = res.filter(x => !existingSizes.includes((x.size || '').toUpperCase()));
-        
         if (this.sizeData && this.sizeData.length > 0) {
           this.sizes = this.sizeData.map(x => ({
             size: (x.size || '').toUpperCase(),
-            availableQty: x.availableQty || x.count || 0
+            availableQty: x.availableQty ?? 0
           }));
           this.activeColourName = colourName;
           this.isSizePickerOpen = true;
@@ -468,25 +553,46 @@ export class OutwardComponent implements OnInit {
   onSizesSelected(selected: string[]): void {
     if (this.activeColourIndexForSize === null) return;
     const sizeArray = this.getSizeBreakdowns(this.activeColourIndexForSize);
-    
+
     selected.forEach(sizeName => {
-      const sizeInfo = this.sizeData.find(x => (x.size || '').toUpperCase() === sizeName);
-      const availableQty = sizeInfo ? (sizeInfo.availableQty || sizeInfo.count || 9999) : 9999;
+      // Check sizeData first (static fallback path), then check sizes array (DC-based path)
+      // If no DC selected (DC Enable = false), use availableQty strictly and ignore count
+      const isDcFlow = !!this.outwardForm.get('selectedDcNos')?.value?.length;
       
+      const sizeInfoFromData = this.sizeData.find(x => (x.size || '').toUpperCase() === sizeName);
+      const sizeInfoFromSizes = this.sizes.find(x => (x.size || '').toUpperCase() === sizeName);
+      
+      let availableQty = 9999;
+      if (!isDcFlow) {
+        // DC Enable = false: strict use of availableQty
+        if (sizeInfoFromData) {
+          availableQty = sizeInfoFromData.availableQty ?? 9999;
+        } else if (sizeInfoFromSizes) {
+          availableQty = sizeInfoFromSizes.availableQty ?? 9999;
+        }
+      } else {
+        // DC Enable = true: fallback to count if availableQty is missing
+        if (sizeInfoFromData) {
+          availableQty = sizeInfoFromData.availableQty ?? sizeInfoFromData.count ?? 9999;
+        } else if (sizeInfoFromSizes) {
+          availableQty = sizeInfoFromSizes.availableQty ?? 9999;
+        }
+      }
+
       const sizeGroup = this.fb.group({
         sizeId: [sizeName],
         sizeName: [sizeName],
         availableQty: [availableQty],
-        quantity: [null, [Validators.required, Validators.min(1), Validators.max(availableQty)]]
+        quantity: [null, [Validators.required, Validators.min(0), Validators.max(availableQty)]]
       });
-      
+
       sizeGroup.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.calculateTotal();
       });
-      
+
       sizeArray.push(sizeGroup);
     });
-    
+
     this.isSizePickerOpen = false;
     this.activeColourIndexForSize = null;
     this.calculateTotal();
@@ -512,9 +618,85 @@ export class OutwardComponent implements OnInit {
     });
   }
 
+  // --- Inventory Status Helpers ---
+  onQuantityChange(cIndex: number, sIndex: number, event: any) {
+    const sizeGroup = this.getSizeBreakdowns(cIndex).at(sIndex) as FormGroup;
+    let qty = parseInt(event.target.value, 10);
+    const available = sizeGroup.get('availableQty')?.value || 0;
+
+    if (isNaN(qty)) {
+      qty = 0;
+    }
+
+    if (qty < 0) {
+      qty = 0;
+    } else if (qty > available) {
+      qty = available;
+      this.showAlert(`Maximum available quantity is ${available}`, 'error');
+    }
+
+    // Set value and trigger calculation
+    sizeGroup.get('quantity')?.setValue(qty > 0 ? qty : null, { emitEvent: false });
+    
+    // Update DOM value if auto-corrected
+    if (event.target.value !== String(qty)) {
+      event.target.value = qty > 0 ? qty : '';
+    }
+    
+    this.calculateTotal();
+    this.cdr.markForCheck();
+  }
+
+  getRemainingQty(cIndex: number, sIndex: number): number {
+    const sizeGroup = this.getSizeBreakdowns(cIndex).at(sIndex);
+    const available = sizeGroup?.get('availableQty')?.value || 0;
+    const selected = sizeGroup?.get('quantity')?.value || 0;
+    return available - selected;
+  }
+
+  getStockPercentage(cIndex: number, sIndex: number): number {
+    const sizeGroup = this.getSizeBreakdowns(cIndex).at(sIndex);
+    const available = sizeGroup?.get('availableQty')?.value || 0;
+    if (available === 0) return 0;
+    const remaining = this.getRemainingQty(cIndex, sIndex);
+    return Math.max(0, Math.min(100, (remaining / available) * 100));
+  }
+
+  getStockStatus(cIndex: number, sIndex: number): 'healthy' | 'medium' | 'critical' | 'completed' {
+    const sizeGroup = this.getSizeBreakdowns(cIndex).at(sIndex);
+    const available = sizeGroup?.get('availableQty')?.value || 0;
+    const remaining = this.getRemainingQty(cIndex, sIndex);
+    
+    if (available === 0) return 'critical';
+    if (remaining === 0 && available > 0) return 'completed';
+    if (remaining > available * 0.5) return 'healthy';
+    if (remaining <= available * 0.5 && remaining > available * 0.2) return 'medium';
+    return 'critical';
+  }
+
+  getStockStatusText(cIndex: number, sIndex: number): string {
+    const sizeGroup = this.getSizeBreakdowns(cIndex).at(sIndex);
+    const available = sizeGroup?.get('availableQty')?.value || 0;
+    if (available === 0) return 'Out Of Stock';
+    
+    const status = this.getStockStatus(cIndex, sIndex);
+    if (status === 'completed') return 'Completed';
+    if (status === 'healthy') return 'Healthy';
+    if (status === 'medium') return 'Low';
+    return 'Critical';
+  }
+
   selectMeters() {
     if (!this.selectedCompanyId || !this.selectedStyle || !this.selectedColour) {
       this.showAlert('Please select Company, Style, and Colour first.', 'error');
+      return;
+    }
+
+    const isDeliveryChallan = this.outwardForm.get('isDeliveryChallan')?.value;
+    const selectedDcNos: string[] = this.outwardForm.get('selectedDcNos')?.value || [];
+
+    if (isDeliveryChallan && !selectedDcNos.length) {
+      this.showAlert('Please select Delivery Challan Number first.', 'error');
       return;
     }
 
@@ -560,29 +742,31 @@ export class OutwardComponent implements OnInit {
   isFormValid() {
     if (this.entryType === 'meter') {
       return this.selectedCompanyId &&
-             this.selectedStyle &&
-             this.selectedColour &&
-             this.meterBreakdown.length > 0 &&
-             this.meterBreakdown.valid &&
-             this.outwardForm.get('companyId')?.valid &&
-             this.outwardForm.get('outwardDate')?.valid &&
-             this.outwardForm.get('styleNo')?.valid &&
-             this.outwardForm.get('colour')?.valid;
+        this.selectedStyle &&
+        this.selectedColour &&
+        this.meterBreakdown.length > 0 &&
+        this.meterBreakdown.valid &&
+        this.outwardForm.get('companyId')?.valid &&
+        this.outwardForm.get('outwardDate')?.valid &&
+        this.outwardForm.get('styleNo')?.valid &&
+        this.outwardForm.get('colour')?.valid;
     }
     return this.selectedCompanyId &&
-           this.selectedStyle &&
-           this.colourBreakdowns.length > 0 &&
-           this.colourBreakdowns.valid &&
-           this.outwardForm.get('companyId')?.valid &&
-           this.outwardForm.get('outwardDate')?.valid &&
-           this.outwardForm.get('styleNo')?.valid;
+      this.selectedStyle &&
+      this.colourBreakdowns.length > 0 &&
+      this.colourBreakdowns.valid &&
+      this.outwardForm.get('companyId')?.valid &&
+      this.outwardForm.get('outwardDate')?.valid &&
+      this.outwardForm.get('styleNo')?.valid;
   }
 
   resetForm() {
     this.fullData = [];
+    this.fullDcData = [];
     this.designOptions = [];
     this.styleOptions = [];
     this.colourOptions = [];
+    this.dcNoOptions = [];
 
     this.selectedDesign = '';
     this.selectedStyle = '';
@@ -591,14 +775,14 @@ export class OutwardComponent implements OnInit {
 
     this.sizeData = [];
     this.isDataLoaded = false;
-    
+
     this.outwardForm.patchValue({
       styleNo: '',
       colour: '',
       designRef: ''
     });
 
-    const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'itemType', 'outwardImage', 'remarks'];
+    const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'itemType', 'outwardImage', 'remarks', 'selectedDcNos'];
     fields.forEach(f => this.outwardForm.get(f)?.disable());
 
     this.colourBreakdowns.clear();
@@ -620,31 +804,104 @@ export class OutwardComponent implements OnInit {
   }
 
   private trackChanges(): void {
-    this.outwardForm.get('itemType')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
-      if (value !== 'size') {
-        this.colourBreakdowns.clear();
+    // 1. DC Dropdown loading logic with optimization
+    this.dcLoadSubject.pipe(
+      takeUntil(this.destroy$),
+      debounceTime(300),
+      distinctUntilChanged((prev, curr) => 
+        prev.companyId === curr.companyId && 
+        prev.styleNo === curr.styleNo && 
+        prev.designRef === curr.designRef
+      ),
+      switchMap(params => {
+        if (params.companyId && params.styleNo && params.designRef) {
+          return this.inwardService.getInwardDcs(params.companyId, params.styleNo, params.designRef);
+        }
+        return of(null);
+      })
+    ).subscribe({
+      next: (res: any) => {
+        if (res && res.success && Array.isArray(res.data)) {
+          this.fullDcData = res.data;
+          this.dcNoOptions = Array.from(new Set<string>(res.data.map((x: any) => String(x.inwardDcNo)).filter((v: string) => !!v)));
+        } else {
+          this.fullDcData = [];
+          this.dcNoOptions = [];
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.fullDcData = [];
+        this.dcNoOptions = [];
+        this.cdr.markForCheck();
       }
-      this.calculateTotal();
     });
+
+    // 2. Toggle Change (No resets)
+    // The Delivery Challan toggle should only affect which API is called when opening the Size dialog.
+    // Existing user data remains untouched.
+
+    // 3. Dependency Resets
+    // Style changes -> Reset design, DCs, colours, table
+    this.outwardForm.get('styleNo')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(style => {
+      if (!this.isInitializing && style) {
+        this.outwardForm.patchValue({ designRef: '', selectedDcNos: [], colour: '' }, { emitEvent: false });
+        this.resetSelectionsAndTable();
+        this.onSelectionChange(); // trigger downstream updates
+      }
+    });
+
+    // Design changes -> Reset DCs, colours, table
+    this.outwardForm.get('designRef')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(design => {
+      if (!this.isInitializing && design) {
+        this.outwardForm.patchValue({ selectedDcNos: [], colour: '' }, { emitEvent: false });
+        this.resetSelectionsAndTable();
+        this.onSelectionChange(); // trigger DC loading
+      }
+    });
+
+    // DC changes -> Reset colours, table
+    this.outwardForm.get('selectedDcNos')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(dcs => {
+      if (!this.isInitializing) {
+        this.outwardForm.patchValue({ colour: '' }, { emitEvent: false });
+        this.resetSelectionsAndTable();
+      }
+    });
+  }
+
+  private resetSelectionsAndTable() {
+    this.colourBreakdowns.clear();
+    this.meterBreakdown.clear();
+    this.selectedColour = '';
+    this.activeColourIndexForSize = null;
+    this.sizes = [];
+    this.sizeData = [];
+    this.totalQuantity = 0;
+    this.totalColours = 0;
+    this.totalSizes = 0;
+    this.totalMeterQuantity = 0;
+    this.totalBitsQuantity = 0;
+    this.totalPiecesQuantity = 0;
+    this.cdr.markForCheck();
   }
 
   calculateTotal(): void {
     let grandTotal = 0;
     let totalSizes = 0;
-    
+
     this.colourBreakdowns.controls.forEach(colourCtrl => {
       const sizes = colourCtrl.get('sizeBreakdowns') as FormArray;
       let colourTotal = 0;
-      
+
       sizes.controls.forEach(sizeCtrl => {
         colourTotal += Number(sizeCtrl.get('quantity')?.value || 0);
       });
-      
-      colourCtrl.get('colourTotal')?.setValue(colourTotal, {emitEvent: false});
+
+      colourCtrl.get('colourTotal')?.setValue(colourTotal, { emitEvent: false });
       grandTotal += colourTotal;
       totalSizes += sizes.length;
     });
-    
+
     this.totalQuantity = grandTotal;
     this.totalColours = this.colourBreakdowns.length;
     this.totalSizes = totalSizes;
@@ -730,18 +987,7 @@ export class OutwardComponent implements OnInit {
     return new Set(vals).size !== vals.length;
   }
 
-  onFileSelect(event: any): void {
-    const file = event.target.files[0];
-    if (file) {
-      this.outwardForm.patchValue({ outwardImage: file });
-      this.fileName = file.name;
-    }
-  }
 
-  removeImage(): void {
-    this.outwardForm.patchValue({ outwardImage: null });
-    this.fileName = null;
-  }
 
   onSubmit(): void {
     const formVal = this.outwardForm.getRawValue();
@@ -772,7 +1018,7 @@ export class OutwardComponent implements OnInit {
         colour: formVal.colour,
         designName: formVal.designRef || '',
         styleNo: formVal.styleNo,
-        uploadURL: this.fileName || '',
+        uploadURL: "null",
         createdBy: new Date().toLocaleDateString('en-GB').split('/').join('-'),
         status: formVal.status || 'Active',
         remarks: formVal.remarks || '',
@@ -985,7 +1231,7 @@ export class OutwardComponent implements OnInit {
   private handleSubmissionSuccess(res: any, successMessage: string): void {
     this.isSubmitting = false;
     this.messageService.success(successMessage);
-    
+
     const isLotCompleted = this.outwardForm.get('isLotCompleted')?.value;
     const formVal = this.outwardForm.getRawValue();
 
@@ -1048,10 +1294,8 @@ export class OutwardComponent implements OnInit {
       if (confirmed) {
         this.resetForm();
         this.outwardForm.reset({
-          outwardDate: new Date().toISOString().split('T')[0],
-          itemType: 'size'
+          outwardDate: new Date().toISOString().split('T')[0]
         });
-        this.fileName = null;
       }
     });
   }

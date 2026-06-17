@@ -38,10 +38,11 @@ export class SizePickerModalComponent implements OnInit {
   }
 
   toggleSelectAll(): void {
-    if (this.selectedSizes.size === this.availableSizes.length) {
+    const validSizes = this.availableSizes.filter(s => s.availableQty > 0);
+    if (this.selectedSizes.size === validSizes.length) {
       this.selectedSizes.clear();
     } else {
-      this.availableSizes.forEach(s => this.selectedSizes.add(s.size));
+      validSizes.forEach(s => this.selectedSizes.add(s.size));
     }
   }
 

@@ -71,6 +71,12 @@
               </div>
             </div>
 
+            <!-- PO No -->
+            <div class="input-group">
+              <label>PO No</label>
+              <input type="text" formControlName="poNo" placeholder="Enter PO No" class="form-control" [class.invalid]="inwardForm.get('poNo')?.touched && inwardForm.get('poNo')?.invalid">
+            </div>
+
 
           </div>
 

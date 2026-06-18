@@ -77,6 +77,12 @@ export class OutwardComponent implements OnInit {
   sizes: any[] = []; // Unified size storage (with size and availableQty)
   activeColourName: string = '';
 
+  // Additional Details Modal properties
+  isAdditionalDetailsModalOpen = false;
+  deliveryToOptions = [{key: 'Unit 1', value: 'Unit 1'}, {key: 'Unit 2', value: 'Unit 2'}, {key: 'Unit 3', value: 'Unit 3'}];
+  poNoOptions = [{key: 'PO-1001', value: 'PO-1001'}, {key: 'PO-1002', value: 'PO-1002'}, {key: 'PO-1003', value: 'PO-1003'}];
+  tempAdditionalDetails = { deliveryTo: '', poNo: '', weight: '', noOfBundles: '' };
+
   // â”€â”€ NEW: Meter-Based Properties (isolated from size-based) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   entryType: 'size' | 'meter' = 'size'; // 'size' = existing flow, 'meter' = new flow
   totalMeterQuantity: number = 0;
@@ -311,6 +317,10 @@ export class OutwardComponent implements OnInit {
       isLotCompleted: [false],
       isDeliveryChallan: [false],
       selectedDcNos: [[]],
+      deliveryTo: [{ value: '', disabled: true }],
+      poNo: [{ value: '', disabled: true }],
+      weight: [{ value: '', disabled: true }],
+      noOfBundles: [{ value: '', disabled: true }],
       colourBreakdowns: this.fb.array([]),
       // NEW: Isolated FormArray for meter-based rows
       meterBreakdown: this.fb.array([])
@@ -367,7 +377,7 @@ export class OutwardComponent implements OnInit {
         this.dcNoOptions = [];
 
         // Enable dependent fields
-        const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'remarks', 'selectedDcNos'];
+        const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'remarks', 'selectedDcNos', 'deliveryTo', 'poNo', 'weight', 'noOfBundles'];
         fields.forEach(f => this.outwardForm.get(f)?.enable());
 
         this.isDataLoaded = true;
@@ -1298,5 +1308,31 @@ export class OutwardComponent implements OnInit {
         });
       }
     });
+  }
+
+  openAdditionalDetailsModal() {
+    this.tempAdditionalDetails = {
+      deliveryTo: this.outwardForm.get('deliveryTo')?.value || '',
+      poNo: this.outwardForm.get('poNo')?.value || '',
+      weight: this.outwardForm.get('weight')?.value || '',
+      noOfBundles: this.outwardForm.get('noOfBundles')?.value || ''
+    };
+    this.isAdditionalDetailsModalOpen = true;
+  }
+
+  closeAdditionalDetailsModal() {
+    this.isAdditionalDetailsModalOpen = false;
+  }
+
+  saveAdditionalDetails() {
+    this.outwardForm.patchValue(this.tempAdditionalDetails);
+    this.isAdditionalDetailsModalOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  clearAdditionalDetail(field: string) {
+    this.outwardForm.get(field)?.setValue('');
+    (this.tempAdditionalDetails as any)[field] = '';
+    this.cdr.markForCheck();
   }
 }

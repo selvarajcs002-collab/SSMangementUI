@@ -302,7 +302,7 @@ export class InwardComponent implements OnInit {
     if (companyId) {
       this.isCompanySelected = true;
       // Enable dependent fields
-      const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL'];
+      const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL', 'poNo'];
       fields.forEach(f => this.inwardForm.get(f)?.enable());
     } else {
       this.isCompanySelected = false;
@@ -485,7 +485,7 @@ export class InwardComponent implements OnInit {
     this.inwardForm.reset({ entryType: defaultEntry });
     
     // Lock fields back down
-    const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL'];
+    const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL', 'poNo'];
     fields.forEach(f => this.inwardForm.get(f)?.disable());
     this.isCompanySelected = false;
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 
 export interface Employee {
   id?: number;
@@ -46,9 +46,11 @@ export interface Payroll {
   providedIn: 'root'
 })
 export class EmployeeService {
-  private apiUrl = `${environment.apiUrl}/Employee`;
+  get apiUrl(): string {
+    return `${this.configService.apiBaseUrl}/Employee`;
+  }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   manageEmployee(employee: Employee): Observable<any> {
     return this.http.post(`${this.apiUrl}/manage`, employee);
@@ -92,36 +94,36 @@ export class EmployeeService {
 
   // Shift Management
   assignShift(assignment: any): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/Shift/assign`, assignment);
+    return this.http.post(`${this.configService.apiBaseUrl}/Shift/assign`, assignment);
   }
 
   getShiftAssignments(date: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/Shift/assignments/${date}`);
+    return this.http.get<any[]>(`${this.configService.apiBaseUrl}/Shift/assignments/${date}`);
   }
 
   getShifts(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/Shift/list`);
+    return this.http.get<any[]>(`${this.configService.apiBaseUrl}/Shift/list`);
   }
 
   getMachines(): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/Shift/machines`);
+    return this.http.get<any[]>(`${this.configService.apiBaseUrl}/Shift/machines`);
   }
 
   getShiftSettings(): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/Shift/settings`);
+    return this.http.get<any>(`${this.configService.apiBaseUrl}/Shift/settings`);
   }
 
   // Dashboard
   getDashboardStats(date: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/Dashboard/stats/${date}`);
+    return this.http.get<any>(`${this.configService.apiBaseUrl}/Dashboard/stats/${date}`);
   }
 
   // Reports
   getPortalSummary(startDate: string, endDate: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/Report/summary/${startDate}/${endDate}`);
+    return this.http.get<any>(`${this.configService.apiBaseUrl}/Report/summary/${startDate}/${endDate}`);
   }
 
   getMasterData(type: string): Observable<any[]> {
-    return this.http.get<any[]>(`${environment.apiUrl}/Master/list/${type}`);
+    return this.http.get<any[]>(`${this.configService.apiBaseUrl}/Master/list/${type}`);
   }
 }

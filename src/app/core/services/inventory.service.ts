@@ -1,17 +1,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 import { ApiResponse, InventoryEntryDto, StockAdjustmentDto } from '../models/inventory.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InventoryService {
-  private apiUrl = `${environment.apiUrl}/Inventory`;
-  private adjUrl = `${environment.apiUrl}/StockAdjustment`;
+  get apiUrl(): string {
+    return `${this.configService.apiBaseUrl}/Inventory`;
+  }
+  
+  get adjUrl(): string {
+    return `${this.configService.apiBaseUrl}/StockAdjustment`;
+  }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   getInventoryList(page: number = 1, pageSize: number = 20, search: string = '', category: string = ''): Observable<ApiResponse<any[]>> {
     let params = new HttpParams()

@@ -1,16 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 import { ApiResponse, MaterialIssueDto } from '../models/inventory.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MaterialIssueService {
-  private apiUrl = `${environment.apiUrl}/MaterialIssue`;
+  get apiUrl(): string {
+    return `${this.configService.apiBaseUrl}/MaterialIssue`;
+  }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   getMaterialIssueList(): Observable<ApiResponse<any[]>> {
     return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/list`);

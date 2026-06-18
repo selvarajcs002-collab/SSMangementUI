@@ -1,16 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 import { ApiResponse, FoamRequestDto } from '../models/inventory.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FoamService {
-  private apiUrl = `${environment.apiUrl}/Foam`;
+  get apiUrl(): string {
+    return `${this.configService.apiBaseUrl}/Foam`;
+  }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   getFoams(): Observable<ApiResponse<any[]>> {
     return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/list`);

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 
 export interface StatusFilterRequest {
   fromDate: string | null;
@@ -32,9 +32,11 @@ export interface StatusFilterResponse {
   providedIn: 'root'
 })
 export class StatusFilterService {
-  private apiUrl = `${environment.apiUrl}/StatusFilter`;
+  get apiUrl(): string {
+    return `${this.configService.apiBaseUrl}/StatusFilter`;
+  }
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   search(payload: StatusFilterRequest): Observable<StatusFilterResponse> {
     return this.http.post<StatusFilterResponse>(`${this.apiUrl}/search`, payload);

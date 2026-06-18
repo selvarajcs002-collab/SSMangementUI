@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 import { ChallanData } from './outward-preview.service';
 
 export type DcPrintMode = 'Original' | 'Reprint';
@@ -45,9 +45,11 @@ export interface DcPrintHistory {
 
 @Injectable({ providedIn: 'root' })
 export class DeliveryChallanPrintService {
-  private readonly baseUrl = `${environment.apiUrl}/DeliveryChallan`;
+  get baseUrl(): string {
+    return `${this.configService.apiBaseUrl}/DeliveryChallan`;
+  }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   generateAndPrint(payload: DcPrintRequest): Observable<ApiResponse<DcPrintResult>> {
     return this.http.post<ApiResponse<DcPrintResult>>(`${this.baseUrl}/GenerateAndPrintDC`, payload);

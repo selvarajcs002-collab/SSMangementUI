@@ -1,18 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   private getFullUrl(url: string): string {
     if (url.startsWith('http') || url.startsWith('assets/')) {
       return url;
     }
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-    return `${environment.apiUrl}/${cleanUrl}`;
+    return `${this.configService.apiBaseUrl}/${cleanUrl}`;
   }
 
   get<T>(url: string, params?: any): Observable<T> {

@@ -1,16 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { AppConfigService } from './app-config.service';
 import { ApiResponse, NeedleRequestDto } from '../models/inventory.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NeedleService {
-  private apiUrl = `${environment.apiUrl}/Needle`;
+  get apiUrl(): string {
+    return `${this.configService.apiBaseUrl}/Needle`;
+  }
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   getNeedles(): Observable<ApiResponse<any[]>> {
     return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/list`);

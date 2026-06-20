@@ -9,4 +9,5 @@ export interface CompanyRequest {
   landmark?: string;
   city: string;
   pincode: string;
+  deliveryToLocations?: string[];
 }

@@ -249,6 +249,11 @@
               [disabled]="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
                <span class="btn-icon">+</span> Add Colour
             </button>
+<div class="export-btn-wrapper" *ngIf="entryType === 'size'">
+  <button type="button" class="btn-primary" (click)="exportDeliveryChallanReport()" [disabled]="isLoading">
+    Export Excel
+  </button>
+</div>
 
             <!-- Totals Dashboard -->
             <div class="totals-dashboard" *ngIf="colourBreakdowns.length > 0">

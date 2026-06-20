@@ -39,6 +39,10 @@ export interface ChallanData {
   }[];
   totalMeterSum?: number;
   totalPiecesSum?: number;
+  deliveryTo?: string;
+  poNo?: string;
+  weight?: string;
+  noOfBundles?: string;
 }
 
 @Injectable({ providedIn: 'root' })

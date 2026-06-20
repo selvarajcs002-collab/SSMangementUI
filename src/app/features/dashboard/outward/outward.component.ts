@@ -79,8 +79,8 @@ export class OutwardComponent implements OnInit {
 
   // Additional Details Modal properties
   isAdditionalDetailsModalOpen = false;
-  deliveryToOptions = [{key: 'Unit 1', value: 'Unit 1'}, {key: 'Unit 2', value: 'Unit 2'}, {key: 'Unit 3', value: 'Unit 3'}];
-  poNoOptions = [{key: 'PO-1001', value: 'PO-1001'}, {key: 'PO-1002', value: 'PO-1002'}, {key: 'PO-1003', value: 'PO-1003'}];
+  deliveryToOptions: any[] = [];
+  poNoOptions: any[] = [];
   tempAdditionalDetails = { deliveryTo: '', poNo: '', weight: '', noOfBundles: '' };
 
   // â”€â”€ NEW: Meter-Based Properties (isolated from size-based) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -127,6 +127,19 @@ export class OutwardComponent implements OnInit {
     this.trackChanges();
     this.checkEditMode();
   }
+
+  // Export Delivery Challan Excel report
+  exportDeliveryChallanReport(): void {
+    const filters = {
+      fromDate: this.outwardForm.get('outwardDate')?.value,
+      toDate: this.outwardForm.get('outwardDate')?.value, // using same date for demo; replace with actual ToDate control if exists
+      companyId: this.outwardForm.get('companyId')?.value,
+      styleNo: this.outwardForm.get('styleNo')?.value,
+      designRef: this.outwardForm.get('designRef')?.value
+    };
+
+  }
+
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -187,112 +200,116 @@ export class OutwardComponent implements OnInit {
 
       // 2. We need to wait for onCompanyChange to finish options loading
       // But since it's a stream, we'll patch values that don't depend on options first
-      
+
       // Setup delivery challan toggle and values if they exist
       const hasDcs = data.selectedDcNos && data.selectedDcNos.length > 0;
       this.outwardForm.patchValue({
         isDeliveryChallan: hasDcs,
         selectedDcNos: hasDcs ? data.selectedDcNos : []
       }, { emitEvent: false });
-    this.outwardForm.patchValue({
-      companyId: data.companyId,
-      outwardDate: data.createdDate ? new Date(data.createdDate).toISOString().split('T')[0] : null,
-      styleNo: data.styleNo,
-      colour: data.colour,
-      designRef: data.designName,
-      remarks: data.remarks || '',
-      status: data.status || 'Active'
-    });
+      this.outwardForm.patchValue({
+        companyId: data.companyId,
+        outwardDate: data.createdDate ? new Date(data.createdDate).toISOString().split('T')[0] : null,
+        styleNo: data.styleNo,
+        colour: data.colour,
+        designRef: data.designName,
+        remarks: data.remarks || '',
+        status: data.status || 'Active',
+        deliveryTo: data.deliveryTo || '',
+        poNo: data.poNo || '',
+        weight: data.weight || '',
+        noOfBundles: data.noOfBundles || ''
+      });
 
-    const isMeterBased = data.entryType === 'M' || (data.meterDetails && data.meterDetails.length > 0);
-    this.setEntryType(isMeterBased ? 'meter' : 'size');
+      const isMeterBased = data.entryType === 'M' || (data.meterDetails && data.meterDetails.length > 0);
+      this.setEntryType(isMeterBased ? 'meter' : 'size');
 
-    if (isMeterBased) {
-      this.meterBreakdown.clear();
-      if (data.meterDetails && data.meterDetails.length > 0) {
-        data.meterDetails.forEach((md: any) => {
-          const row = this.fb.group({
-            meterPerBit: [md.meterValue || md.meterPerBit, [Validators.required, Validators.min(0.01)]],
-            bitsCount: [md.bitsCount, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
-            piecesCount: [md.piecesCount || null, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
-            totalMeter: [{ value: md.totalMeter, disabled: true }]
-          });
-
-          // Real-time calculation for this row
-          row.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            const meter = Number(row.get('meterPerBit')?.value) || 0;
-            const bits = Number(row.get('bitsCount')?.value) || 0;
-            const total = parseFloat((meter * bits).toFixed(3));
-            row.get('totalMeter')?.setValue(total, { emitEvent: false });
-            this.calculateMeterTotals();
-            this.cdr.markForCheck();
-          });
-
-          this.meterBreakdown.push(row);
-        });
-      } else {
-        this.addMeterRow();
-      }
-      this.calculateMeterTotals();
-    } else {
-      // 3. Clear and build colour breakdown
-      this.colourBreakdowns.clear();
-
-      if (data.colourBreakdowns && data.colourBreakdowns.length > 0) {
-        data.colourBreakdowns.forEach((cb: any) => {
-          const sizeBreakdownsArray: any = this.fb.array([]);
-
-          const sizesList = cb.sizes || cb.sizeBreakdowns;
-          if (sizesList && sizesList.length > 0) {
-            sizesList.forEach((sb: any) => {
-              const sizeGroup = this.fb.group({
-                sizeId: [sb.sizeCountId || sb.sizeId || sb.sizeName || sb.size],
-                sizeName: [sb.size || sb.sizeName, Validators.required],
-                availableQty: [sb.availableQty || 9999],
-                quantity: [sb.count || sb.quantity, [Validators.required, Validators.min(0)]]
-              });
-
-              sizeGroup.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-                this.calculateTotal();
-              });
-              sizeBreakdownsArray.push(sizeGroup);
+      if (isMeterBased) {
+        this.meterBreakdown.clear();
+        if (data.meterDetails && data.meterDetails.length > 0) {
+          data.meterDetails.forEach((md: any) => {
+            const row = this.fb.group({
+              meterPerBit: [md.meterValue || md.meterPerBit, [Validators.required, Validators.min(0.01)]],
+              bitsCount: [md.bitsCount, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
+              piecesCount: [md.piecesCount || null, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
+              totalMeter: [{ value: md.totalMeter, disabled: true }]
             });
-          }
 
+            // Real-time calculation for this row
+            row.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+              const meter = Number(row.get('meterPerBit')?.value) || 0;
+              const bits = Number(row.get('bitsCount')?.value) || 0;
+              const total = parseFloat((meter * bits).toFixed(3));
+              row.get('totalMeter')?.setValue(total, { emitEvent: false });
+              this.calculateMeterTotals();
+              this.cdr.markForCheck();
+            });
+
+            this.meterBreakdown.push(row);
+          });
+        } else {
+          this.addMeterRow();
+        }
+        this.calculateMeterTotals();
+      } else {
+        // 3. Clear and build colour breakdown
+        this.colourBreakdowns.clear();
+
+        if (data.colourBreakdowns && data.colourBreakdowns.length > 0) {
+          data.colourBreakdowns.forEach((cb: any) => {
+            const sizeBreakdownsArray: any = this.fb.array([]);
+
+            const sizesList = cb.sizes || cb.sizeBreakdowns;
+            if (sizesList && sizesList.length > 0) {
+              sizesList.forEach((sb: any) => {
+                const sizeGroup = this.fb.group({
+                  sizeId: [sb.sizeCountId || sb.sizeId || sb.sizeName || sb.size],
+                  sizeName: [sb.size || sb.sizeName, Validators.required],
+                  availableQty: [sb.availableQty || 9999],
+                  quantity: [sb.count || sb.quantity, [Validators.required, Validators.min(0)]]
+                });
+
+                sizeGroup.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+                  this.calculateTotal();
+                });
+                sizeBreakdownsArray.push(sizeGroup);
+              });
+            }
+
+            const colourGroup = this.fb.group({
+              colourId: [cb.colourId || cb.colour || cb.colourName],
+              colourName: [cb.colour || cb.colourName],
+              colourTotal: [cb.colourTotal || 0],
+              sizeBreakdowns: sizeBreakdownsArray
+            });
+
+            this.colourBreakdowns.push(colourGroup);
+          });
+        } else if (data.sizeCounts && data.sizeCounts.length > 0) {
+          // Fallback for legacy single colour
+          const sizeBreakdownsArray: any = this.fb.array([]);
+          data.sizeCounts.forEach((sc: any) => {
+            const sizeGroup = this.fb.group({
+              sizeId: [sc.size],
+              sizeName: [sc.size, Validators.required],
+              availableQty: [9999],
+              quantity: [sc.count, [Validators.required, Validators.min(0)]]
+            });
+            sizeGroup.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+              this.calculateTotal();
+            });
+            sizeBreakdownsArray.push(sizeGroup);
+          });
+
+          const colourName = data.colour || 'UNKNOWN';
           const colourGroup = this.fb.group({
-            colourId: [cb.colourId || cb.colour || cb.colourName],
-            colourName: [cb.colour || cb.colourName],
-            colourTotal: [cb.colourTotal || 0],
+            colourId: [colourName],
+            colourName: [colourName],
+            colourTotal: [0],
             sizeBreakdowns: sizeBreakdownsArray
           });
-
           this.colourBreakdowns.push(colourGroup);
-        });
-      } else if (data.sizeCounts && data.sizeCounts.length > 0) {
-        // Fallback for legacy single colour
-        const sizeBreakdownsArray: any = this.fb.array([]);
-        data.sizeCounts.forEach((sc: any) => {
-          const sizeGroup = this.fb.group({
-            sizeId: [sc.size],
-            sizeName: [sc.size, Validators.required],
-            availableQty: [9999],
-            quantity: [sc.count, [Validators.required, Validators.min(0)]]
-          });
-          sizeGroup.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.calculateTotal();
-          });
-          sizeBreakdownsArray.push(sizeGroup);
-        });
-
-        const colourName = data.colour || 'UNKNOWN';
-        const colourGroup = this.fb.group({
-          colourId: [colourName],
-          colourName: [colourName],
-          colourTotal: [0],
-          sizeBreakdowns: sizeBreakdownsArray
-        });
-        this.colourBreakdowns.push(colourGroup);
-      }
+        }
 
       }
 
@@ -376,6 +393,17 @@ export class OutwardComponent implements OnInit {
 
         this.dcNoOptions = [];
 
+        // Populate Delivery To Locations from Company
+        if (res.company && res.company.deliveryToLocations && Array.isArray(res.company.deliveryToLocations)) {
+          this.deliveryToOptions = res.company.deliveryToLocations.map((loc: string) => ({ key: loc, value: loc }));
+        } else {
+          this.deliveryToOptions = [];
+        }
+
+        // Populate PO Numbers from Inward options
+        const validPoNos = res.options.map((x: any) => x.poNo).filter((po: any) => po);
+        this.poNoOptions = [...new Set(validPoNos)].map((po: any) => ({ key: po, value: po }));
+
         // Enable dependent fields
         const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'remarks', 'selectedDcNos', 'deliveryTo', 'poNo', 'weight', 'noOfBundles'];
         fields.forEach(f => this.outwardForm.get(f)?.enable());
@@ -420,7 +448,7 @@ export class OutwardComponent implements OnInit {
 
     // Trigger optimized DC Load
     if (!this.isInitializing) {
-        this.dcLoadSubject.next({ companyId, styleNo: this.selectedStyle, designRef: this.selectedDesign });
+      this.dcLoadSubject.next({ companyId, styleNo: this.selectedStyle, designRef: this.selectedDesign });
     }
 
     this.selectedInwardId = filtered.length ? filtered[0].inwardId : null;
@@ -568,10 +596,10 @@ export class OutwardComponent implements OnInit {
       // Check sizeData first (static fallback path), then check sizes array (DC-based path)
       // If no DC selected (DC Enable = false), use availableQty strictly and ignore count
       const isDcFlow = !!this.outwardForm.get('selectedDcNos')?.value?.length;
-      
+
       const sizeInfoFromData = this.sizeData.find(x => (x.size || '').toUpperCase() === sizeName);
       const sizeInfoFromSizes = this.sizes.find(x => (x.size || '').toUpperCase() === sizeName);
-      
+
       let availableQty = 9999;
       if (!isDcFlow) {
         // DC Enable = false: strict use of availableQty
@@ -647,12 +675,12 @@ export class OutwardComponent implements OnInit {
 
     // Set value and trigger calculation
     sizeGroup.get('quantity')?.setValue(qty > 0 ? qty : null, { emitEvent: false });
-    
+
     // Update DOM value if auto-corrected
     if (event.target.value !== String(qty)) {
       event.target.value = qty > 0 ? qty : '';
     }
-    
+
     this.calculateTotal();
     this.cdr.markForCheck();
   }
@@ -676,7 +704,7 @@ export class OutwardComponent implements OnInit {
     const sizeGroup = this.getSizeBreakdowns(cIndex).at(sIndex);
     const available = sizeGroup?.get('availableQty')?.value || 0;
     const remaining = this.getRemainingQty(cIndex, sIndex);
-    
+
     if (available === 0) return 'critical';
     if (remaining === 0 && available > 0) return 'completed';
     if (remaining > available * 0.5) return 'healthy';
@@ -688,7 +716,7 @@ export class OutwardComponent implements OnInit {
     const sizeGroup = this.getSizeBreakdowns(cIndex).at(sIndex);
     const available = sizeGroup?.get('availableQty')?.value || 0;
     if (available === 0) return 'Out Of Stock';
-    
+
     const status = this.getStockStatus(cIndex, sIndex);
     if (status === 'completed') return 'Completed';
     if (status === 'healthy') return 'Healthy';
@@ -818,9 +846,9 @@ export class OutwardComponent implements OnInit {
     this.dcLoadSubject.pipe(
       takeUntil(this.destroy$),
       debounceTime(300),
-      distinctUntilChanged((prev, curr) => 
-        prev.companyId === curr.companyId && 
-        prev.styleNo === curr.styleNo && 
+      distinctUntilChanged((prev, curr) =>
+        prev.companyId === curr.companyId &&
+        prev.styleNo === curr.styleNo &&
         prev.designRef === curr.designRef
       ),
       switchMap(params => {
@@ -1033,6 +1061,10 @@ export class OutwardComponent implements OnInit {
         status: formVal.status || 'Active',
         remarks: formVal.remarks || '',
         outwardDate: formVal.outwardDate,
+        deliveryTo: formVal.deliveryTo || '',
+        poNo: formVal.poNo || '',
+        weight: formVal.weight || '',
+        noOfBundles: formVal.noOfBundles || '',
         meterDetails: this.meterBreakdown.getRawValue().map((r: any) => ({
           meterPerBit: Number(r.meterPerBit),
           bitsCount: Number(r.bitsCount),
@@ -1066,6 +1098,10 @@ export class OutwardComponent implements OnInit {
             totalQty: this.totalMeterQuantity,
             remarks: formVal.remarks || "",
             entryType: 'M',
+            deliveryTo: formVal.deliveryTo || '',
+            poNo: formVal.poNo || '',
+            weight: formVal.weight || '',
+            noOfBundles: formVal.noOfBundles || '',
             meterDetails: this.meterBreakdown.getRawValue().map((r: any) => ({
               meterPerBit: Number(r.meterPerBit),
               bitsCount: Number(r.bitsCount),
@@ -1123,6 +1159,10 @@ export class OutwardComponent implements OnInit {
         createdBy: new Date().toLocaleDateString('en-GB').split('/').join('-'),
         status: formVal.status || "Active",
         remarks: formVal.remarks || "",
+        deliveryTo: formVal.deliveryTo || '',
+        poNo: formVal.poNo || '',
+        weight: formVal.weight || '',
+        noOfBundles: formVal.noOfBundles || '',
         colourBreakdowns: this.colourBreakdowns.getRawValue().map((c: any) => ({
           colourId: c.colourId,
           colourName: c.colourName,
@@ -1185,7 +1225,11 @@ export class OutwardComponent implements OnInit {
           uploadURL: "null",
           createdBy: new Date().toLocaleDateString('en-GB').split('/').join('-'),
           status: formVal.status || "Active",
-          remarks: formVal.remarks || ""
+          remarks: formVal.remarks || "",
+          deliveryTo: formVal.deliveryTo || '',
+          poNo: formVal.poNo || '',
+          weight: formVal.weight || '',
+          noOfBundles: formVal.noOfBundles || ''
         },
         colourBreakdowns: this.colourBreakdowns.getRawValue().map((c: any) => ({
           colourId: c.colourId,
@@ -1268,7 +1312,11 @@ export class OutwardComponent implements OnInit {
         count: Number(c.get('colourTotal')?.value) || 0
       })),
       totalQty: this.totalQuantity,
-      remarks: formVal.remarks || ""
+      remarks: formVal.remarks || "",
+      deliveryTo: formVal.deliveryTo || '',
+      poNo: formVal.poNo || '',
+      weight: formVal.weight || '',
+      noOfBundles: formVal.noOfBundles || ''
     };
 
     this.outwardPreviewService.setPreviewData(previewData);

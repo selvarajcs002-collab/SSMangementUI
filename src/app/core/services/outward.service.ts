@@ -13,6 +13,10 @@ export interface OutwardSaveRequest {
     uploadURL: string;
     createdBy: string;
     status: string;
+    deliveryTo?: string;
+    poNo?: string;
+    weight?: string;
+    noOfBundles?: string;
   };
   sizes?: {
     size: string;
@@ -35,6 +39,10 @@ export interface MeterOutwardSavePayload {
   status: string;
   remarks: string;
   outwardDate: string;
+  deliveryTo?: string;
+  poNo?: string;
+  weight?: string;
+  noOfBundles?: string;
   meterDetails: {
     meterPerBit: number;
     bitsCount: number;

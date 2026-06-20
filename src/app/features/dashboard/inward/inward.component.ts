@@ -146,6 +146,7 @@ export class InwardComponent implements OnInit {
       designName: data.designName,
       styleNo: data.styleNo,
       inwardDcNo: data.dcNo || data.inwardDcNo,
+      poNo: data.poNo || '',
       uploadURL: data.uploadURL
     }, { emitEvent: false });
 
@@ -213,6 +214,7 @@ export class InwardComponent implements OnInit {
       designName: [{ value: '', disabled: true }, Validators.required],
       styleNo: [{ value: '', disabled: true }, Validators.required],
       inwardDcNo: [{ value: '', disabled: true }, Validators.required],
+      poNo: [{ value: '', disabled: true }],
       uploadURL: [{ value: '', disabled: true }],
       sizes: this.fb.array([]),
       meterDetails: this.fb.array([], duplicateMeterValidator)
@@ -386,6 +388,7 @@ export class InwardComponent implements OnInit {
         design_name: formVal.designName,
         style_no: formVal.styleNo,
         inward_dc_no: formVal.inwardDcNo,
+        po_no: formVal.poNo,
         updated_by: userId,
         entry_type: entryType,
         sizes: entryType === 'S' ? formVal.sizes : [],
@@ -418,6 +421,7 @@ export class InwardComponent implements OnInit {
           designName: formVal.designName,
           styleNo: formVal.styleNo,
           inwardDcNo: formVal.inwardDcNo,
+          poNo: formVal.poNo,
           uploadURL: this.fileName || '',
           createdBy: userId,
           meterDetails: formVal.meterDetails.map((md: any) => ({
@@ -449,6 +453,7 @@ export class InwardComponent implements OnInit {
             designName: formVal.designName,
             styleNo: formVal.styleNo,
             inwardDcNo: formVal.inwardDcNo,
+            poNo: formVal.poNo,
             uploadURL: this.fileName || '',
             createdBy: userId
           },

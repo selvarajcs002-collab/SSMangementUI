@@ -184,7 +184,11 @@ export class OutwardPreviewComponent implements OnInit {
       printMode: 'Original',
       entryType: entryType,
       company: this.data.company,
-      items: this.data.items
+      items: this.data.items,
+      deliveryTo: this.data.deliveryTo,
+      poNo: this.data.poNo,
+      weight: this.data.weight,
+      noOfBundles: this.data.noOfBundles
     };
 
     if (entryType === 'M') {

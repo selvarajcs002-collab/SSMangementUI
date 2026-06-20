@@ -11,6 +11,7 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 import { SizePickerModalComponent } from '../../../shared/components/size-picker-modal/size-picker-modal.component';
+import { ExcelReportComponent } from '../../../excel/excel-report.component';
 import { MeterPickerModalComponent, AvailableMeter } from '../../../shared/components/meter-picker-modal/meter-picker-modal.component';
 import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 import { MessageService } from '../../../core/services/message.service';
@@ -31,6 +32,7 @@ import { AppDatePickerComponent } from '../../../shared/components/app-date-pick
     SizePickerModalComponent,
     MeterPickerModalComponent,
     CustomSelectComponent,
+    ExcelReportComponent,
     AppDatePickerComponent
   ],
   templateUrl: './outward.component.html',
@@ -1088,6 +1090,7 @@ export class OutwardComponent implements OnInit {
             dcNo: res.outwardDcNo || res.OutwardDcNo || `DC-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
             receiverName: this.selectedCompany?.companyName || 'Company Name',
             receiverAddress: `${this.selectedCompany?.door_No || this.selectedCompany?.Door_No || ''} ${this.selectedCompany?.street_Name || this.selectedCompany?.Street_Name || ''}\n${this.selectedCompany?.city || this.selectedCompany?.City || ''} - ${this.selectedCompany?.pincode || this.selectedCompany?.Pincode || ''}`,
+            receiverGst: this.selectedCompany?.gst_No || this.selectedCompany?.Gst_No || '',
             items: [{
               designName: formVal.designRef || '',
               styleNo: formVal.styleNo,
@@ -1102,6 +1105,7 @@ export class OutwardComponent implements OnInit {
             poNo: formVal.poNo || '',
             weight: formVal.weight || '',
             noOfBundles: formVal.noOfBundles || '',
+            supplierDcNo: formVal.selectedDcNos ? formVal.selectedDcNos.join(', ') : '',
             meterDetails: this.meterBreakdown.getRawValue().map((r: any) => ({
               meterPerBit: Number(r.meterPerBit),
               bitsCount: Number(r.bitsCount),
@@ -1301,6 +1305,7 @@ export class OutwardComponent implements OnInit {
       dcNo: res.outwardDcNo || res.OutwardDcNo || `DC-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
       receiverName: this.selectedCompany?.companyName || 'Company Name',
       receiverAddress: `${this.selectedCompany?.door_No || this.selectedCompany?.Door_No || ''} ${this.selectedCompany?.street_Name || this.selectedCompany?.Street_Name || ''}\n${this.selectedCompany?.city || this.selectedCompany?.City || ''} - ${this.selectedCompany?.pincode || this.selectedCompany?.Pincode || ''}`,
+      receiverGst: this.selectedCompany?.gst_No || this.selectedCompany?.Gst_No || '',
       items: this.colourBreakdowns.controls.map((c: any) => ({
         designName: formVal.designRef || '',
         styleNo: formVal.styleNo,
@@ -1316,7 +1321,8 @@ export class OutwardComponent implements OnInit {
       deliveryTo: formVal.deliveryTo || '',
       poNo: formVal.poNo || '',
       weight: formVal.weight || '',
-      noOfBundles: formVal.noOfBundles || ''
+      noOfBundles: formVal.noOfBundles || '',
+      supplierDcNo: formVal.selectedDcNos ? formVal.selectedDcNos.join(', ') : ''
     };
 
     this.outwardPreviewService.setPreviewData(previewData);

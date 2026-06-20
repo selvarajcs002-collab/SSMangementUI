@@ -8,13 +8,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
     children: [
-      { path: '', loadComponent: () => import('./features/dashboard/dashboard-home/dashboard-home.component').then(m => m.DashboardHomeComponent) },
+      { path: '', loadComponent: () => import('./features/dashboard/dashboard-home/dashboard-home.component').then(m => m.DashboardHomeComponent), pathMatch: 'full' },
       { path: 'inward', loadComponent: () => import('./features/dashboard/inward/inward.component').then(m => m.InwardComponent) },
       { path: 'inward/:id', loadComponent: () => import('./features/dashboard/inward/inward.component').then(m => m.InwardComponent) },
       { 
         path: 'outward',
         children: [
-          { path: '', loadComponent: () => import('./features/dashboard/outward/outward.component').then(m => m.OutwardComponent) },
+          { path: '', loadComponent: () => import('./features/dashboard/outward/outward.component').then(m => m.OutwardComponent), pathMatch: 'full' },
           { path: 'preview', loadComponent: () => import('./features/dashboard/outward/preview/outward-preview.component').then(m => m.OutwardPreviewComponent) },
           { path: ':id', loadComponent: () => import('./features/dashboard/outward/outward.component').then(m => m.OutwardComponent) }
         ]

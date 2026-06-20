@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@
 import { TableColumn } from '../dc-filter-table/dc-filter-table.component';
 
 import { CommonModule } from '@angular/common';
+import { ExcelReportComponent } from '../../../../excel/excel-report.component';
 import { DcFilterHeaderComponent } from '../dc-filter-header/dc-filter-header.component';
 import { DcFilterComponent } from '../dc-filter-component.component';
 import { DcFilterTableComponent } from '../dc-filter-table/dc-filter-table.component';
@@ -19,7 +20,7 @@ import { StatusFilterService, StatusFilterRequest } from '../../../../core/servi
 @Component({
   selector: 'app-dc-filter-container',
   standalone: true,
-  imports: [CommonModule, DcFilterHeaderComponent, DcFilterComponent, DcFilterTableComponent, DynamicToggleComponent],
+  imports: [CommonModule, DcFilterHeaderComponent, DcFilterComponent, DcFilterTableComponent, DynamicToggleComponent, ExcelReportComponent],
   templateUrl: './dc-filter-container.component.html',
   styleUrl: './dc-filter-container.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -70,7 +71,7 @@ export class DcFilterContainerComponent implements OnInit {
   pageNumber: number = 1;
   pageSize: number = 10;
   totalPages: number = 0;
-  
+
   summaryTotals = { totalBitsCount: 0, totalMeter: 0 };
   currentFilters: any = {};
   Math = Math;
@@ -138,22 +139,27 @@ export class DcFilterContainerComponent implements OnInit {
     }
   }
 
+  excelReportPayload: any = this.buildExcelReportPayload();
+
   loadData(): void {
     this.isLoading = true;
     this.cdr.markForCheck();
+    
+    // Update excel payload whenever we load data (filters/view changes)
+    this.excelReportPayload = this.buildExcelReportPayload();
 
-    const payload: StatusFilterRequest = {
-      transactionType: this.activeView.toUpperCase(),
-      viewType: this.currentViewType === 'S' ? 'SIZE' : 'METER',
-      fromDate: this.currentFilters.fromDate || null,
-      toDate: this.currentFilters.toDate || null,
-      companyId: this.currentFilters.companyId || null,
-      styleId: this.currentFilters.styleNo || null,
-      designId: this.currentFilters.designName || null,
-      pageNumber: this.pageNumber,
-      pageSize: this.pageSize,
-      sortColumn: 'Date',
-      sortDirection: 'DESC'
+    const payload: any = {
+      CompanyId: this.currentFilters.companyId ? Number(this.currentFilters.companyId) : null,
+      DesignId: this.currentFilters.designName || null,
+      FromDate: this.currentFilters.fromDate || null,
+      ToDate: this.currentFilters.toDate || null,
+      PageNumber: this.pageNumber,
+      PageSize: this.pageSize,
+      SortColumn: 'Date',
+      SortDirection: 'DESC',
+      StyleId: this.currentFilters.styleNo || null,
+      TransactionType: this.activeView.toUpperCase(),
+      ViewType: this.currentViewType === 'S' ? 'SIZE' : 'METER'
     };
 
     this.statusFilterService.search(payload).subscribe({
@@ -168,10 +174,12 @@ export class DcFilterContainerComponent implements OnInit {
           this.totalRecords = 0;
           this.totalPages = 0;
           this.summaryTotals = { totalBitsCount: 0, totalMeter: 0 };
-          
+
           if (res && res.success) {
-             // Success but no data
-             this.showNoDataModal = true;
+            // Success but no data
+            this.showNoDataModal = true;
+          } else if (res && !res.success && res.message) {
+            this.messageService.error(res.message);
           }
         }
         this.isLoading = false;
@@ -213,8 +221,8 @@ export class DcFilterContainerComponent implements OnInit {
   private handleResponse(data: any[]): void {
     this.tableData = data.map((item, index) => {
       const parsedDate = new Date(item.date || item.createdDate);
-      const formattedDate = !isNaN(parsedDate.getTime()) 
-        ? `${parsedDate.getDate().toString().padStart(2, '0')}-${(parsedDate.getMonth() + 1).toString().padStart(2, '0')}-${parsedDate.getFullYear()}` 
+      const formattedDate = !isNaN(parsedDate.getTime())
+        ? `${parsedDate.getDate().toString().padStart(2, '0')}-${(parsedDate.getMonth() + 1).toString().padStart(2, '0')}-${parsedDate.getFullYear()}`
         : (item.date || item.createdDate);
 
       return {
@@ -236,6 +244,45 @@ export class DcFilterContainerComponent implements OnInit {
     this.currentFilters = filterPayload;
     this.pageNumber = 1;
     this.loadData();
+  }
+
+  buildExcelReportPayload(): any {
+    const fromDateVal = this.currentFilters.fromDate;
+    const toDateVal = this.currentFilters.toDate;
+
+    let formattedFromDate = null;
+    if (fromDateVal) {
+      const d = new Date(fromDateVal);
+      if (!isNaN(d.getTime())) {
+        formattedFromDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0)).toISOString();
+      }
+    } else {
+      // Default initial fromDate (e.g. 1st of month)
+      const d = new Date();
+      formattedFromDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), 1, 0, 0, 0)).toISOString();
+    }
+
+    let formattedToDate = null;
+    if (toDateVal) {
+      const d = new Date(toDateVal);
+      if (!isNaN(d.getTime())) {
+        formattedToDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59)).toISOString();
+      }
+    } else {
+       // Default initial toDate (e.g. today)
+      const d = new Date();
+      formattedToDate = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59)).toISOString();
+    }
+
+    return {
+      fromDate: formattedFromDate,
+      toDate: formattedToDate,
+      mode: this.activeView === 'inward' ? 'Inward' : 'Outward',
+      type: this.currentViewType === 'S' ? 'Size' : 'Meter',
+      companyId: this.currentFilters.companyId ? Number(this.currentFilters.companyId) : null,
+      styleNo: this.currentFilters.styleNo || null,
+      designName: this.currentFilters.designName || null
+    };
   }
 
   private formatDate(value: any): string | null {
@@ -386,13 +433,13 @@ export class DcFilterContainerComponent implements OnInit {
         this.isLoading = false;
         if (res) {
           const route = mode === 'INWARD' ? '/dashboard/inward' : '/dashboard/outward';
-          
+
           if (mode === 'INWARD') {
             this.inwardService.setEditData(res);
           } else {
             this.outwardService.setEditData(res);
           }
-          
+
           this.router.navigate([route, id]);
         } else {
           this.messageService.error('Record details not found');

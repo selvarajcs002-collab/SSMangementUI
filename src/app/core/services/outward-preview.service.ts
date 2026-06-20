@@ -27,6 +27,7 @@ export interface ChallanData {
   dcNo: string;
   receiverName: string;
   receiverAddress: string;
+  receiverGst?: string;
   items: ChallanItem[];
   totalQty: number;
   remarks?: string;
@@ -43,6 +44,7 @@ export interface ChallanData {
   poNo?: string;
   weight?: string;
   noOfBundles?: string;
+  supplierDcNo?: string;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -198,30 +198,40 @@
 .filter-controls {
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
   margin-bottom: 12px;
 
   .btn-toggle-filter {
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 12px;
+    border: 1px solid #d9e1ec;
+    background: #fff;
+    color: #3f4c65;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 6px;
-    color: #475569;
     font-weight: 600;
-    font-size: 0.875rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all .3s ease;
 
     &:hover {
-      background: #F8FAFC;
-      border-color: #CBD5E1;
-      color: #0F172A;
+        background: #f8fafc;
     }
     
     svg {
-      color: #64748B;
+      color: #3f4c65;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-controls {
+    justify-content: center;
+
+    .btn-toggle-filter {
+      width: 100%;
+      justify-content: center;
     }
   }
 }

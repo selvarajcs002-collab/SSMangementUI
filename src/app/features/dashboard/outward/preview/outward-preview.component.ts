@@ -6,6 +6,7 @@ import { ApiService } from '../../../../core/services/api.service';
 import { MessageService } from '../../../../core/services/message.service';
 import { DeliveryChallanPrintService, DcPrintRequest } from '../../../../core/services/delivery-challan-print.service';
 import html2pdf from 'html2pdf.js';
+import { CompanyService } from '../../../../core/services/company.service';
 import { MeterDeliveryChallanPreviewComponent } from './meter/meter-delivery-challan-preview.component';
 
 @Component({
@@ -40,6 +41,7 @@ export class OutwardPreviewComponent implements OnInit {
     private apiService: ApiService,
     private messageService: MessageService,
     private deliveryChallanPrintService: DeliveryChallanPrintService,
+    private companyService: CompanyService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
@@ -160,77 +162,99 @@ export class OutwardPreviewComponent implements OnInit {
     if (!this.data) return;
     this.isDownloading = true;
 
-    const colourBreakdowns = this.data.items?.map(item => {
-      const cb: any = { colourName: item.colour };
-      if (item.sizes) {
-        item.sizes.forEach(s => {
-          cb[s.label] = s.qty;
-        });
-      }
-      return cb;
-    }) || [];
+    // Fetch GST number for company ID 2 (static for now)
+    this.companyService.getCompanyById(2).subscribe({
+      next: (company) => {
+        const gstNo = company?.gst_No ?? company?.gstNo ?? '';
 
-    const entryType = this.data.entryType || 'S';
-
-    const payload: any = {
-      dcNo: this.data.dcNo,
-      companyName: this.data.receiverName,
-      address: this.data.receiverAddress,
-      date: this.data.date,
-      remarks: this.data.remarks,
-      style: this.data.items && this.data.items.length > 0 ? this.data.items[0].styleNo : '',
-      designReference: this.data.items && this.data.items.length > 0 ? this.data.items[0].designName : '',
-      printedBy: localStorage.getItem('userId') || 'Current User',
-      printMode: 'Original',
-      entryType: entryType,
-      company: this.data.company,
-      items: this.data.items,
-      deliveryTo: this.data.deliveryTo,
-      poNo: this.data.poNo,
-      weight: this.data.weight,
-      noOfBundles: this.data.noOfBundles
-    };
-
-    if (entryType === 'M') {
-      payload.itemType = 'Meter Based';
-      payload.meterDetails = this.data.meterDetails || [];
-      payload.totalMeterSum = this.data.totalMeterSum || 0;
-    } else {
-      payload.itemType = 'Size Based';
-      payload.colourBreakdowns = colourBreakdowns;
-    }
-
-    this.deliveryChallanPrintService.generateAndDownload(payload).subscribe({
-      next: (response) => {
-        this.isDownloading = false;
-        const blob = response.body;
-        if (blob) {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          const contentDisposition = response.headers.get('content-disposition');
-          let fileName = `DC_${this.data?.dcNo || 'Unknown'}.pdf`;
-          if (contentDisposition) {
-            const matches = /filename="([^"]*)"/.exec(contentDisposition);
-            if (matches != null && matches[1]) {
-              fileName = matches[1];
-            }
+        const colourBreakdowns = this.data!.items?.map(item => {
+          const cb: any = { colourName: item.colour };
+          if (item.sizes) {
+            item.sizes.forEach(s => {
+              cb[s.label] = s.qty;
+            });
           }
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          a.remove();
-          this.messageService.success('DC downloaded successfully');
+          return cb;
+        }) || [];
+
+        const entryType = this.data!.entryType || 'S';
+
+        const formattedDate = (() => {
+          const d = new Date(this.data!.date);
+          const dd = ('0' + d.getDate()).slice(-2);
+          const mm = ('0' + (d.getMonth() + 1)).slice(-2);
+          const yyyy = d.getFullYear();
+          return `${dd}-${mm}-${yyyy}`;
+        })();
+        const payload: any = {
+          dcNo: this.data!.dcNo,
+          companyName: this.data!.receiverName,
+          address: this.data!.receiverAddress,
+          gstNo: gstNo,
+          date: formattedDate,
+          remarks: this.data!.remarks,
+          style: this.data!.items && this.data!.items.length > 0 ? this.data!.items[0].styleNo : '',
+          designReference: this.data!.items && this.data!.items.length > 0 ? this.data!.items[0].designName : '',
+          printedBy: localStorage.getItem('userId') || 'Current User',
+          printMode: 'Original',
+          entryType: entryType,
+          company: this.data!.company,
+          items: this.data!.items,
+          deliveryTo: this.data!.deliveryTo,
+          poNo: this.data!.poNo,
+          weight: this.data!.weight,
+          noOfBundles: this.data!.noOfBundles,
+          supplierDcNo: this.data!.supplierDcNo
+        };
+
+        if (entryType === 'M') {
+          payload.itemType = 'Meter Based';
+          payload.meterDetails = this.data!.meterDetails || [];
+          payload.totalMeterSum = this.data!.totalMeterSum || 0;
         } else {
-          this.messageService.error('Failed to download PDF. Empty response.');
+          payload.itemType = 'Size Based';
+          payload.colourBreakdowns = colourBreakdowns;
         }
-        this.cdr.detectChanges();
+
+        this.deliveryChallanPrintService.generateAndDownload(payload).subscribe({
+          next: (response) => {
+            this.isDownloading = false;
+            const blob = response.body;
+            if (blob) {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              const contentDisposition = response.headers.get('content-disposition');
+              let fileName = `DC_${this.data?.dcNo || 'Unknown'}.pdf`;
+              if (contentDisposition) {
+                const matches = /filename=\"([^\"]*)\"/.exec(contentDisposition);
+                if (matches != null && matches[1]) {
+                  fileName = matches[1];
+                }
+              }
+              a.download = fileName;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              a.remove();
+              this.messageService.success('DC downloaded successfully');
+            } else {
+              this.messageService.error('Failed to download PDF. Empty response.');
+            }
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.isDownloading = false;
+            console.error('Download error:', err);
+            this.messageService.error('Failed to download DC from server');
+            this.cdr.detectChanges();
+          }
+        });
       },
       error: (err) => {
         this.isDownloading = false;
-        console.error('Download error:', err);
-        this.messageService.error('Failed to download DC from server');
+        console.error('Company fetch error:', err);
+        this.messageService.error('Failed to fetch GST number');
         this.cdr.detectChanges();
       }
     });

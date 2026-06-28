@@ -8,4 +8,15 @@ export interface AppConfig {
   signalR?: {
     baseUrl: string;
   };
+  defaultQuotationSettings?: {
+    companyId: number;
+    contactPerson: string;
+    mobileNo: string;
+    emailId: string;
+    address: string;
+    productType: string;
+    quantity: number;
+    status: string;
+    createdBy: number;
+  };
 }

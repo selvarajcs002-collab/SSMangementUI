@@ -197,8 +197,8 @@ export class OutwardComponent implements OnInit {
 
     this.isInitializing = true;
     try {
-      // 1. Initial Company Load
-      this.onCompanyChange(data.companyId);
+      // 1. Initial Company Load with isEditMode = true
+      this.onCompanyChange(data.companyId, true);
 
       // 2. We need to wait for onCompanyChange to finish options loading
       // But since it's a stream, we'll patch values that don't depend on options first
@@ -209,11 +209,24 @@ export class OutwardComponent implements OnInit {
         isDeliveryChallan: hasDcs,
         selectedDcNos: hasDcs ? data.selectedDcNos : []
       }, { emitEvent: false });
+
+      // Show/hide DC numbers dropdown conditionally
+      if (hasDcs) {
+        // Populate options so the CustomSelectComponent can show them
+        this.dcNoOptions = data.selectedDcNos;
+      }
+
+      // Determine the exact colour to display if it was saved as MULTI but only has 1 colour
+      let displayColour = data.colour;
+      if (displayColour === 'MULTI' && data.colourBreakdowns && data.colourBreakdowns.length === 1) {
+        displayColour = data.colourBreakdowns[0].colour || data.colourBreakdowns[0].colourName || data.colourBreakdowns[0].colourId;
+      }
+
       this.outwardForm.patchValue({
         companyId: data.companyId,
         outwardDate: data.createdDate ? new Date(data.createdDate).toISOString().split('T')[0] : null,
         styleNo: data.styleNo,
-        colour: data.colour,
+        colour: displayColour,
         designRef: data.designName,
         remarks: data.remarks || '',
         status: data.status || 'Active',
@@ -315,12 +328,75 @@ export class OutwardComponent implements OnInit {
 
       }
 
+      if (!isMeterBased) {
+        this.fetchAvailableQuantitiesForEdit(data);
+      }
+
       this.calculateTotal();
     } finally {
       this.isInitializing = false;
       this.onSelectionChange();
       this.cdr.markForCheck();
     }
+  }
+
+  private fetchAvailableQuantitiesForEdit(data: any): void {
+    const isDcFlow = data.selectedDcNos && data.selectedDcNos.length > 0;
+    
+    for (let cIndex = 0; cIndex < this.colourBreakdowns.length; cIndex++) {
+      const colourGroup = this.colourBreakdowns.at(cIndex);
+      const colourName = colourGroup.get('colourName')?.value;
+      const sizeArray = colourGroup.get('sizeBreakdowns') as FormArray;
+      
+      if (!colourName) continue;
+      
+      if (isDcFlow) {
+        this.inwardService.getInwardDetailsByDcs(data.companyId, data.selectedDcNos, colourName).subscribe({
+          next: (res: any) => {
+            if (res && res.success && res.data && Array.isArray(res.data.sizes)) {
+              const availableMap = new Map<string, number>();
+              res.data.sizes.forEach((item: any) => {
+                 const sizeName = (item.size || item.sizeName || '').toString().toUpperCase();
+                 if (!availableMap.has(sizeName)) {
+                   availableMap.set(sizeName, Number(item.availableQty ?? item.count ?? 0));
+                 }
+              });
+              this.updateAvailableQuantities(sizeArray, availableMap);
+            }
+          }
+        });
+      } else {
+        this.inwardService.getSizes(data.companyId, colourName, data.styleNo).subscribe({
+          next: (res: any[]) => {
+            if (res && res.length > 0) {
+              const availableMap = new Map<string, number>();
+              res.forEach(item => {
+                 const sizeName = (item.size || '').toUpperCase();
+                 availableMap.set(sizeName, Number(item.availableQty ?? 0));
+              });
+              this.updateAvailableQuantities(sizeArray, availableMap);
+            }
+          }
+        });
+      }
+    }
+  }
+
+  private updateAvailableQuantities(sizeArray: FormArray, availableMap: Map<string, number>): void {
+    for (let i = 0; i < sizeArray.length; i++) {
+      const sizeGroup = sizeArray.at(i);
+      const sizeName = sizeGroup.get('sizeName')?.value?.toUpperCase();
+      const currentQty = Number(sizeGroup.get('quantity')?.value || 0);
+      
+      if (sizeName) {
+         const currentAvailable = availableMap.get(sizeName) || 0;
+         const maxAvailableForEdit = currentAvailable + currentQty;
+         sizeGroup.get('availableQty')?.setValue(maxAvailableForEdit, { emitEvent: false });
+         sizeGroup.get('quantity')?.setValidators([Validators.required, Validators.min(0), Validators.max(maxAvailableForEdit)]);
+         sizeGroup.get('quantity')?.updateValueAndValidity({ emitEvent: false });
+      }
+    }
+    this.cdr.markForCheck();
   }
 
   private initForm(): void {
@@ -368,8 +444,10 @@ export class OutwardComponent implements OnInit {
   get designSelectOptions() { return this.designOptions.map(d => ({ key: d, value: d })); }
   get dcNoSelectOptions() { return this.dcNoOptions.map(d => ({ key: d, value: d })); }
 
-  onCompanyChange(companyId: number) {
-    this.resetForm();
+  onCompanyChange(companyId: number, isEditMode: boolean = false) {
+    if (!isEditMode) {
+      this.resetForm();
+    }
     this.selectedCompanyId = companyId;
     this.outwardForm.patchValue({ companyId });
 
@@ -393,7 +471,13 @@ export class OutwardComponent implements OnInit {
         this.styleOptions = [...new Set(res.options.map((x: any) => x.styleNo))];
         this.colourOptions = [...new Set(res.options.map((x: any) => x.colour))];
 
-        this.dcNoOptions = [];
+        if (!this.colourOptions.includes('MULTI')) {
+            this.colourOptions.push('MULTI');
+        }
+
+        if (!isEditMode) {
+            this.dcNoOptions = [];
+        }
 
         // Populate Delivery To Locations from Company
         if (res.company && res.company.deliveryToLocations && Array.isArray(res.company.deliveryToLocations)) {
@@ -408,7 +492,22 @@ export class OutwardComponent implements OnInit {
 
         // Enable dependent fields
         const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'remarks', 'selectedDcNos', 'deliveryTo', 'poNo', 'weight', 'noOfBundles'];
-        fields.forEach(f => this.outwardForm.get(f)?.enable());
+        fields.forEach(f => this.outwardForm.get(f)?.enable({ emitEvent: false }));
+
+        this.onSelectionChange();
+
+        // In edit mode, ensure the currently selected values exist in options even if they were filtered out
+        if (isEditMode) {
+            const currentVals = this.outwardForm.getRawValue();
+            if (currentVals.designRef && !this.designOptions.includes(currentVals.designRef)) this.designOptions.push(currentVals.designRef);
+            if (currentVals.styleNo && !this.styleOptions.includes(currentVals.styleNo)) this.styleOptions.push(currentVals.styleNo);
+            if (currentVals.colour && !this.colourOptions.includes(currentVals.colour)) this.colourOptions.push(currentVals.colour);
+            if (currentVals.selectedDcNos && currentVals.selectedDcNos.length > 0) {
+                currentVals.selectedDcNos.forEach((dc: string) => {
+                    if (!this.dcNoOptions.includes(dc)) this.dcNoOptions.push(dc);
+                });
+            }
+        }
 
         this.isDataLoaded = true;
         this.isOptionsLoading = false;
@@ -440,13 +539,29 @@ export class OutwardComponent implements OnInit {
       filtered = filtered.filter(x => x.styleNo === this.selectedStyle);
     }
 
-    if (this.selectedColour) {
+    const isDeliveryChallan = this.outwardForm.get('isDeliveryChallan')?.value;
+    const selectedDcNos = this.outwardForm.get('selectedDcNos')?.value;
+    if (isDeliveryChallan && selectedDcNos && selectedDcNos.length > 0) {
+      filtered = filtered.filter(x => selectedDcNos.includes(x.inwardDcNo));
+    }
+
+    if (this.selectedColour && this.selectedColour !== 'MULTI') {
       filtered = filtered.filter(x => x.colour === this.selectedColour);
     }
 
     this.designOptions = [...new Set(filtered.map(x => x.designName))];
     this.styleOptions = [...new Set(filtered.map(x => x.styleNo))];
     this.colourOptions = [...new Set(filtered.map(x => x.colour))];
+
+    if (!this.colourOptions.includes('MULTI')) {
+      this.colourOptions.push('MULTI');
+    }
+
+    if (this.isEditMode) {
+      if (this.selectedDesign && !this.designOptions.includes(this.selectedDesign)) this.designOptions.push(this.selectedDesign);
+      if (this.selectedStyle && !this.styleOptions.includes(this.selectedStyle)) this.styleOptions.push(this.selectedStyle);
+      if (this.selectedColour && !this.colourOptions.includes(this.selectedColour)) this.colourOptions.push(this.selectedColour);
+    }
 
     // Trigger optimized DC Load
     if (!this.isInitializing) {
@@ -461,12 +576,42 @@ export class OutwardComponent implements OnInit {
       this.showAlert('Please select Company and Style first.', 'error');
       return;
     }
+
     const existingColours = this.colourBreakdowns.controls.map(c => c.get('colourName')?.value);
-    this.availableColoursForModal = this.colourOptions
-      .filter(c => !existingColours.includes(c))
-      .map(c => ({ key: c, value: c }));
-    this.selectedColoursForModal = [];
-    this.isAddColourModalOpen = true;
+    const isDeliveryChallan = this.outwardForm.get('isDeliveryChallan')?.value;
+    const selectedDcNos = this.outwardForm.get('selectedDcNos')?.value;
+
+    if (isDeliveryChallan && selectedDcNos && selectedDcNos.length > 0) {
+      this.outwardService.getColoursByDcs(
+        this.selectedCompanyId,
+        this.selectedStyle,
+        this.selectedDesign || '',
+        selectedDcNos
+      ).subscribe({
+        next: (res: any) => {
+          if (res && res.success && res.data) {
+            this.availableColoursForModal = res.data
+              .map((item: any) => item.colour)
+              .filter((c: string) => c && c !== 'MULTI' && !existingColours.includes(c))
+              .map((c: string) => ({ key: c, value: c }));
+          } else {
+            this.availableColoursForModal = [];
+          }
+          this.selectedColoursForModal = [];
+          this.isAddColourModalOpen = true;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.showAlert('Failed to fetch colours for the selected DCs.', 'error');
+        }
+      });
+    } else {
+      this.availableColoursForModal = this.colourOptions
+        .filter(c => c !== 'MULTI' && !existingColours.includes(c))
+        .map(c => ({ key: c, value: c }));
+      this.selectedColoursForModal = [];
+      this.isAddColourModalOpen = true;
+    }
   }
 
   confirmAddColour() {
@@ -823,7 +968,7 @@ export class OutwardComponent implements OnInit {
     });
 
     const fields = ['outwardDate', 'styleNo', 'colour', 'designRef', 'itemType', 'outwardImage', 'remarks', 'selectedDcNos'];
-    fields.forEach(f => this.outwardForm.get(f)?.disable());
+    fields.forEach(f => this.outwardForm.get(f)?.disable({ emitEvent: false }));
 
     this.colourBreakdowns.clear();
     this.meterBreakdown.clear();
@@ -888,6 +1033,13 @@ export class OutwardComponent implements OnInit {
         this.outwardForm.patchValue({ designRef: '', selectedDcNos: [], colour: '' }, { emitEvent: false });
         this.resetSelectionsAndTable();
         this.onSelectionChange(); // trigger downstream updates
+      }
+    });
+
+    // DC Numbers Selection Change
+    this.outwardForm.get('selectedDcNos')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(dcs => {
+      if (!this.isInitializing) {
+        this.onSelectionChange();
       }
     });
 
@@ -1167,6 +1319,7 @@ export class OutwardComponent implements OnInit {
         poNo: formVal.poNo || '',
         weight: formVal.weight || '',
         noOfBundles: formVal.noOfBundles || '',
+        selectedDcNos: formVal.isDeliveryChallan ? formVal.selectedDcNos : [],
         colourBreakdowns: this.colourBreakdowns.getRawValue().map((c: any) => ({
           colourId: c.colourId,
           colourName: c.colourName,
@@ -1233,7 +1386,8 @@ export class OutwardComponent implements OnInit {
           deliveryTo: formVal.deliveryTo || '',
           poNo: formVal.poNo || '',
           weight: formVal.weight || '',
-          noOfBundles: formVal.noOfBundles || ''
+          noOfBundles: formVal.noOfBundles || '',
+          selectedDcNos: formVal.isDeliveryChallan ? formVal.selectedDcNos : []
         },
         colourBreakdowns: this.colourBreakdowns.getRawValue().map((c: any) => ({
           colourId: c.colourId,

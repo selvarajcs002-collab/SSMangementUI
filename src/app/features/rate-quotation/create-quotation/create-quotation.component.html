@@ -1,0 +1,157 @@
+<div class="create-container">
+  <form [formGroup]="quotationForm" (ngSubmit)="submitQuotation()">
+    
+    <!-- Quotation Details Card -->
+    <div class="card-box">
+      <div class="card-content-wrapper">
+        <!-- Left Side: Form Fields -->
+        <div class="form-section">
+          <div class="section-title">
+            <h2>QUOTATION DETAILS</h2>
+            <div class="title-underline"></div>
+          </div>
+
+          <div class="form-grid-2col">
+            <!-- Company Name -->
+            <div class="input-group">
+              <label>
+                Company Name <span class="required">*</span>
+                <mat-icon *ngIf="isLoadingCompanies" class="loading-spinner rotating">autorenew</mat-icon>
+              </label>
+              <app-custom-select 
+                formControlName="companyId" 
+                [options]="companyOptions" 
+                [placeholder]="isLoadingCompanies ? 'Loading companies...' : 'Select Company'">
+              </app-custom-select>
+              <div *ngIf="quotationForm.get('companyId')?.touched && quotationForm.get('companyId')?.invalid" class="error-text">
+                Company Name is required
+              </div>
+            </div>
+
+            <!-- Style No -->
+            <div class="input-group">
+              <label>Style No <span class="required">*</span></label>
+              <input type="text" formControlName="styleNo" placeholder="Enter Style No">
+              <div *ngIf="quotationForm.get('styleNo')?.touched && quotationForm.get('styleNo')?.invalid" class="error-text">
+                Style No is required
+              </div>
+            </div>
+
+            <!-- EMB Design -->
+            <div class="input-group">
+              <label>EMB Design <span class="required">*</span></label>
+              <input type="text" formControlName="embDesign" placeholder="Enter EMB Design">
+              <div *ngIf="quotationForm.get('embDesign')?.touched && quotationForm.get('embDesign')?.invalid" class="error-text">
+                EMB Design is required
+              </div>
+            </div>
+
+            <!-- No Of Stitches -->
+            <div class="input-group">
+              <label>No Of Stitches <span class="required">*</span></label>
+              <input type="number" formControlName="noOfStitches" placeholder="Enter No Of Stitches">
+              <div *ngIf="quotationForm.get('noOfStitches')?.touched && quotationForm.get('noOfStitches')?.invalid" class="error-text">
+                No Of Stitches is required
+              </div>
+            </div>
+
+            <!-- Chenille Colors -->
+            <div class="input-group">
+              <label>Chenille Colors <span class="required">*</span></label>
+              <input type="text" formControlName="chenilleColors" placeholder="Enter No Of Colors in Chenille">
+              <div *ngIf="quotationForm.get('chenilleColors')?.touched && quotationForm.get('chenilleColors')?.invalid" class="error-text">
+                Chenille Colors is required
+              </div>
+            </div>
+
+            <!-- Normal EMB Colors -->
+            <div class="input-group">
+              <label>Normal EMB Colors <span class="required">*</span></label>
+              <input type="text" formControlName="normalEmbColors" placeholder="Enter No Of Colors in Normal Emb">
+              <div *ngIf="quotationForm.get('normalEmbColors')?.touched && quotationForm.get('normalEmbColors')?.invalid" class="error-text">
+                Normal EMB Colors is required
+              </div>
+            </div>
+
+            <!-- Embroidery Cost / 1000 Sts -->
+            <div class="input-group">
+              <label>Embroidery Cost / 1000 Sts <span class="required">*</span></label>
+              <input type="number" formControlName="embCost" placeholder="Enter Cost per 1000 Stitches">
+              <div *ngIf="quotationForm.get('embCost')?.touched && quotationForm.get('embCost')?.invalid" class="error-text">
+                Embroidery Cost is required
+              </div>
+            </div>
+
+            <!-- Payment Terms -->
+            <div class="input-group">
+              <label>Payment Terms <span class="required">*</span></label>
+              <textarea formControlName="paymentTerms" placeholder="Enter Payment Terms" rows="2"></textarea>
+              <div *ngIf="quotationForm.get('paymentTerms')?.touched && quotationForm.get('paymentTerms')?.invalid" class="error-text">
+                Payment Terms are required
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Image Upload -->
+        <div class="upload-section">
+          <div class="section-title center">
+            <h2>DESIGN IMAGE</h2>
+          </div>
+          
+          <input type="file" #fileInput hidden accept=".jpg,.jpeg,.png" (change)="onFileSelected($event)">
+          
+          <div class="upload-box" *ngIf="!imagePreview" (click)="fileInput.click()">
+            <mat-icon class="upload-icon">image</mat-icon>
+            <span class="upload-text">Click to upload<br>or drag and drop</span>
+            <span class="upload-hint">PNG, JPG, JPEG<br>Max size: 5MB</span>
+          </div>
+
+          <div class="preview-box" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="Design Preview">
+            <div class="preview-overlay">
+              <button mat-icon-button type="button" (click)="fileInput.click()"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button type="button" color="warn" (click)="removeImage()"><mat-icon>delete</mat-icon></button>
+            </div>
+          </div>
+          
+          <div class="no-image-text" *ngIf="!imagePreview">No image selected</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terms & Conditions Card -->
+    <div class="card-box terms-card">
+      <div class="section-title">
+        <h2>TERMS & CONDITIONS</h2>
+        <div class="title-underline"></div>
+      </div>
+      
+      <div class="terms-grid">
+        <ul class="terms-list">
+          <li>Rate is calculated based on the design details provided.</li>
+          <li>Any change in stitch count or colors may affect the quoted rate.</li>
+          <li>GST will be charged extra as applicable.</li>
+        </ul>
+        <ul class="terms-list">
+          <li>Quotation is valid for 30 days from the date of issue.</li>
+          <li>Payment terms as mentioned above must be followed.</li>
+          <li>Sample approval is required before bulk production.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="footer-actions">
+      <button class="btn-save" type="button" (click)="saveDraft()">
+        <mat-icon>save</mat-icon> SAVE DRAFT
+      </button>
+      <button class="btn-pdf" type="button" (click)="generatePdf()">
+        <mat-icon>insert_drive_file</mat-icon> GENERATE PDF
+      </button>
+      <button class="btn-submit" type="submit" [disabled]="quotationForm.invalid">
+        <mat-icon>send</mat-icon> SUBMIT QUOTATION
+      </button>
+    </div>
+  </form>
+</div>

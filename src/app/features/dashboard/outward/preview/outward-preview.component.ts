@@ -5,7 +5,6 @@ import { OutwardPreviewService, ChallanData } from '../../../../core/services/ou
 import { ApiService } from '../../../../core/services/api.service';
 import { MessageService } from '../../../../core/services/message.service';
 import { DeliveryChallanPrintService, DcPrintRequest } from '../../../../core/services/delivery-challan-print.service';
-import html2pdf from 'html2pdf.js';
 import { CompanyService } from '../../../../core/services/company.service';
 import { MeterDeliveryChallanPreviewComponent } from './meter/meter-delivery-challan-preview.component';
 
@@ -24,7 +23,7 @@ export class OutwardPreviewComponent implements OnInit {
   // New properties for matrix
   matrixColumns: string[] = [];
   matrixRows: any[] = [];
-  matrixTotals: {[key: string]: number} = {};
+  matrixTotals: { [key: string]: number } = {};
 
   get totalBitsQuantity(): number {
     if (!this.data || !this.data.meterDetails) return 0;
@@ -44,7 +43,7 @@ export class OutwardPreviewComponent implements OnInit {
     private companyService: CompanyService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.data = this.outwardPreviewService.getPreviewData();
@@ -64,7 +63,7 @@ export class OutwardPreviewComponent implements OnInit {
         item.sizes.forEach(s => sizeSet.add(s.label));
       }
     });
-    
+
     // Sort sizes alphabetically
     this.matrixColumns = Array.from(sizeSet).sort();
 
@@ -76,13 +75,13 @@ export class OutwardPreviewComponent implements OnInit {
         total: item.count,
         sizes: {}
       };
-      
+
       if (item.sizes) {
         item.sizes.forEach(s => {
           row.sizes[s.label] = s.qty;
         });
       }
-      
+
       return row;
     });
 
@@ -92,65 +91,94 @@ export class OutwardPreviewComponent implements OnInit {
     });
   }
 
+  private buildPrintPayload(gstNo: string): any {
+    const colourBreakdowns = this.data!.items?.map(item => {
+      const cb: any = { colourName: item.colour };
+      if (item.sizes) {
+        item.sizes.forEach(s => {
+          cb[s.label] = s.qty;
+        });
+      }
+      return cb;
+    }) || [];
+
+    const entryType = this.data!.entryType || 'S';
+
+    const formattedDate = (() => {
+      const d = new Date(this.data!.date);
+      const dd = ('0' + d.getDate()).slice(-2);
+      const mm = ('0' + (d.getMonth() + 1)).slice(-2);
+      const yyyy = d.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    })();
+
+    const payload: any = {
+      dcNo: this.data!.dcNo,
+      companyName: this.data!.receiverName,
+      address: this.data!.receiverAddress,
+      gstNo: gstNo,
+      date: formattedDate,
+      remarks: this.data!.remarks,
+      style: this.data!.items && this.data!.items.length > 0 ? this.data!.items[0].styleNo : '',
+      designReference: this.data!.items && this.data!.items.length > 0 ? this.data!.items[0].designName : '',
+      printedBy: localStorage.getItem('userId') || 'Current User',
+      printMode: 'Original',
+      entryType: entryType,
+      company: this.data!.company,
+      items: this.data!.items,
+      deliveryTo: this.data!.deliveryTo,
+      poNo: this.data!.poNo,
+      weight: this.data!.weight,
+      noOfBundles: this.data!.noOfBundles,
+      supplierDcNo: this.data!.supplierDcNo
+    };
+
+    if (entryType === 'M') {
+      payload.itemType = 'Meter Based';
+      payload.meterDetails = this.data!.meterDetails || [];
+      payload.totalMeterSum = this.data!.totalMeterSum || 0;
+    } else {
+      payload.itemType = 'Size Based';
+      payload.colourBreakdowns = colourBreakdowns;
+    }
+
+    return payload;
+  }
+
   printPage(): void {
     if (!this.data) return;
     this.isSaving = true;
 
-    const element = document.querySelector('.dc-card') as HTMLElement;
-    if (!element) {
-      this.messageService.error('Could not find the document to print');
-      this.isSaving = false;
-      return;
-    }
+    // Fetch GST number for company ID 2 (static for now)
+    this.companyService.getCompanyById(2).subscribe({
+      next: (company) => {
+        const gstNo = company?.gst_No ?? company?.gstNo ?? '';
+        const payload = this.buildPrintPayload(gstNo);
 
-    element.classList.add('exporting-pdf');
-
-    const opt = {
-      margin: [10, 10, 10, 10] as [number, number, number, number],
-      filename: `DC_${this.data.dcNo || 'Unknown'}.pdf`,
-      image: { type: 'jpeg' as "jpeg", quality: 0.98 },
-      html2canvas: { 
-        scale: 4, 
-        useCORS: true, 
-        letterRendering: true,
-        allowTaint: false,
-        logging: false,
-        backgroundColor: '#ffffff'
-      },
-      jsPDF: { unit: 'mm' as "mm", format: [148, 210] as [number, number], orientation: 'portrait' as "portrait" },
-      pagebreak: { mode: ['avoid-all'] }
-    };
-
-    // Generate PDF as base64 and send to backend
-    html2pdf().from(element).set(opt as any).outputPdf('datauristring').then((pdfBase64: string) => {
-      element.classList.remove('exporting-pdf');
-
-      const payload = {
-        companyName: this.data?.receiverName || 'Unknown',
-        dcNo: this.data?.dcNo || 'DC_Unknown',
-        base64Pdf: pdfBase64
-      };
-
-      this.apiService.post<any>('Print/save-pdf', payload).subscribe({
-        next: (res) => {
-          this.isSaving = false;
-          if (res.success) {
-            this.messageService.success(`PDF saved successfully to: ${res.path}`);
-          } else {
-            this.messageService.error('Failed to save PDF to folder');
+        this.deliveryChallanPrintService.generateAndPrint(payload).subscribe({
+          next: (res) => {
+            this.isSaving = false;
+            if (res.success) {
+              this.messageService.success(`Challan printed successfully`);
+            } else {
+              this.messageService.error(res.message || 'Failed to print challan');
+            }
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.isSaving = false;
+            console.error('Print error:', err);
+            this.messageService.error('Connection error while printing');
+            this.cdr.detectChanges();
           }
-        },
-        error: (err) => {
-          this.isSaving = false;
-          console.error('PDF Save error:', err);
-          this.messageService.error('Connection error while saving PDF');
-        }
-      });
-    }).catch((err: unknown) => {
-      element.classList.remove('exporting-pdf');
-      this.isSaving = false;
-      console.error('PDF generation error:', err);
-      this.messageService.error('Could not generate PDF preview');
+        });
+      },
+      error: (err) => {
+        this.isSaving = false;
+        console.error('Company fetch error:', err);
+        this.messageService.error('Failed to fetch GST number');
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -166,55 +194,7 @@ export class OutwardPreviewComponent implements OnInit {
     this.companyService.getCompanyById(2).subscribe({
       next: (company) => {
         const gstNo = company?.gst_No ?? company?.gstNo ?? '';
-
-        const colourBreakdowns = this.data!.items?.map(item => {
-          const cb: any = { colourName: item.colour };
-          if (item.sizes) {
-            item.sizes.forEach(s => {
-              cb[s.label] = s.qty;
-            });
-          }
-          return cb;
-        }) || [];
-
-        const entryType = this.data!.entryType || 'S';
-
-        const formattedDate = (() => {
-          const d = new Date(this.data!.date);
-          const dd = ('0' + d.getDate()).slice(-2);
-          const mm = ('0' + (d.getMonth() + 1)).slice(-2);
-          const yyyy = d.getFullYear();
-          return `${dd}-${mm}-${yyyy}`;
-        })();
-        const payload: any = {
-          dcNo: this.data!.dcNo,
-          companyName: this.data!.receiverName,
-          address: this.data!.receiverAddress,
-          gstNo: gstNo,
-          date: formattedDate,
-          remarks: this.data!.remarks,
-          style: this.data!.items && this.data!.items.length > 0 ? this.data!.items[0].styleNo : '',
-          designReference: this.data!.items && this.data!.items.length > 0 ? this.data!.items[0].designName : '',
-          printedBy: localStorage.getItem('userId') || 'Current User',
-          printMode: 'Original',
-          entryType: entryType,
-          company: this.data!.company,
-          items: this.data!.items,
-          deliveryTo: this.data!.deliveryTo,
-          poNo: this.data!.poNo,
-          weight: this.data!.weight,
-          noOfBundles: this.data!.noOfBundles,
-          supplierDcNo: this.data!.supplierDcNo
-        };
-
-        if (entryType === 'M') {
-          payload.itemType = 'Meter Based';
-          payload.meterDetails = this.data!.meterDetails || [];
-          payload.totalMeterSum = this.data!.totalMeterSum || 0;
-        } else {
-          payload.itemType = 'Size Based';
-          payload.colourBreakdowns = colourBreakdowns;
-        }
+        const payload = this.buildPrintPayload(gstNo);
 
         this.deliveryChallanPrintService.generateAndDownload(payload).subscribe({
           next: (response) => {

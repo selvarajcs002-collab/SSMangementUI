@@ -78,6 +78,11 @@ export class OutwardService {
     );
   }
 
+  getColoursByDcs(companyId: number, styleNo: string, designName: string, dcNos: string[]): Observable<any> {
+    const params = { companyId, styleNo, designName, dcNos: dcNos.join(',') };
+    return this.api.get<any>('outward/colours-by-dcs', params);
+  }
+
   setEditData(data: any): void {
     this.editDataSubject.next(data);
   }

@@ -6,6 +6,8 @@
   box-sizing: border-box;
 }
 
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
 @layer base {
   :root {
     --primary: #42A5F5;

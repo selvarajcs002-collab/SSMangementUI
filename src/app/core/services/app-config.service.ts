@@ -59,4 +59,22 @@ export class AppConfigService {
     }
     return this.config.signalR.baseUrl;
   }
+
+  public get defaultQuotationSettings(): any {
+    if (!this.config || !this.config.defaultQuotationSettings) {
+      console.warn('Configuration missing "defaultQuotationSettings". Using fallback values.');
+      return {
+        companyId: 123,
+        contactPerson: "John Doe",
+        mobileNo: "+1234567890",
+        emailId: "john.doe@acmecorp.com",
+        address: "123 Main St, Springfield",
+        productType: "Fabric",
+        quantity: 100,
+        status: "Draft",
+        createdBy: 1
+      };
+    }
+    return this.config.defaultQuotationSettings;
+  }
 }

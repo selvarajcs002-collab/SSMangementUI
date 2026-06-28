@@ -53,6 +53,12 @@ export class DashboardHomeComponent {
       title: 'Status',
       description: 'View real-time system health, operational metrics, and activity logs',
       route: '/status'
+    },
+    {
+      icon: '📄',
+      title: 'Rate Quotation',
+      description: 'Create and manage price quotations for embroidery designs',
+      route: '/dashboard/rate-quotation/dashboard'
     }
   ];
 }

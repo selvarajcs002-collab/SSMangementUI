@@ -52,7 +52,7 @@ export class DeliveryChallanPrintService {
   constructor(private http: HttpClient, private configService: AppConfigService) { }
 
   generateAndPrint(payload: DcPrintRequest): Observable<ApiResponse<DcPrintResult>> {
-    return this.http.post<ApiResponse<DcPrintResult>>(`${this.baseUrl}/GenerateAndPrintDC`, payload);
+    return this.http.post<ApiResponse<DcPrintResult>>(`${this.baseUrl}/SaveAndPrintDC`, payload);
   }
 
   reprint(payload: DcPrintRequest): Observable<ApiResponse<DcPrintResult>> {

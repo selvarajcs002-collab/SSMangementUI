@@ -1,4 +1,7 @@
+// Production environment configuration
 export const environment = {
   production: true,
-  apiUrl: "http://43.204.223.3:8082/api"
+  // Add any production-specific settings here, e.g., API URLs
+  // Example:
+  // apiUrl: 'https://api.example.com',
 };

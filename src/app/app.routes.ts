@@ -1,3 +1,4 @@
+// Application routes definition
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -59,6 +60,18 @@ export const routes: Routes = [
       {
         path: 'shifts',
         loadComponent: () => import('./admin/shift-management/shift-management.component').then(m => m.ShiftManagementComponent)
+      },
+      { 
+        path: 'rate-quotation/dashboard', 
+        loadComponent: () => import('./features/rate-quotation/dashboard-quotation/dashboard-quotation.component').then(m => m.DashboardQuotationComponent) 
+      },
+      { 
+        path: 'rate-quotation/create', 
+        loadComponent: () => import('./features/rate-quotation/create-quotation/create-quotation.component').then(m => m.CreateQuotationComponent) 
+      },
+      { 
+        path: 'rate-quotation/edit/:id', 
+        loadComponent: () => import('./features/rate-quotation/edit-quotation/edit-quotation.component').then(m => m.EditQuotationComponent) 
       }
     ]
   },

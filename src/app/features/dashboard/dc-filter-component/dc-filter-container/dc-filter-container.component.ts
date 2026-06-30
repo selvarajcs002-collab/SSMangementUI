@@ -117,6 +117,7 @@ export class DcFilterContainerComponent implements OnInit {
       this.tableColumns = [
         { key: 'sno', label: 'S.No' },
         { key: 'date', label: 'Date' },
+        { key: 'companyName', label: 'Company Name' },
         { key: 'styleNo', label: 'Style No' },
         { key: 'designName', label: 'Design Name' },
         { key: 'colour', label: 'Colour' },
@@ -128,6 +129,7 @@ export class DcFilterContainerComponent implements OnInit {
       this.tableColumns = [
         { key: 'sno', label: 'S.No' },
         { key: 'date', label: 'Date' },
+        { key: 'companyName', label: 'Company Name' },
         { key: 'styleNo', label: 'Style No' },
         { key: 'designName', label: 'Design Name' },
         { key: 'colour', label: 'Colour' },
@@ -228,6 +230,7 @@ export class DcFilterContainerComponent implements OnInit {
       return {
         sno: index + 1,
         date: formattedDate,
+        companyName: item.companyName || item.CompanyName || '-',
         styleNo: item.styleNo,
         designName: item.designName,
         colour: item.colour || '-',

@@ -319,38 +319,67 @@ export class DcFilterContainerComponent implements OnInit {
     this.cdr.markForCheck();
 
     if (!id) {
-      this.openOutwardPreview(rawData);
+      this.openOutwardPreview(rawData, rawData);
       return;
     }
 
     this.outwardService.getOutwardByDcNo(id, 'OUTWARD').subscribe({
       next: (res) => {
-        this.openOutwardPreview(res || rawData);
+        this.openOutwardPreview(res || rawData, rawData);
       },
       error: (err) => {
         console.error('View fetch error:', err);
-        this.openOutwardPreview(rawData);
+        this.openOutwardPreview(rawData, rawData);
       }
     });
   }
 
-  private openOutwardPreview(data: any): void {
+  private openOutwardPreview(data: any, rawData?: any): void {
     const companyId = Number(data?.companyId || data?.CompanyId || 0);
 
     if (companyId) {
       this.companyService.getCompanyById(companyId).subscribe({
-        next: (company) => this.navigateToPreview(data, company),
-        error: () => this.navigateToPreview(data, null)
+        next: (company) => this.navigateToPreview(data, company, rawData),
+        error: () => this.navigateToPreview(data, null, rawData)
       });
       return;
     }
 
-    this.navigateToPreview(data, null);
+    this.navigateToPreview(data, null, rawData);
   }
 
-  private navigateToPreview(data: any, company: any): void {
+  private navigateToPreview(data: any, company: any, rawData?: any): void {
     const sizes = this.getSizeRows(data);
     const totalQty = sizes.reduce((sum, item) => sum + item.qty, 0) || Number(data?.count || data?.totalCount || 0);
+
+    let items: any[] = [];
+    const colourBreakdowns = data?.colourBreakdowns || data?.ColourBreakdowns;
+
+    if (colourBreakdowns && Array.isArray(colourBreakdowns) && colourBreakdowns.length > 0) {
+      items = colourBreakdowns.map((cb: any) => {
+        const cbSizes = cb.sizes || cb.Sizes || [];
+        const mappedSizes = cbSizes.map((s: any) => ({
+          label: s.size || s.label || s.sizeName || '',
+          qty: Number(s.count ?? s.qty ?? s.quantity ?? 0)
+        })).filter((s: any) => s.label);
+
+        return {
+          designName: data?.designName || data?.designRef || '',
+          styleNo: data?.styleNo || '',
+          colour: cb.colour || cb.Colour || data?.colourName || data?.colour || '',
+          sizes: mappedSizes,
+          count: mappedSizes.reduce((sum: number, s: any) => sum + s.qty, 0)
+        };
+      });
+    } else {
+      items = [{
+        designName: data?.designName || data?.designRef || '',
+        styleNo: data?.styleNo || '',
+        colour: rawData?.colour && rawData?.colour !== 'MULTI' ? rawData.colour : (data?.colourName || data?.colour || ''),
+        sizes,
+        count: totalQty
+      }];
+    }
 
     const previewData: ChallanData = {
       company: {
@@ -363,13 +392,7 @@ export class DcFilterContainerComponent implements OnInit {
       dcNo: data?.dcNo || data?.outwardDcNo || data?.OutwardDcNo || '-',
       receiverName: company?.companyName || company?.CompanyName || data?.companyName || data?.receiverName || 'Company Name',
       receiverAddress: this.buildReceiverAddress(company, data),
-      items: [{
-        designName: data?.designName || data?.designRef || '',
-        styleNo: data?.styleNo || '',
-        colour: data?.colourName || data?.colour || '',
-        sizes,
-        count: totalQty
-      }],
+      items: items,
       totalQty
     };
 

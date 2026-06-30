@@ -539,12 +539,6 @@ export class OutwardComponent implements OnInit {
       filtered = filtered.filter(x => x.styleNo === this.selectedStyle);
     }
 
-    const isDeliveryChallan = this.outwardForm.get('isDeliveryChallan')?.value;
-    const selectedDcNos = this.outwardForm.get('selectedDcNos')?.value;
-    if (isDeliveryChallan && selectedDcNos && selectedDcNos.length > 0) {
-      filtered = filtered.filter(x => selectedDcNos.includes(x.inwardDcNo));
-    }
-
     if (this.selectedColour && this.selectedColour !== 'MULTI') {
       filtered = filtered.filter(x => x.colour === this.selectedColour);
     }

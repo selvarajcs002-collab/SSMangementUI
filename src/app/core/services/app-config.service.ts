@@ -13,8 +13,9 @@ export class AppConfigService {
 
   public async loadConfig(): Promise<void> {
     try {
+      const cacheBuster = `?t=${new Date().getTime()}`;
       this.config = await firstValueFrom(
-        this.http.get<AppConfig>('/assets/appsettings.json').pipe(
+        this.http.get<AppConfig>(`/assets/appsettings.json${cacheBuster}`).pipe(
           catchError((error: HttpErrorResponse) => {
             console.error('Network or server error while loading appsettings.json', error);
             return throwError(() => new Error(`Failed to load appsettings.json: ${error.message}`));

@@ -101,6 +101,10 @@ export class InwardService {
     return this.api.put<any>('inward/update', payload);
   }
 
+  deleteInward(id: number): Observable<any> {
+    return this.api.delete<any>(`DeliveryChallan/delete-inward/${id}`);
+  }
+
   clearCache(): void {
     this.selectionCache.clear();
   }

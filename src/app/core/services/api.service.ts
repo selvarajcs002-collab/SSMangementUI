@@ -33,4 +33,8 @@ export class ApiService {
   put<T>(url: string, data: unknown): Observable<T> {
     return this.http.put<T>(this.getFullUrl(url), data);
   }
+
+  delete<T>(url: string, params?: any): Observable<T> {
+    return this.http.delete<T>(this.getFullUrl(url), { params });
+  }
 }

@@ -97,6 +97,17 @@ export class InwardService {
     );
   }
 
+  getMasterColours(): Observable<any[]> {
+    const CACHE_KEY = 'master_colours_list';
+    if (this.selectionCache.has(CACHE_KEY as any)) {
+      return of(this.selectionCache.get(CACHE_KEY as any)!);
+    }
+
+    return this.api.get<any[]>('Master/list/colour').pipe(
+      tap(data => this.selectionCache.set(CACHE_KEY as any, data))
+    );
+  }
+
   updateInward(payload: any): Observable<any> {
     return this.api.put<any>('inward/update', payload);
   }

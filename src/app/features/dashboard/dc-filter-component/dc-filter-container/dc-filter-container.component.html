@@ -20,31 +20,24 @@
   <!-- Filter Control Button -->
   <div class="filter-controls" *ngIf="!isLoading">
     <app-excel-report [filters]="excelReportPayload"></app-excel-report>
-    <button class="btn-toggle-filter" (click)="toggleFilter()">
-      <svg *ngIf="showFilter" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+    <button class="btn-toggle-filter" (click)="openFilterDialog()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m18 15-6-6-6 6" />
+        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
       </svg>
-      <svg *ngIf="!showFilter" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m6 9 6 6 6-6" />
-      </svg>
-      {{ showFilter ? 'Hide Filters' : 'Show Filters' }}
+      Filters
     </button>
   </div>
 
+  <!-- New Filter Dialog -->
+  <app-dashboard-filter-dialog 
+    *ngIf="showFilter" 
+    (apply)="closeFilterDialog()" 
+    (cancel)="closeFilterDialog()">
+  </app-dashboard-filter-dialog>
 
-  <!-- Filter Section -->
-  <div class="section-filter card-wrapper" *ngIf="!isLoading && showFilter">
-    <app-dc-filter-component (search)="onSearch($event)"></app-dc-filter-component>
-  </div>
 
-  <!-- View Type Toggle (Size/Meter) -->
-  <div class="view-type-wrapper" *ngIf="!isLoading">
-    <app-dynamic-toggle [config]="viewTypeToggleConfig" [(value)]="currentViewType"
-      (valueChange)="onViewTypeChange($event)">
-    </app-dynamic-toggle>
-  </div>
+
 
   <!-- Table Section -->
   <div class="section-table" *ngIf="!isLoading && tableData.length > 0">

@@ -72,6 +72,10 @@ export const routes: Routes = [
       { 
         path: 'rate-quotation/edit/:id', 
         loadComponent: () => import('./features/rate-quotation/edit-quotation/edit-quotation.component').then(m => m.EditQuotationComponent) 
+      },
+      {
+        path: 'stock-management',
+        loadComponent: () => import('./features/dashboard/StockManagement/stock-management.component').then(m => m.StockManagementComponent)
       }
     ]
   },

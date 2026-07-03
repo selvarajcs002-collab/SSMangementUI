@@ -1,10 +1,10 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { TableColumn } from '../dc-filter-table/dc-filter-table.component';
 
 import { CommonModule } from '@angular/common';
 import { ExcelReportComponent } from '../../../../excel/excel-report.component';
 import { DcFilterHeaderComponent } from '../dc-filter-header/dc-filter-header.component';
-import { DcFilterComponent } from '../dc-filter-component.component';
+import { DashboardFilterDialogComponent } from '../../dashboard-filter-dialog/dashboard-filter-dialog.component';
 import { DcFilterTableComponent } from '../dc-filter-table/dc-filter-table.component';
 import { DynamicToggleComponent, ToggleConfig } from '../../../../shared/components/dynamic-toggle/dynamic-toggle.component';
 import { ApiService } from '../../../../core/services/api.service';
@@ -16,21 +16,25 @@ import { InwardService } from '../../../../core/services/inward.service';
 import { CompanyService } from '../../../../core/services/company.service';
 import { OutwardPreviewService, ChallanData } from '../../../../core/services/outward-preview.service';
 import { StatusFilterService, StatusFilterRequest } from '../../../../core/services/status-filter.service';
+import { DashboardFilterStateService } from '../../../../core/services/dashboard-filter-state.service';
+import { Subscription } from 'rxjs';
 
+// Force Angular compiler to re-evaluate this file
 @Component({
   selector: 'app-dc-filter-container',
   standalone: true,
-  imports: [CommonModule, DcFilterHeaderComponent, DcFilterComponent, DcFilterTableComponent, DynamicToggleComponent, ExcelReportComponent],
+  imports: [CommonModule, DcFilterHeaderComponent, DashboardFilterDialogComponent, DcFilterTableComponent, DynamicToggleComponent, ExcelReportComponent],
   templateUrl: './dc-filter-container.component.html',
   styleUrl: './dc-filter-container.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DcFilterContainerComponent implements OnInit {
+export class DcFilterContainerComponent implements OnInit, OnDestroy {
 
   activeView: string = 'inward';
   currentViewType: string = 'S';
   isLoading: boolean = false;
   showNoDataModal: boolean = false;
+  private filterSub!: Subscription;
 
   toggleConfig: ToggleConfig = {
     type: 'view-switcher',
@@ -48,21 +52,7 @@ export class DcFilterContainerComponent implements OnInit {
     ]
   };
 
-  viewTypeToggleConfig: ToggleConfig = {
-    type: 'view-switcher',
-    options: [
-      {
-        label: 'Size Based',
-        value: 'S',
-        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/></svg>`
-      },
-      {
-        label: 'Meter Based',
-        value: 'M',
-        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>`
-      }
-    ]
-  };
+
 
   tableColumns: TableColumn[] = [];
 
@@ -76,7 +66,7 @@ export class DcFilterContainerComponent implements OnInit {
   currentFilters: any = {};
   Math = Math;
 
-  showFilter: boolean = true;
+  showFilter: boolean = false;
 
   constructor(
     private apiService: ApiService,
@@ -86,13 +76,36 @@ export class DcFilterContainerComponent implements OnInit {
     private outwardPreviewService: OutwardPreviewService,
     private statusFilterService: StatusFilterService,
     private messageService: MessageService,
+    private filterStateService: DashboardFilterStateService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) { }
 
   ngOnInit(): void {
-    this.updateColumns();
-    this.loadData();
+    this.filterSub = this.filterStateService.state$.subscribe(state => {
+      this.currentFilters = state;
+      this.currentViewType = state.mode;
+      this.updateColumns();
+      this.pageNumber = 1;
+      this.loadData();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.filterStateService.resetState();
+    if (this.filterSub) {
+      this.filterSub.unsubscribe();
+    }
+  }
+
+  openFilterDialog(): void {
+    this.showFilter = true;
+    this.cdr.markForCheck();
+  }
+  
+  closeFilterDialog(): void {
+    this.showFilter = false;
+    this.cdr.markForCheck();
   }
 
   toggleFilter(): void {
@@ -102,13 +115,6 @@ export class DcFilterContainerComponent implements OnInit {
   onToggleChange(newMode: string): void {
     this.activeView = newMode;
     this.pageNumber = 1;
-    this.loadData();
-  }
-
-  onViewTypeChange(newType: string): void {
-    this.currentViewType = newType;
-    this.pageNumber = 1;
-    this.updateColumns();
     this.loadData();
   }
 
@@ -151,6 +157,7 @@ export class DcFilterContainerComponent implements OnInit {
     const payload: any = {
       CompanyId: this.currentFilters.companyId ? Number(this.currentFilters.companyId) : null,
       DesignId: this.currentFilters.designName || null,
+      Colour: this.currentFilters.colour || null,
       FromDate: this.currentFilters.fromDate || null,
       ToDate: this.currentFilters.toDate || null,
       PageNumber: this.pageNumber,
@@ -159,7 +166,7 @@ export class DcFilterContainerComponent implements OnInit {
       SortDirection: 'DESC',
       StyleId: this.currentFilters.styleNo || null,
       TransactionType: this.activeView.toUpperCase(),
-      ViewType: this.currentViewType === 'S' ? 'SIZE' : 'METER'
+      ViewType: this.currentViewType === 'S' ? 'SIZE' : (this.currentViewType === 'M' ? 'METER' : 'ALL')
     };
 
     this.statusFilterService.search(payload).subscribe({
@@ -240,12 +247,6 @@ export class DcFilterContainerComponent implements OnInit {
     });
   }
 
-  onSearch(filterPayload: any): void {
-    this.currentFilters = filterPayload;
-    this.pageNumber = 1;
-    this.loadData();
-  }
-
   buildExcelReportPayload(): any {
     const fromDateVal = this.currentFilters.fromDate;
     const toDateVal = this.currentFilters.toDate;
@@ -278,10 +279,11 @@ export class DcFilterContainerComponent implements OnInit {
       fromDate: formattedFromDate,
       toDate: formattedToDate,
       mode: this.activeView === 'inward' ? 'Inward' : 'Outward',
-      type: this.currentViewType === 'S' ? 'Size' : 'Meter',
+      type: this.currentViewType === 'S' ? 'Size' : (this.currentViewType === 'M' ? 'Meter' : 'All'),
       companyId: this.currentFilters.companyId ? Number(this.currentFilters.companyId) : null,
       styleNo: this.currentFilters.styleNo || null,
-      designName: this.currentFilters.designName || null
+      designName: this.currentFilters.designName || null,
+      colour: this.currentFilters.colour || null
     };
   }
 

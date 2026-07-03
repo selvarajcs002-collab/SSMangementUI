@@ -1,39 +1,30 @@
 <div class="dashboard-page animate-fade-in">
   <div class="dashboard-container">
     <!-- Page Header -->
-    <app-section-header 
-      [title]="isEditMode ? 'Edit Inward Entry' : 'Inward Entry'" 
-      [actionText]="isEditMode ? 'Update Entry' : 'Add New'"
-      [actionIcon]="isEditMode ? icons.update : icons.plus"
+    <app-section-header [title]="isEditMode ? 'Edit Inward Entry' : 'Inward Entry'"
+      [actionText]="isEditMode ? 'Update Entry' : 'Add New'" [actionIcon]="isEditMode ? icons.update : icons.plus"
       (actionClick)="!isEditMode && updateModalService.open()">
     </app-section-header>
 
-    <app-alert 
-      *ngIf="alertMessage" 
-      [message]="alertMessage" 
-      [type]="alertType"
-      (close)="alertMessage = null">
+    <app-alert *ngIf="alertMessage" [message]="alertMessage" [type]="alertType" (close)="alertMessage = null">
     </app-alert>
 
     <div class="form-card-wrapper">
       <div class="card inward-card">
         <form [formGroup]="inwardForm" (ngSubmit)="onSubmit()">
-          
+
 
           <!-- Primary Form Fields -->
           <div class="form-grid">
-            
+
             <!-- Company Selection -->
             <div class="input-group">
               <label>Select Company <span class="required">*</span></label>
-              <app-custom-select 
-                formControlName="companyId" 
-                [options]="companies$ | async" 
-                [icon]="icons.company"
-                placeholder="Choose a company..."
-                (change)="onCompanyChange($event)">
+              <app-custom-select formControlName="companyId" [options]="companies$ | async" [icon]="icons.company"
+                placeholder="Choose a company..." (change)="onCompanyChange($event)">
               </app-custom-select>
-              <div class="error-text" *ngIf="inwardForm.get('companyId')?.touched && inwardForm.get('companyId')?.invalid">
+              <div class="error-text"
+                *ngIf="inwardForm.get('companyId')?.touched && inwardForm.get('companyId')?.invalid">
                 Company selection is required
               </div>
             </div>
@@ -43,9 +34,12 @@
               <label>Inward DC No <span class="required">*</span></label>
               <div class="input-wrapper">
                 <span class="input-icon" [innerHTML]="icons.calendar | safeHtml"></span>
-                <input type="text" formControlName="inwardDcNo" placeholder="e.g. DC-2024-001" class="form-control with-icon" [class.invalid]="inwardForm.get('inwardDcNo')?.touched && inwardForm.get('inwardDcNo')?.invalid">
+                <input type="text" formControlName="inwardDcNo" placeholder="e.g. DC-2024-001"
+                  class="form-control with-icon"
+                  [class.invalid]="inwardForm.get('inwardDcNo')?.touched && inwardForm.get('inwardDcNo')?.invalid">
               </div>
-              <div class="error-text" *ngIf="inwardForm.get('inwardDcNo')?.touched && inwardForm.get('inwardDcNo')?.invalid">
+              <div class="error-text"
+                *ngIf="inwardForm.get('inwardDcNo')?.touched && inwardForm.get('inwardDcNo')?.invalid">
                 Inward DC No is required
               </div>
             </div>
@@ -53,28 +47,32 @@
             <!-- Style Number -->
             <div class="input-group">
               <label>Style Number <span class="required">*</span></label>
-              <input type="text" formControlName="styleNo" placeholder="e.g. SN-8820" class="form-control" [class.invalid]="inwardForm.get('styleNo')?.touched && inwardForm.get('styleNo')?.invalid">
+              <input type="text" formControlName="styleNo" placeholder="e.g. SN-8820" class="form-control"
+                [class.invalid]="inwardForm.get('styleNo')?.touched && inwardForm.get('styleNo')?.invalid">
             </div>
 
             <!-- Design Name -->
             <div class="input-group">
               <label>Design Name <span class="required">*</span></label>
-              <input type="text" formControlName="designName" placeholder="e.g. Floral Pattern" class="form-control" [class.invalid]="inwardForm.get('designName')?.touched && inwardForm.get('designName')?.invalid">
+              <input type="text" formControlName="designName" placeholder="e.g. Floral Pattern" class="form-control"
+                [class.invalid]="inwardForm.get('designName')?.touched && inwardForm.get('designName')?.invalid">
             </div>
 
             <!-- Colour -->
-            <div class="input-group">
+            <div class="input-group" *ngIf="inwardForm.get('entryType')?.value === 'M'">
               <label>Colour <span class="required">*</span></label>
               <div class="input-wrapper">
                 <span class="input-icon" [innerHTML]="icons.palette | safeHtml"></span>
-                <input type="text" formControlName="colour" placeholder="e.g. Royal Blue" class="form-control with-icon" [class.invalid]="inwardForm.get('colour')?.touched && inwardForm.get('colour')?.invalid">
+                <input type="text" formControlName="colour" placeholder="e.g. Royal Blue" class="form-control with-icon"
+                  [class.invalid]="inwardForm.get('colour')?.touched && inwardForm.get('colour')?.invalid">
               </div>
             </div>
 
             <!-- PO No -->
             <div class="input-group">
               <label>PO No</label>
-              <input type="text" formControlName="poNo" placeholder="Enter PO No" class="form-control" [class.invalid]="inwardForm.get('poNo')?.touched && inwardForm.get('poNo')?.invalid">
+              <input type="text" formControlName="poNo" placeholder="Enter PO No" class="form-control"
+                [class.invalid]="inwardForm.get('poNo')?.touched && inwardForm.get('poNo')?.invalid">
             </div>
 
 
@@ -83,9 +81,10 @@
           <!-- Upload Design Image Section -->
           <div class="upload-section">
             <label>Design Image</label>
-            <div class="upload-container" [class.has-file]="fileName" [class.disabled]="!isCompanySelected" (click)="!fileName && isCompanySelected && fileInput.click()">
+            <div class="upload-container" [class.has-file]="fileName" [class.disabled]="!isCompanySelected"
+              (click)="!fileName && isCompanySelected && fileInput.click()">
               <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" hidden>
-              
+
               <!-- Placeholder State -->
               <div class="upload-placeholder" *ngIf="!fileName">
                 <span class="upload-icon" [innerHTML]="icons.image | safeHtml"></span>
@@ -98,7 +97,8 @@
               <div class="file-success-badge" *ngIf="fileName">
                 <span class="file-icon" [innerHTML]="icons.check | safeHtml"></span>
                 <span class="file-name-text">{{ fileName }}</span>
-                <button type="button" class="btn-remove-file" (click)="removeImage(); $event.stopPropagation()" title="Remove file">
+                <button type="button" class="btn-remove-file" (click)="removeImage(); $event.stopPropagation()"
+                  title="Remove file">
                   <span [innerHTML]="icons.x | safeHtml"></span>
                 </button>
               </div>
@@ -109,58 +109,172 @@
           <div class="entry-type-section">
             <label class="entry-type-label">Entry Type <span class="required">*</span></label>
             <div class="entry-type-toggle">
-              <button type="button"
-                class="entry-type-btn"
-                [class.active]="inwardForm.get('entryType')?.value === 'S'"
+              <button type="button" class="entry-type-btn" [class.active]="inwardForm.get('entryType')?.value === 'S'"
                 (click)="inwardForm.get('entryType')?.setValue('S')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                  <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
                 </svg>
                 Size Based
               </button>
-              <button type="button"
-                class="entry-type-btn"
-                [class.active]="inwardForm.get('entryType')?.value === 'M'"
+              <button type="button" class="entry-type-btn" [class.active]="inwardForm.get('entryType')?.value === 'M'"
                 (click)="inwardForm.get('entryType')?.setValue('M')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 2a10 10 0 0 1 10 10"/>
-                  <path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22a10 10 0 0 1-10-10"/>
-                  <path d="M2 12h20"/><path d="M12 2v20"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12a10 10 0 0 1 10-10" />
+                  <path d="M12 2a10 10 0 0 1 10 10" />
+                  <path d="M22 12a10 10 0 0 1-10 10" />
+                  <path d="M12 22a10 10 0 0 1-10-10" />
+                  <path d="M2 12h20" />
+                  <path d="M12 2v20" />
                 </svg>
                 Meter Based
               </button>
             </div>
           </div>
 
-          <!-- Dynamic Sizes Section (Visible if Size Based) -->
-          <div class="size-breakdown-section" *ngIf="inwardForm.get('entryType')?.value === 'S'">
-            <div class="section-header-inline">
-              <h3>Sizes <span class="required">*</span></h3>
-              <button type="button" class="btn-add-size" (click)="addSizeRow()" [disabled]="!isCompanySelected">
-                <span class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
-                Add Size
-              </button>
-            </div>
+          <!-- NEW: Modern Size Based Grid (Visible if Size Based) -->
+          <div class="multi-colour-grid-section" *ngIf="inwardForm.get('entryType')?.value === 'S'">
 
-            <div formArrayName="sizes" class="size-list">
-              <div *ngFor="let row of sizes.controls; let i=index" [formGroupName]="i" class="size-row animate-in">
-                <div class="field-col size-label">
-                  <input type="text" formControlName="size" placeholder="Size (e.g. XL)" class="form-control" [class.invalid]="row.get('size')?.touched && row.get('size')?.invalid">
+            <!-- Cards Section -->
+            <div class="cards-layout">
+              <!-- Left Card: Colours -->
+              <div class="config-card">
+                <div class="card-header"
+                  style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div>
+                    <h4>Colours <span class="required">*</span></h4>
+                    <p class="subtitle">Add one or more colours.</p>
+                  </div>
+                  <button type="button" class="btn-add-chip outline" (click)="openAddColourModal()"
+                    [disabled]="!isCompanySelected" style="margin: 0;">
+                    <span class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span> Add Colour
+                  </button>
                 </div>
-                <div class="field-col size-qty">
-                  <input type="number" formControlName="count" placeholder="Qty" class="form-control" [class.invalid]="row.get('count')?.touched && row.get('count')?.invalid">
+                <div class="card-body">
+                  <div class="chip-container">
+                    <div class="chip" *ngFor="let c of colourChips.controls; let i=index">
+                      <span class="chip-dot"></span>
+                      <span class="chip-text">{{ c.value }}</span>
+                      <button type="button" class="btn-remove-chip" (click)="removeColourRow(i)">×</button>
+                    </div>
+                  </div>
                 </div>
-                <button type="button" class="btn-delete-row" (click)="removeSizeRow(i)" [disabled]="sizes.length <= 1" title="Delete row">
-                  <span [innerHTML]="icons.trash | safeHtml"></span>
-                </button>
+              </div>
+
+              <!-- Right Card: Sizes -->
+              <div class="config-card">
+                <div class="card-header"
+                  style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div>
+                    <h4>Sizes <span class="required">*</span></h4>
+                    <p class="subtitle">Add sizes that are applicable.</p>
+                  </div>
+                  <button type="button" class="btn-add-chip outline" (click)="openAddSizeModal()"
+                    [disabled]="!isCompanySelected" style="margin: 0;">
+                    <span class="btn-icon" [innerHTML]="icons.plus | safeHtml"></span> Add Size
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="chip-container">
+                    <div class="chip" *ngFor="let s of sizeChips.controls; let i=index">
+                      <span class="chip-text">{{ s.value }}</span>
+                      <button type="button" class="btn-remove-chip" (click)="removeSizeColumn(i)">×</button>
+                    </div>
+                  </div>
+                  <div class="info-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      class="lucide lucide-info">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 16v-4" />
+                      <path d="M12 8h.01" />
+                    </svg>
+                    You can add any size you need.
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Total Calculation Bar -->
-            <div class="total-summary">
-              <span class="label">Total Inward Quantity:</span>
-              <span class="value">{{ totalQuantity || 0 }}</span>
+            <!-- Dynamic Table Section -->
+            <div class="matrix-table-container mt-4" *ngIf="colourChips.length > 0 && sizeChips.length > 0">
+              <div class="table-header-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                  <path d="M9 14h6"></path>
+                  <path d="M9 10h6"></path>
+                </svg>
+                Enter Size wise Quantity by Colour
+              </div>
+              <div class="table-responsive">
+                <table class="matrix-table">
+                  <thead>
+                    <tr>
+                      <th class="col-index">#</th>
+                      <th class="col-colour">Colour</th>
+                      <th class="col-size" *ngFor="let s of sizeChips.controls; let i=index">
+                        {{ s.value }}
+                      </th>
+                      <th class="col-total">Total Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="matrix">
+                    <tr *ngFor="let row of matrix.controls; let i=index" [formGroupName]="i">
+                      <td class="col-index">{{ i + 1 }}</td>
+                      <td class="col-colour">
+                        <div class="colour-name-wrapper">
+                          <span class="chip-dot"></span>
+                          {{ row.get('colour')?.value }}
+                        </div>
+                      </td>
+                      <td class="col-size" formGroupName="quantities" *ngFor="let s of sizeChips.controls">
+                        <input type="number" [formControlName]="s.value" class="form-control matrix-input"
+                          placeholder="-">
+                      </td>
+                      <td class="col-total">
+                        <span class="total-val">{{ getRowTotal(i) }}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="2" class="footer-label">Total (All Colours)</td>
+                      <td class="col-size footer-val" *ngFor="let s of sizeChips.controls">
+                        {{ columnTotals[s.value] || 0 }}
+                      </td>
+                      <td class="col-total footer-grand-total">{{ grandTotal }}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <div class="table-bottom-actions">
+                <div class="info-text">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-info">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4" />
+                    <path d="M12 8h.01" />
+                  </svg>
+                  You can add or remove colours and sizes before saving.
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty State for Table -->
+            <div class="empty-matrix-state" *ngIf="colourChips.length === 0 || sizeChips.length === 0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="9" y1="21" x2="9" y2="9" />
+              </svg>
+              <p>Please add at least one Colour and one Size to enter quantities.</p>
             </div>
           </div>
 
@@ -169,10 +283,15 @@
             <div class="section-header-inline">
               <div>
                 <h3>Meter Based Entry</h3>
-                <p class="section-desc" style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Enter meter and bits details. System will calculate total meter automatically.</p>
+                <p class="section-desc" style="color: #64748B; font-size: 13px; margin: 4px 0 0 0;">Enter meter and bits
+                  details. System will calculate total meter automatically.</p>
               </div>
               <button type="button" class="btn-add-meter" (click)="addEmptyMeterRow()" [disabled]="!isCompanySelected">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14" />
+                  <path d="M5 12h14" />
+                </svg>
                 Add Meter Row
               </button>
             </div>
@@ -197,21 +316,26 @@
               </div>
 
               <!-- Grid Body -->
-              <div *ngFor="let row of meterDetails.controls; let i=index" [formGroupName]="i" class="meter-row animate-in">
+              <div *ngFor="let row of meterDetails.controls; let i=index" [formGroupName]="i"
+                class="meter-row animate-in">
                 <div class="field-col col-row-num">
                   {{ i + 1 }}
                 </div>
                 <div class="field-col col-meter">
-                  <input type="number" formControlName="meterPerBit" class="form-control" [class.invalid]="row.get('meterPerBit')?.touched && row.get('meterPerBit')?.invalid" step="0.01" min="0.01">
+                  <input type="number" formControlName="meterPerBit" class="form-control"
+                    [class.invalid]="row.get('meterPerBit')?.touched && row.get('meterPerBit')?.invalid" step="0.01"
+                    min="0.01">
                 </div>
                 <div class="field-col col-bits">
-                  <input type="number" formControlName="bitsCount" class="form-control" [class.invalid]="row.get('bitsCount')?.touched && row.get('bitsCount')?.invalid" min="1">
+                  <input type="number" formControlName="bitsCount" class="form-control"
+                    [class.invalid]="row.get('bitsCount')?.touched && row.get('bitsCount')?.invalid" min="1">
                 </div>
                 <div class="field-col col-total">
                   <span class="total-meter-val">{{ row.get('totalMeter')?.value | number:'1.2-2' }}</span>
                 </div>
                 <div class="field-col col-action">
-                  <button type="button" class="btn-delete-row" (click)="removeMeterRow(i)" title="Delete row" [disabled]="meterDetails.length <= 1">
+                  <button type="button" class="btn-delete-row" (click)="removeMeterRow(i)" title="Delete row"
+                    [disabled]="meterDetails.length <= 1">
                     <span [innerHTML]="icons.trash | safeHtml"></span>
                   </button>
                 </div>
@@ -222,7 +346,13 @@
             <div class="meter-summary-container">
               <div class="summary-box">
                 <div class="icon-wrap clipboard-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 14h6"></path><path d="M9 10h6"></path></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <path d="M9 14h6"></path>
+                    <path d="M9 10h6"></path>
+                  </svg>
                 </div>
                 <div class="summary-info">
                   <span class="title">Total Rows</span>
@@ -231,7 +361,14 @@
               </div>
               <div class="summary-box">
                 <div class="icon-wrap bits-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="16" width="18" height="4" rx="1"></rect><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="m8 8-2 8"></path><path d="m16 8-2 8"></path><path d="m12 8-2 8"></path></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="16" width="18" height="4" rx="1"></rect>
+                    <rect x="3" y="4" width="18" height="4" rx="1"></rect>
+                    <path d="m8 8-2 8"></path>
+                    <path d="m16 8-2 8"></path>
+                    <path d="m12 8-2 8"></path>
+                  </svg>
                 </div>
                 <div class="summary-info">
                   <span class="title">Total Bits</span>
@@ -240,7 +377,15 @@
               </div>
               <div class="summary-box">
                 <div class="icon-wrap meter-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 0 1 10-10"></path><path d="M12 2a10 10 0 0 1 10 10"></path><path d="M22 12a10 10 0 0 1-10 10"></path><path d="M12 22a10 10 0 0 1-10-10"></path><path d="M2 12h20"></path><path d="M12 2v20"></path></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12a10 10 0 0 1 10-10"></path>
+                    <path d="M12 2a10 10 0 0 1 10 10"></path>
+                    <path d="M22 12a10 10 0 0 1-10 10"></path>
+                    <path d="M12 22a10 10 0 0 1-10-10"></path>
+                    <path d="M2 12h20"></path>
+                    <path d="M12 2v20"></path>
+                  </svg>
                 </div>
                 <div class="summary-info">
                   <span class="title">Total Meter</span>
@@ -254,13 +399,156 @@
           <div class="form-footer">
             <button type="button" class="btn-cancel" (click)="onCancel()" [disabled]="loading">Cancel</button>
             <button type="submit" class="btn-submit" [disabled]="(inwardForm.invalid && !isEditMode) || loading">
-              <span *ngIf="!loading" class="btn-icon" [innerHTML]="(isEditMode ? icons.update : icons.check) | safeHtml"></span>
+              <span *ngIf="!loading" class="btn-icon"
+                [innerHTML]="(isEditMode ? icons.update : icons.check) | safeHtml"></span>
               <span *ngIf="loading" class="spinner"></span>
-              {{ loading ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Entry' : 'Submit Entry') }}
+              {{ loading ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Entry' : 'Submit Entry')
+              }}
             </button>
           </div>
         </form>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Colours Modal -->
+<div class="modal-overlay" *ngIf="isAddColourModalOpen">
+  <div class="modal-container large-modal">
+    <div class="modal-header">
+      <h3>Add Colours</h3>
+      <button type="button" class="btn-close" (click)="isAddColourModalOpen = false">
+        <span [innerHTML]="icons.x | safeHtml"></span>
+      </button>
+    </div>
+
+    <div class="modal-body modal-scrollable">
+      <div class="input-group">
+        <label>Colour Name <span class="required">*</span></label>
+        <div class="search-add-group">
+          <input type="text" [(ngModel)]="tempColourName" (ngModelChange)="onColourSearchChange()"
+            [ngModelOptions]="{standalone: true}" class="form-control search-input"
+            placeholder="Type colour name or select from list" (keyup.enter)="addTempColour()" autofocus>
+          <button type="button" class="btn-submit" (click)="addTempColour()"
+            [disabled]="!tempColourName.trim()">Add</button>
+        </div>
+      </div>
+
+      <div class="master-colours-section mt-4" style="margin-top: 24px;">
+        <label class="section-label"
+          style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #475569;">Select a
+          colour from the list</label>
+
+        <div class="loading-state" *ngIf="isMasterColoursLoading">
+          <div class="spinner"></div>
+          <span>Loading available colours...</span>
+        </div>
+
+        <div class="empty-state" *ngIf="!isMasterColoursLoading && filteredMasterColours.length === 0">
+          <span>No colours found matching your search. Type a name and click Add.</span>
+        </div>
+
+        <div class="master-chip-grid" *ngIf="!isMasterColoursLoading && filteredMasterColours.length > 0">
+          <div class="master-chip" *ngFor="let c of filteredMasterColours" (click)="selectMasterColour(c)">
+            <div class="chip-content">
+              <span class="chip-dot"></span>
+              <span class="chip-text">{{ c }}</span>
+            </div>
+            <span class="chip-add-icon" [innerHTML]="icons.plus | safeHtml"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="selected-colours-section mt-4"
+        style="margin-top: 24px; border-top: 1px dashed #E2E8F0; padding-top: 16px;" *ngIf="tempColours.length > 0">
+        <label class="section-label"
+          style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #475569;">Selected
+          Colours</label>
+        <div class="chip-container">
+          <div class="chip selected-chip" *ngFor="let tc of tempColours; let i=index">
+            <span class="chip-dot"></span>
+            <span class="chip-text">{{ tc }}</span>
+            <button type="button" class="btn-remove-chip" (click)="removeTempColour(i)">×</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer sticky-footer">
+      <button type="button" class="btn-cancel" (click)="isAddColourModalOpen = false">Cancel</button>
+      <button type="button" class="btn-submit" (click)="confirmAddMultipleColours()"
+        [disabled]="tempColours.length === 0">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Size Modal -->
+<div class="modal-overlay" *ngIf="isAddSizeModalOpen">
+  <div class="modal-container large-modal">
+    <div class="modal-header" style="position: relative;">
+      <div>
+        <h3>Add Size</h3>
+        <p class="subtitle" style="margin: 4px 0 0; color: #64748B; font-size: 13px;">Add one or more sizes to your
+          list.</p>
+      </div>
+      <button type="button" class="btn-close" style="position: absolute; right: 24px; top: 20px;"
+        (click)="isAddSizeModalOpen = false">
+        <span [innerHTML]="icons.x | safeHtml"></span>
+      </button>
+    </div>
+    <div class="modal-body modal-scrollable">
+      <div class="input-group">
+        <label>Add Sizes <span class="required">*</span></label>
+        <div class="search-add-group">
+          <input type="text" [(ngModel)]="tempSizeName" [ngModelOptions]="{standalone: true}"
+            class="form-control search-input" placeholder="e.g. XL, XXL, 16/17, 1/2" (keyup.enter)="addTempSize()"
+            autofocus>
+          <button type="button" class="btn-submit" (click)="addTempSize()"
+            [disabled]="!tempSizeName.trim()">Add</button>
+        </div>
+        <div class="info-text mt-2"
+          style="margin-top: 8px; font-size: 13px; color: #64748B; display: flex; align-items: flex-start; gap: 6px;">
+          <span style="color: var(--primary);">ℹ</span>
+          <div>
+            You can enter any custom size.<br>
+            Examples: <strong>XL, XXL, 16/17, 1/2, 38, FREE SIZE</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="master-colours-section mt-4" style="margin-top: 24px;">
+        <label class="section-label"
+          style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #475569;">Popular
+          Sizes</label>
+
+        <div class="master-chip-grid size-chip-grid">
+          <div class="master-chip size-chip" *ngFor="let s of popularSizes" (click)="selectPopularSize(s)">
+            <div class="chip-content">
+              <span class="chip-text" style="font-weight: 700;">{{ s }}</span>
+            </div>
+            <span class="chip-add-icon" [innerHTML]="icons.plus | safeHtml"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="selected-colours-section mt-4"
+        style="margin-top: 24px; border-top: 1px dashed #E2E8F0; padding-top: 16px;" *ngIf="tempSizes.length > 0">
+        <label class="section-label"
+          style="display: block; margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #475569;">Selected Sizes
+          ({{ tempSizes.length }})</label>
+        <div class="chip-container">
+          <div class="chip selected-chip" *ngFor="let ts of tempSizes; let i=index">
+            <span class="chip-text">{{ ts }}</span>
+            <button type="button" class="btn-remove-chip" (click)="removeTempSize(i)">×</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer sticky-footer">
+      <button type="button" class="btn-cancel" (click)="isAddSizeModalOpen = false">Cancel</button>
+      <button type="button" class="btn-submit" (click)="confirmAddMultipleSizes()"
+        [disabled]="tempSizes.length === 0">Done</button>
     </div>
   </div>
 </div>

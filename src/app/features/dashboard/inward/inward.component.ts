@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, effect } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { CompanyService, CompanySummary } from '../../../core/services/company.service';
 import { InwardService } from '../../../core/services/inward.service';
 import { Observable, map, startWith } from 'rxjs';
@@ -12,12 +12,12 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { UpdateModalService } from '../../../core/services/update-modal.service';
 import { MessageService } from '../../../core/services/message.service';
 import { OutwardService } from '../../../core/services/outward.service';
-import { Subject, takeUntil, take } from 'rxjs';
+import { Subject, takeUntil, take, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-inward',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SectionHeaderComponent, SafeHtmlPipe, AlertComponent, CustomSelectComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SectionHeaderComponent, SafeHtmlPipe, AlertComponent, CustomSelectComponent],
   templateUrl: './inward.component.html',
   styleUrl: './inward.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -30,7 +30,25 @@ export class InwardComponent implements OnInit {
   isCompanySelected: boolean = false;
   isEditMode: boolean = false;
   editId: number | null = null;
-  
+
+  // Matrix Totals
+  grandTotal: number = 0;
+  columnTotals: { [key: string]: number } = {};
+
+  // UI Modals State
+  isAddColourModalOpen: boolean = false;
+  isAddSizeModalOpen: boolean = false;
+  tempColourName: string = '';
+  tempColours: string[] = [];
+  masterColours: string[] = [];
+  filteredMasterColours: string[] = [];
+  isMasterColoursLoading: boolean = false;
+
+  tempSizeName: string = '';
+  tempSizes: string[] = [];
+  popularSizes: string[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'];
+  // tempSizeCode is no longer needed since it's not in the new design, but keep it if anything relies on it.
+
   // Meter-Based Properties
   totalMeterQuantity: number = 0;
   totalBitsQuantity: number = 0;
@@ -135,7 +153,7 @@ export class InwardComponent implements OnInit {
 
   private patchForm(data: any): void {
     this.onCompanyChange(data.companyId);
-    
+
     // Check if it's meter based payload based on response shape, default to 'S'
     const isMeterBased = data.entryType === 'M' || (data.meterDetails && data.meterDetails.length > 0);
 
@@ -165,21 +183,33 @@ export class InwardComponent implements OnInit {
         this.addEmptyMeterRow();
       }
     } else {
-      this.sizes.clear();
+      this.colourChips.clear();
+      this.sizeChips.clear();
+      this.matrix.clear();
+
+      if (data.colour) {
+        this.addColourChip(data.colour);
+      }
+
       if (data.sizeCounts && data.sizeCounts.length > 0) {
         data.sizeCounts.forEach((sc: any) => {
-          const row = this.fb.group({
-            size: [sc.size, Validators.required],
-            count: [sc.count, [Validators.required, Validators.min(1)]]
-          });
-          this.sizes.push(row);
+          this.addSizeChip(sc.size);
         });
-      } else {
-        this.addSizeRow();
+
+        // After adding chips and sizes, set the values
+        if (this.matrix.length > 0) {
+          const firstRow = this.matrix.at(0);
+          const quantitiesGroup = firstRow.get('quantities') as FormGroup;
+          data.sizeCounts.forEach((sc: any) => {
+            if (quantitiesGroup.contains(sc.size)) {
+              quantitiesGroup.get(sc.size)?.setValue(sc.count, { emitEvent: false });
+            }
+          });
+        }
       }
     }
 
-    this.calculateTotal();
+    this.calculateTotals();
     this.calculateMeterTotal();
     this.cdr.markForCheck();
   }
@@ -210,56 +240,270 @@ export class InwardComponent implements OnInit {
     this.inwardForm = this.fb.group({
       entryType: ['S', Validators.required], // 'S' for Size, 'M' for Meter
       companyId: [null, Validators.required],
-      colour: [{ value: '', disabled: true }, Validators.required],
+      colour: [{ value: '', disabled: true }],
       designName: [{ value: '', disabled: true }, Validators.required],
       styleNo: [{ value: '', disabled: true }, Validators.required],
       inwardDcNo: [{ value: '', disabled: true }, Validators.required],
       poNo: [{ value: '', disabled: true }],
       uploadURL: [{ value: '', disabled: true }],
-      sizes: this.fb.array([]),
+      colourChips: this.fb.array([]),
+      sizeChips: this.fb.array([]),
+      matrix: this.fb.array([]),
       meterDetails: this.fb.array([], duplicateMeterValidator)
     });
 
-    this.addSizeRow();
-    
     // Switch validation/view logic based on entry type
     this.inwardForm.get('entryType')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(type => {
       if (type === 'S') {
         this.meterDetails.clear();
-        if (this.sizes.length === 0) this.addSizeRow();
       } else if (type === 'M') {
-        this.sizes.clear();
         if (this.meterDetails.length === 0) this.addEmptyMeterRow();
       }
-      // If we switch, clear the totals
-      this.calculateTotal();
+      this.calculateTotals();
       this.calculateMeterTotal();
       this.cdr.markForCheck();
     });
   }
 
-  get sizes(): FormArray {
-    return this.inwardForm.get('sizes') as FormArray;
+  get colourChips(): FormArray {
+    return this.inwardForm.get('colourChips') as FormArray;
+  }
+
+  get sizeChips(): FormArray {
+    return this.inwardForm.get('sizeChips') as FormArray;
+  }
+
+  get matrix(): FormArray {
+    return this.inwardForm.get('matrix') as FormArray;
   }
 
   get meterDetails(): FormArray {
     return this.inwardForm.get('meterDetails') as FormArray;
   }
 
-  addSizeRow(): void {
-    const row = this.fb.group({
-      size: ['', Validators.required],
-      count: [null, [Validators.required, Validators.min(1)]]
-    });
-    this.sizes.push(row);
+  // --- Dynamic Chip & Matrix Logic ---
+
+  openAddColourModal(): void {
+    if (!this.isCompanySelected) return;
+    this.tempColourName = '';
+    this.tempColours = [];
+    this.isAddColourModalOpen = true;
+    this.loadMasterColours();
   }
 
-  removeSizeRow(index: number): void {
-    if (this.sizes.length > 1) {
-      this.sizes.removeAt(index);
-    } else {
-      this.sizes.at(0).reset();
+  loadMasterColours(): void {
+    if (this.masterColours.length > 0) {
+      this.filteredMasterColours = [...this.masterColours];
+      return;
     }
+
+    this.isMasterColoursLoading = true;
+    // Assuming backend returns an array of objects like { key: 1, value: "Red" } or array of strings
+    this.inwardService.getMasterColours().subscribe({
+      next: (res: any[]) => {
+        // Map based on the expected /Master/list/type response, usually objects with a name/value property
+        // We handle strings directly if it's an array of strings, or extract 'name'/'value'
+        const names = res.map(item => typeof item === 'string' ? item : (item.name || item.value || item.colourName || '')).filter(n => !!n);
+        this.masterColours = [...new Set(names)];
+        this.filteredMasterColours = [...this.masterColours];
+        this.isMasterColoursLoading = false;
+      },
+      error: () => {
+        // Fallback or handle error
+        this.isMasterColoursLoading = false;
+        // Optionally populate some default fallbacks if API fails
+        this.masterColours = ['Red', 'Navy', 'Bottle Green', 'Maroon', 'Black', 'White', 'Yellow', 'Brown', 'Orange', 'Green', 'Grey', 'Sky Blue'];
+        this.filteredMasterColours = [...this.masterColours];
+      }
+    });
+  }
+
+  onColourSearchChange(): void {
+    const query = (this.tempColourName || '').toLowerCase().trim();
+    if (!query) {
+      this.filteredMasterColours = [...this.masterColours];
+      return;
+    }
+    this.filteredMasterColours = this.masterColours.filter(c => c.toLowerCase().includes(query));
+  }
+
+  addTempColour(): void {
+    const rawVal = (this.tempColourName || '').trim();
+    if (!rawVal) {
+      return;
+    }
+
+    // Support comma-separated pasting
+    const values = rawVal.split(',').map(v => v.trim().toUpperCase()).filter(v => !!v);
+    let addedCount = 0;
+    let duplicateFound = false;
+
+    for (const val of values) {
+      // Case insensitive duplicate check against main grid and temp list
+      const existsInMain = this.colourChips.controls.some(c => c.value.toLowerCase() === val.toLowerCase());
+      const existsInTemp = this.tempColours.some(c => c.toLowerCase() === val.toLowerCase());
+
+      if (existsInMain || existsInTemp) {
+        duplicateFound = true;
+      } else {
+        this.tempColours.push(val);
+        addedCount++;
+      }
+    }
+
+    if (duplicateFound && addedCount === 0) {
+      this.showAlert('Colour(s) already added', 'error');
+    }
+
+    this.tempColourName = '';
+    this.onColourSearchChange(); // reset filter
+  }
+
+  selectMasterColour(colour: string): void {
+    this.tempColourName = colour;
+    this.addTempColour();
+  }
+
+  removeTempColour(index: number): void {
+    this.tempColours.splice(index, 1);
+  }
+
+  confirmAddMultipleColours(): void {
+    if (this.tempColourName.trim()) {
+      this.addTempColour();
+    }
+
+    this.tempColours.forEach(c => {
+      this.addColourChip(c);
+    });
+    this.isAddColourModalOpen = false;
+  }
+
+  addColourChip(colour: string): void {
+    this.colourChips.push(this.fb.control(colour));
+
+    const quantitiesGroup = this.fb.group({});
+    // Add existing sizes to the new colour row
+    this.sizeChips.controls.forEach(sizeCtrl => {
+      quantitiesGroup.addControl(sizeCtrl.value, this.fb.control('', [Validators.min(0)]));
+    });
+
+    this.matrix.push(this.fb.group({
+      colour: [colour],
+      quantities: quantitiesGroup
+    }));
+
+    this.calculateTotals();
+    this.cdr.markForCheck();
+  }
+
+  removeColourRow(index: number): void {
+    const row = this.matrix.at(index);
+    const hasValues = Object.values(row.value.quantities || {}).some(v => v !== null && v !== '' && Number(v) > 0);
+
+    if (hasValues) {
+      if (!confirm('This colour contains entered quantities. Continue?')) return;
+    } else if (this.colourChips.length === 1) {
+      if (!confirm('Are you sure you want to remove the last colour?')) return;
+    }
+
+    this.colourChips.removeAt(index);
+    this.matrix.removeAt(index);
+    this.calculateTotals();
+  }
+
+  openAddSizeModal(): void {
+    if (!this.isCompanySelected) return;
+    this.tempSizeName = '';
+    this.tempSizes = [];
+    this.isAddSizeModalOpen = true;
+  }
+
+  addTempSize(): void {
+    const rawVal = (this.tempSizeName || '').trim();
+    if (!rawVal) {
+      return;
+    }
+
+    const values = rawVal.split(',').map(v => v.trim().toUpperCase()).filter(v => !!v);
+    let addedCount = 0;
+    let duplicateFound = false;
+
+    for (const val of values) {
+      const existsInMain = this.sizeChips.controls.some(c => c.value.toLowerCase() === val.toLowerCase());
+      const existsInTemp = this.tempSizes.some(c => c.toLowerCase() === val.toLowerCase());
+
+      if (existsInMain || existsInTemp) {
+        duplicateFound = true;
+      } else {
+        this.tempSizes.push(val);
+        addedCount++;
+      }
+    }
+
+    if (duplicateFound && addedCount === 0) {
+      this.showAlert('Size(s) already added', 'error');
+    }
+
+    this.tempSizeName = '';
+  }
+
+  selectPopularSize(size: string): void {
+    this.tempSizeName = size;
+    this.addTempSize();
+  }
+
+  removeTempSize(index: number): void {
+    this.tempSizes.splice(index, 1);
+  }
+
+  confirmAddMultipleSizes(): void {
+    if (this.tempSizeName.trim()) {
+      this.addTempSize();
+    }
+
+    this.tempSizes.forEach(s => {
+      this.addSizeChip(s);
+    });
+    this.isAddSizeModalOpen = false;
+  }
+
+  addSizeChip(size: string): void {
+    this.sizeChips.push(this.fb.control(size));
+
+    // Add the new size control to all existing colour rows
+    this.matrix.controls.forEach(row => {
+      const qGroup = row.get('quantities') as FormGroup;
+      qGroup.addControl(size, this.fb.control('', [Validators.min(0)]));
+    });
+
+    this.calculateTotals();
+    this.cdr.markForCheck();
+  }
+
+  removeSizeColumn(sizeIndex: number): void {
+    const sizeName = this.sizeChips.at(sizeIndex).value;
+
+    // Check if any row has quantity for this size
+    let hasValues = false;
+    this.matrix.controls.forEach(row => {
+      const qty = row.value.quantities[sizeName];
+      if (qty !== null && qty !== '' && Number(qty) > 0) hasValues = true;
+    });
+
+    if (hasValues) {
+      if (!confirm('This size contains entered quantities. Continue?')) return;
+    } else if (this.sizeChips.length === 1) {
+      if (!confirm('Are you sure you want to remove the last size?')) return;
+    }
+
+    this.sizeChips.removeAt(sizeIndex);
+    this.matrix.controls.forEach(row => {
+      const qGroup = row.get('quantities') as FormGroup;
+      qGroup.removeControl(sizeName);
+    });
+
+    this.calculateTotals();
   }
 
   addEmptyMeterRow(): void {
@@ -280,9 +524,8 @@ export class InwardComponent implements OnInit {
   }
 
   private trackChanges(): void {
-    // Auto sum counts
-    this.sizes.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.calculateTotal();
+    this.matrix.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.calculateTotals();
     });
 
     this.meterDetails.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
@@ -290,7 +533,7 @@ export class InwardComponent implements OnInit {
         const bits = val.bitsCount || 0;
         const meter = val.meterPerBit || 0;
         const total = bits * meter;
-        
+
         const control = this.meterDetails.at(index).get('totalMeter');
         if (control?.value !== total) {
           control?.setValue(total, { emitEvent: false });
@@ -313,11 +556,35 @@ export class InwardComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  calculateTotal(): void {
-    this.totalQuantity = this.sizes.controls.reduce((sum, control) => {
-      const count = control.get('count')?.value || 0;
-      return sum + Number(count);
-    }, 0);
+  calculateTotals(): void {
+    this.grandTotal = 0;
+    this.columnTotals = {};
+
+    this.sizeChips.controls.forEach(s => {
+      this.columnTotals[s.value] = 0;
+    });
+
+    this.matrix.controls.forEach(row => {
+      const qGroup = row.get('quantities') as FormGroup;
+      let rowTot = 0;
+      this.sizeChips.controls.forEach(s => {
+        const val = Number(qGroup.get(s.value)?.value) || 0;
+        rowTot += val;
+        this.columnTotals[s.value] += val;
+      });
+      this.grandTotal += rowTot;
+    });
+  }
+
+  getRowTotal(rowIndex: number): number {
+    let tot = 0;
+    const qGroup = this.matrix.at(rowIndex).get('quantities') as FormGroup;
+    if (qGroup) {
+      this.sizeChips.controls.forEach(s => {
+        tot += Number(qGroup.get(s.value)?.value) || 0;
+      });
+    }
+    return tot;
   }
 
   calculateMeterTotal(): void {
@@ -336,14 +603,14 @@ export class InwardComponent implements OnInit {
 
   onSubmit(): void {
     const entryType = this.inwardForm.get('entryType')?.value;
-    
+
     // Additional Validation for Meter Based
     if (entryType === 'M') {
       if (this.meterDetails.length === 0) {
         this.showAlert('Please add at least one meter row.', 'error');
         return;
       }
-      
+
       let valid = true;
       let duplicateMeters = false;
       const meters = new Set();
@@ -369,6 +636,30 @@ export class InwardComponent implements OnInit {
         this.inwardForm.markAllAsTouched();
         return;
       }
+    } else {
+      // Validate Size Based Matrix
+      if (this.colourChips.length === 0) {
+        this.showAlert('Please add at least one colour.', 'error');
+        return;
+      }
+      if (this.sizeChips.length === 0) {
+        this.showAlert('Please add at least one size.', 'error');
+        return;
+      }
+
+      let hasAnyQuantity = false;
+      this.matrix.controls.forEach(row => {
+        const qGroup = row.get('quantities') as FormGroup;
+        this.sizeChips.controls.forEach(s => {
+          const val = Number(qGroup.get(s.value)?.value) || 0;
+          if (val > 0) hasAnyQuantity = true;
+        });
+      });
+
+      if (!hasAnyQuantity) {
+        this.showAlert('Please enter at least one quantity greater than zero.', 'error');
+        return;
+      }
     }
 
     if (this.inwardForm.invalid && !this.isEditMode) {
@@ -381,37 +672,107 @@ export class InwardComponent implements OnInit {
     const formVal = this.inwardForm.getRawValue();
 
     if (this.isEditMode) {
-      const updatePayload = {
-        inward_id: this.editId!,
-        company_id: Number(formVal.companyId),
-        colour: formVal.colour,
-        design_name: formVal.designName,
-        style_no: formVal.styleNo,
-        inward_dc_no: formVal.inwardDcNo,
-        po_no: formVal.poNo,
-        updated_by: userId,
-        entry_type: entryType,
-        sizes: entryType === 'S' ? formVal.sizes : [],
-        meter_details: entryType === 'M' ? formVal.meterDetails.map((md: any) => ({
+      if (entryType === 'M') {
+        const updatePayload = {
+          inward_id: this.editId!,
+          company_id: Number(formVal.companyId),
+          colour: formVal.colour,
+          design_name: formVal.designName,
+          style_no: formVal.styleNo,
+          inward_dc_no: formVal.inwardDcNo,
+          po_no: formVal.poNo,
+          updated_by: userId,
+          entry_type: 'M',
+          sizes: [],
+          meter_details: formVal.meterDetails.map((md: any) => ({
             meterValue: Number(md.meterPerBit),
             bitsCount: Number(md.bitsCount),
             totalMeter: Number(md.meterPerBit) * Number(md.bitsCount)
-        })) : []
-      };
+          }))
+        };
 
-      this.inwardService.updateInward(updatePayload).subscribe({
-        next: (res) => {
+        this.inwardService.updateInward(updatePayload).subscribe({
+          next: (res) => {
+            this.loading = false;
+            this.messageService.success('Entry updated successfully!');
+            this.router.navigate(['/dashboard/delivery-challan']);
+            this.cdr.markForCheck();
+          },
+          error: (err) => {
+            this.loading = false;
+            this.messageService.error('Failed to update entry');
+            this.cdr.markForCheck();
+          }
+        });
+      } else {
+        // Edit Mode: Size Based
+        const requests: Observable<any>[] = [];
+
+        formVal.matrix.forEach((row: any, index: number) => {
+          const sizesToSave: any[] = [];
+          this.sizeChips.controls.forEach(s => {
+            const qty = Number(row.quantities[s.value]);
+            if (qty > 0) {
+              sizesToSave.push({ size: s.value, count: qty });
+            }
+          });
+
+          if (sizesToSave.length > 0) {
+            if (index === 0) {
+              // Update the original entry
+              const updatePayload = {
+                inward_id: this.editId!,
+                company_id: Number(formVal.companyId),
+                colour: row.colour,
+                design_name: formVal.designName,
+                style_no: formVal.styleNo,
+                inward_dc_no: formVal.inwardDcNo,
+                po_no: formVal.poNo,
+                updated_by: userId,
+                entry_type: 'S',
+                sizes: sizesToSave,
+                meter_details: []
+              };
+              requests.push(this.inwardService.updateInward(updatePayload));
+            } else {
+              // Any additional colours added during edit should be created
+              const savePayload = {
+                inward: {
+                  companyId: Number(formVal.companyId),
+                  colour: row.colour,
+                  designName: formVal.designName,
+                  styleNo: formVal.styleNo,
+                  inwardDcNo: formVal.inwardDcNo,
+                  poNo: formVal.poNo,
+                  uploadURL: this.fileName || '',
+                  createdBy: userId
+                },
+                sizes: sizesToSave
+              };
+              requests.push(this.inwardService.saveInward(savePayload));
+            }
+          }
+        });
+
+        if (requests.length > 0) {
+          forkJoin(requests).subscribe({
+            next: () => {
+              this.loading = false;
+              this.messageService.success('Entry updated successfully!');
+              this.router.navigate(['/dashboard/delivery-challan']);
+              this.cdr.markForCheck();
+            },
+            error: () => {
+              this.loading = false;
+              this.messageService.error('Failed to update entry');
+              this.cdr.markForCheck();
+            }
+          });
+        } else {
           this.loading = false;
-          this.messageService.success('Entry updated successfully!');
-          this.router.navigate(['/dashboard/delivery-challan']);
-          this.cdr.markForCheck();
-        },
-        error: (err) => {
-          this.loading = false;
-          this.messageService.error('Failed to update entry');
-          this.cdr.markForCheck();
+          this.messageService.error('No quantities entered');
         }
-      });
+      }
     } else {
       if (entryType === 'M') {
         const meterPayload = {
@@ -430,7 +791,7 @@ export class InwardComponent implements OnInit {
             totalMeter: Number(md.meterPerBit) * Number(md.bitsCount)
           }))
         };
-        
+
         this.inwardService.saveMeterInward(meterPayload).subscribe({
           next: () => {
             this.loading = false;
@@ -446,33 +807,54 @@ export class InwardComponent implements OnInit {
         });
 
       } else {
-        const payload = {
-          inward: {
-            companyId: Number(formVal.companyId),
-            colour: formVal.colour,
-            designName: formVal.designName,
-            styleNo: formVal.styleNo,
-            inwardDcNo: formVal.inwardDcNo,
-            poNo: formVal.poNo,
-            uploadURL: this.fileName || '',
-            createdBy: userId
-          },
-          sizes: formVal.sizes
-        };
+        // Size Based: New Entry (Multi-Colour)
+        const requests: Observable<any>[] = [];
 
-        this.inwardService.saveInward(payload).subscribe({
-          next: () => {
-            this.loading = false;
-            this.messageService.success('Saved Successfully');
-            this.resetForm();
-            this.cdr.markForCheck();
-          },
-          error: () => {
-            this.loading = false;
-            this.messageService.error('Something went wrong');
-            this.cdr.markForCheck();
+        formVal.matrix.forEach((row: any) => {
+          const sizesToSave: any[] = [];
+          this.sizeChips.controls.forEach(s => {
+            const qty = Number(row.quantities[s.value]);
+            if (qty > 0) {
+              sizesToSave.push({ size: s.value, count: qty });
+            }
+          });
+
+          if (sizesToSave.length > 0) {
+            const payload = {
+              inward: {
+                companyId: Number(formVal.companyId),
+                colour: row.colour,
+                designName: formVal.designName,
+                styleNo: formVal.styleNo,
+                inwardDcNo: formVal.inwardDcNo,
+                poNo: formVal.poNo,
+                uploadURL: this.fileName || '',
+                createdBy: userId
+              },
+              sizes: sizesToSave
+            };
+            requests.push(this.inwardService.saveInward(payload));
           }
         });
+
+        if (requests.length > 0) {
+          forkJoin(requests).subscribe({
+            next: () => {
+              this.loading = false;
+              this.messageService.success('Saved Successfully');
+              this.resetForm();
+              this.cdr.markForCheck();
+            },
+            error: () => {
+              this.loading = false;
+              this.messageService.error('Something went wrong');
+              this.cdr.markForCheck();
+            }
+          });
+        } else {
+          this.loading = false;
+          this.messageService.error('Please enter at least one quantity.');
+        }
       }
     }
   }
@@ -488,17 +870,18 @@ export class InwardComponent implements OnInit {
   private resetForm(): void {
     const defaultEntry = this.inwardForm.get('entryType')?.value || 'S';
     this.inwardForm.reset({ entryType: defaultEntry });
-    
+
     // Lock fields back down
     const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL', 'poNo'];
     fields.forEach(f => this.inwardForm.get(f)?.disable());
     this.isCompanySelected = false;
 
-    this.sizes.clear();
-    this.addSizeRow();
-    
+    this.colourChips.clear();
+    this.sizeChips.clear();
+    this.matrix.clear();
+
     this.meterDetails.clear();
-    
+
     this.fileName = null;
     this.imagePreview = null;
     this.totalQuantity = 0;
@@ -512,7 +895,7 @@ export class InwardComponent implements OnInit {
     if (file) {
       this.fileName = file.name;
       this.inwardForm.patchValue({ uploadURL: file.name });
-      
+
       const reader = new FileReader();
       reader.onload = () => {
         this.imagePreview = reader.result as string;

@@ -1,0 +1,158 @@
+<div class="dialog-backdrop animate-fade-in" (click)="onBackdropClick($event)" (keydown.escape)="onCancel()" tabindex="0">
+  <div class="dialog-container animate-scale-in" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="dialog-header">
+      <div class="header-content">
+        <div class="icon-wrapper" [innerHTML]="icons.filter | safeHtml"></div>
+        <div class="title-group">
+          <h2 class="title">Dashboard Filters</h2>
+          <p class="subtitle">Filter the dashboard summary and reports</p>
+        </div>
+      </div>
+      <button class="btn-close" (click)="onCancel()" [innerHTML]="icons.close | safeHtml" aria-label="Close"></button>
+    </div>
+
+    <!-- Body -->
+    <div class="dialog-body" [formGroup]="filterForm">
+      
+      <!-- Section 1: Dropdowns -->
+      <div class="form-grid dropdown-section">
+        <!-- Company -->
+        <div class="form-group">
+          <label class="form-label">Company</label>
+          <app-custom-select 
+            formControlName="companyId" 
+            [options]="(companies$ | async) || []" 
+            placeholder="Select Company" 
+            [icon]="icons.company"
+            (valueChange)="onCompanyChange($event)">
+          </app-custom-select>
+        </div>
+
+        <!-- Style No -->
+        <div class="form-group">
+          <label class="form-label">Style No</label>
+          <app-custom-select 
+            formControlName="styleNo" 
+            [options]="styleOptions" 
+            valueKey="key" 
+            labelKey="value"
+            placeholder="Select Style" 
+            [icon]="icons.style">
+          </app-custom-select>
+        </div>
+
+        <!-- Design Name -->
+        <div class="form-group">
+          <label class="form-label">Design Name</label>
+          <app-custom-select 
+            formControlName="designName" 
+            [options]="designOptions" 
+            valueKey="key" 
+            labelKey="value"
+            placeholder="Select Design" 
+            [icon]="icons.design">
+          </app-custom-select>
+        </div>
+
+        <!-- Colour -->
+        <div class="form-group">
+          <label class="form-label">Colour</label>
+          <app-custom-select 
+            formControlName="colour" 
+            [options]="colourOptions" 
+            valueKey="key" 
+            labelKey="value"
+            placeholder="Select Colour" 
+            [icon]="icons.colour">
+          </app-custom-select>
+        </div>
+      </div>
+
+      <!-- Section 2 & 3: Mode and Dates -->
+      <div class="form-grid bottom-section">
+        <!-- Mode -->
+        <div class="form-group mode-group">
+          <label class="form-label">
+            Mode
+            <span class="info-icon" title="Select tracking mode" [innerHTML]="icons.info | safeHtml"></span>
+          </label>
+          <div class="radio-group-squares">
+            <label class="radio-square" [class.active]="filterForm.get('mode')?.value === 'S'">
+              <input type="radio" formControlName="mode" value="S">
+              <div class="square-top">
+                <span class="custom-radio"></span>
+                <span class="radio-icon size-icon" [innerHTML]="icons.size | safeHtml"></span>
+              </div>
+              <span class="square-text">Size</span>
+            </label>
+            <label class="radio-square" [class.active]="filterForm.get('mode')?.value === 'M'">
+              <input type="radio" formControlName="mode" value="M">
+              <div class="square-top">
+                <span class="custom-radio"></span>
+                <span class="radio-icon meter-icon" [innerHTML]="icons.meter | safeHtml"></span>
+              </div>
+              <span class="square-text">Meter</span>
+            </label>
+            <label class="radio-square" [class.active]="filterForm.get('mode')?.value === 'ALL'">
+              <input type="radio" formControlName="mode" value="ALL">
+              <div class="square-top">
+                <span class="custom-radio"></span>
+                <span class="radio-icon all-icon" [innerHTML]="icons.all | safeHtml"></span>
+              </div>
+              <span class="square-text">All</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="form-group date-group">
+          <label class="form-label">From Date</label>
+          <app-date-picker 
+            formControlName="fromDate">
+          </app-date-picker>
+        </div>
+        
+        <div class="form-group date-group">
+          <label class="form-label">To Date</label>
+          <app-date-picker 
+            formControlName="toDate">
+          </app-date-picker>
+        </div>
+      </div>
+
+      <!-- Note Section -->
+      <div class="info-banner">
+        <div class="info-icon-large">
+          <div class="solid-info">i</div>
+        </div>
+        <div class="info-content">
+          <h4>Note</h4>
+          <p>Total Inward/Outward Qty will not be affected by date filters.</p>
+          <p>Today's Inward/Outward Qty will always consider today's date.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="dialog-footer">
+      <button class="btn-reset" (click)="onReset()">
+        <span class="icon" [innerHTML]="icons.reset | safeHtml"></span>
+        Reset
+      </button>
+      <div class="action-buttons">
+        <button class="btn-cancel" (click)="onCancel()">
+          <span class="icon" [innerHTML]="icons.close | safeHtml"></span>
+          Cancel
+        </button>
+        <button class="btn-apply" (click)="onApply()">
+          <span class="icon" [innerHTML]="icons.filter | safeHtml"></span>
+          Apply Filters
+        </button>
+      </div>
+    </div>
+    
+  </div>
+</div>

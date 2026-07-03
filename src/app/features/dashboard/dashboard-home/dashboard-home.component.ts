@@ -59,6 +59,12 @@ export class DashboardHomeComponent {
       title: 'Rate Quotation',
       description: 'Create and manage price quotations for embroidery designs',
       route: '/dashboard/rate-quotation/dashboard'
+    },
+    {
+      icon: '📦',
+      title: 'Stock Management',
+      description: 'View stock balances and track last transactions',
+      route: '/dashboard/stock-management'
     }
   ];
 }

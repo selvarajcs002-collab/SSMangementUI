@@ -123,6 +123,7 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
       this.tableColumns = [
         { key: 'sno', label: 'S.No' },
         { key: 'date', label: 'Date' },
+        { key: 'companyName', label: 'Company Name' },
         { key: 'styleNo', label: 'Style No' },
         { key: 'designName', label: 'Design Name' },
         { key: 'colour', label: 'Colour' },
@@ -134,6 +135,7 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
       this.tableColumns = [
         { key: 'sno', label: 'S.No' },
         { key: 'date', label: 'Date' },
+        { key: 'companyName', label: 'Company Name' },
         { key: 'styleNo', label: 'Style No' },
         { key: 'designName', label: 'Design Name' },
         { key: 'colour', label: 'Colour' },
@@ -235,6 +237,7 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
       return {
         sno: index + 1,
         date: formattedDate,
+        companyName: item.companyName || item.CompanyName || '-',
         styleNo: item.styleNo,
         designName: item.designName,
         colour: item.colour || '-',
@@ -481,8 +484,32 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
   }
 
   onDelete(row: any): void {
+    if (this.activeView !== 'inward') {
+      this.messageService.error('Deletion is only supported for Inward records from this interface.');
+      return;
+    }
+
+    const id = row.fullData?.id || row.fullData?.Id;
+    if (!id) {
+      this.messageService.error('Invalid ID for deletion');
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this log?')) {
-      console.log('Deleted row:', row);
+      this.inwardService.deleteInward(id).subscribe({
+        next: (res) => {
+          if (res && res.status) {
+            this.messageService.success(res.message || 'Deleted successfully');
+            this.loadData();
+          } else {
+            this.messageService.error(res?.message || 'Failed to delete record');
+          }
+        },
+        error: (err) => {
+          const errMsg = err.error?.message || 'Failed to delete record';
+          this.messageService.error(errMsg);
+        }
+      });
     }
   }
 }

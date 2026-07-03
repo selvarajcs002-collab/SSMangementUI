@@ -1,4 +1,4 @@
-/* === RESPONSIVE REFACTORING ANALYSIS ===
+﻿/* === RESPONSIVE REFACTORING ANALYSIS ===
  * Original Issues Found:
  - Fixed `min-width` can cause overflow if the screen is narrower than the value.
  *
@@ -257,3 +257,83 @@
     cursor: default;
   }
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.column-toggle-wrapper {
+  position: relative;
+}
+
+.settings-btn {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  color: #64748B;
+  
+  &:hover {
+    background: #F1F5F9;
+    color: #3B82F6;
+    border-color: #CBD5E1;
+  }
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  z-index: 50;
+  padding: 8px 0;
+  animation: dropdown-fade 0.2s ease;
+
+  .dropdown-header {
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #F1F5F9;
+    margin-bottom: 4px;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #F8FAFC;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #3B82F6;
+      cursor: pointer;
+    }
+
+    span {
+      font-size: 14px;
+      color: #1E293B;
+      font-weight: 500;
+    }
+  }
+}
+
+@keyframes dropdown-fade {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+

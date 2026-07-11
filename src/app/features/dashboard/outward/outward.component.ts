@@ -342,24 +342,24 @@ export class OutwardComponent implements OnInit {
 
   private fetchAvailableQuantitiesForEdit(data: any): void {
     const isDcFlow = data.selectedDcNos && data.selectedDcNos.length > 0;
-    
+
     for (let cIndex = 0; cIndex < this.colourBreakdowns.length; cIndex++) {
       const colourGroup = this.colourBreakdowns.at(cIndex);
       const colourName = colourGroup.get('colourName')?.value;
       const sizeArray = colourGroup.get('sizeBreakdowns') as FormArray;
-      
+
       if (!colourName) continue;
-      
+
       if (isDcFlow) {
         this.inwardService.getInwardDetailsByDcs(data.companyId, data.selectedDcNos, colourName).subscribe({
           next: (res: any) => {
             if (res && res.success && res.data && Array.isArray(res.data.sizes)) {
               const availableMap = new Map<string, number>();
               res.data.sizes.forEach((item: any) => {
-                 const sizeName = (item.size || item.sizeName || '').toString().toUpperCase();
-                 if (!availableMap.has(sizeName)) {
-                   availableMap.set(sizeName, Number(item.availableQty ?? item.count ?? 0));
-                 }
+                const sizeName = (item.size || item.sizeName || '').toString().toUpperCase();
+                if (!availableMap.has(sizeName)) {
+                  availableMap.set(sizeName, Number(item.availableQty ?? item.count ?? 0));
+                }
               });
               this.updateAvailableQuantities(sizeArray, availableMap);
             }
@@ -371,8 +371,8 @@ export class OutwardComponent implements OnInit {
             if (res && res.length > 0) {
               const availableMap = new Map<string, number>();
               res.forEach(item => {
-                 const sizeName = (item.size || '').toUpperCase();
-                 availableMap.set(sizeName, Number(item.availableQty ?? 0));
+                const sizeName = (item.size || '').toUpperCase();
+                availableMap.set(sizeName, Number(item.availableQty ?? 0));
               });
               this.updateAvailableQuantities(sizeArray, availableMap);
             }
@@ -387,13 +387,13 @@ export class OutwardComponent implements OnInit {
       const sizeGroup = sizeArray.at(i);
       const sizeName = sizeGroup.get('sizeName')?.value?.toUpperCase();
       const currentQty = Number(sizeGroup.get('quantity')?.value || 0);
-      
+
       if (sizeName) {
-         const currentAvailable = availableMap.get(sizeName) || 0;
-         const maxAvailableForEdit = currentAvailable + currentQty;
-         sizeGroup.get('availableQty')?.setValue(maxAvailableForEdit, { emitEvent: false });
-         sizeGroup.get('quantity')?.setValidators([Validators.required, Validators.min(0), Validators.max(maxAvailableForEdit)]);
-         sizeGroup.get('quantity')?.updateValueAndValidity({ emitEvent: false });
+        const currentAvailable = availableMap.get(sizeName) || 0;
+        const maxAvailableForEdit = currentAvailable + currentQty;
+        sizeGroup.get('availableQty')?.setValue(maxAvailableForEdit, { emitEvent: false });
+        sizeGroup.get('quantity')?.setValidators([Validators.required, Validators.min(0), Validators.max(maxAvailableForEdit)]);
+        sizeGroup.get('quantity')?.updateValueAndValidity({ emitEvent: false });
       }
     }
     this.cdr.markForCheck();
@@ -467,16 +467,16 @@ export class OutwardComponent implements OnInit {
         this.selectedCompany = res.company;
         this.fullDcData = [];
 
-        this.designOptions = [...new Set(res.options.map((x: any) => x.designName))];
-        this.styleOptions = [...new Set(res.options.map((x: any) => x.styleNo))];
-        this.colourOptions = [...new Set(res.options.map((x: any) => x.colour))];
+        this.designOptions = this.getUniqueStrings(res.options, (x: any) => x.designName);
+        this.styleOptions = this.getUniqueStrings(res.options, (x: any) => x.styleNo);
+        this.colourOptions = this.getUniqueStrings(res.options, (x: any) => x.colour);
 
         if (!this.colourOptions.includes('MULTI')) {
-            this.colourOptions.push('MULTI');
+          this.colourOptions.push('MULTI');
         }
 
         if (!isEditMode) {
-            this.dcNoOptions = [];
+          this.dcNoOptions = [];
         }
 
         // Populate Delivery To Locations from Company
@@ -498,15 +498,15 @@ export class OutwardComponent implements OnInit {
 
         // In edit mode, ensure the currently selected values exist in options even if they were filtered out
         if (isEditMode) {
-            const currentVals = this.outwardForm.getRawValue();
-            if (currentVals.designRef && !this.designOptions.includes(currentVals.designRef)) this.designOptions.push(currentVals.designRef);
-            if (currentVals.styleNo && !this.styleOptions.includes(currentVals.styleNo)) this.styleOptions.push(currentVals.styleNo);
-            if (currentVals.colour && !this.colourOptions.includes(currentVals.colour)) this.colourOptions.push(currentVals.colour);
-            if (currentVals.selectedDcNos && currentVals.selectedDcNos.length > 0) {
-                currentVals.selectedDcNos.forEach((dc: string) => {
-                    if (!this.dcNoOptions.includes(dc)) this.dcNoOptions.push(dc);
-                });
-            }
+          const currentVals = this.outwardForm.getRawValue();
+          if (currentVals.designRef && !this.designOptions.includes(currentVals.designRef)) this.designOptions.push(currentVals.designRef);
+          if (currentVals.styleNo && !this.styleOptions.includes(currentVals.styleNo)) this.styleOptions.push(currentVals.styleNo);
+          if (currentVals.colour && !this.colourOptions.includes(currentVals.colour)) this.colourOptions.push(currentVals.colour);
+          if (currentVals.selectedDcNos && currentVals.selectedDcNos.length > 0) {
+            currentVals.selectedDcNos.forEach((dc: string) => {
+              if (!this.dcNoOptions.includes(dc)) this.dcNoOptions.push(dc);
+            });
+          }
         }
 
         this.isDataLoaded = true;
@@ -543,9 +543,9 @@ export class OutwardComponent implements OnInit {
       filtered = filtered.filter(x => x.colour === this.selectedColour);
     }
 
-    this.designOptions = [...new Set(filtered.map(x => x.designName))];
-    this.styleOptions = [...new Set(filtered.map(x => x.styleNo))];
-    this.colourOptions = [...new Set(filtered.map(x => x.colour))];
+    this.designOptions = this.getUniqueStrings(filtered, (x: any) => x.designName);
+    this.styleOptions = this.getUniqueStrings(filtered, (x: any) => x.styleNo);
+    this.colourOptions = this.getUniqueStrings(filtered, (x: any) => x.colour);
 
     if (!this.colourOptions.includes('MULTI')) {
       this.colourOptions.push('MULTI');
@@ -1536,5 +1536,22 @@ export class OutwardComponent implements OnInit {
     this.outwardForm.get(field)?.setValue('');
     (this.tempAdditionalDetails as any)[field] = '';
     this.cdr.markForCheck();
+  }
+
+  private getUniqueStrings(items: any[], selector: (item: any) => any): string[] {
+    const map = new Map<string, string>();
+    items.forEach(item => {
+      const val = selector(item);
+      if (val) {
+        const str = val.toString().trim();
+        if (str) {
+          const lower = str.toLowerCase();
+          if (!map.has(lower)) {
+            map.set(lower, str);
+          }
+        }
+      }
+    });
+    return Array.from(map.values());
   }
 }

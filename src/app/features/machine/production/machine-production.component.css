@@ -154,7 +154,7 @@
 
 /* KPI Section */
 .kpi-section { padding: 32px 40px; }
-.kpi-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 16px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
 
 .kpi-card { background: white; border-radius: 20px; transition: all 0.3s; cursor: pointer; }
 .kpi-card:hover { transform: translateY(-6px); }
@@ -353,7 +353,7 @@
 
 /* Detail Modal Styles */
 .detail-modal { max-width: 800px; }
-.detail-grid { display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
 .detail-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 .detail-kpi { background: #f8fafc; padding: 16px; border-radius: 16px; display: flex; flex-direction: column; gap: 4px; }
 .detail-kpi label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
@@ -391,7 +391,7 @@
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
 /* Responsive Adjustments */
-@media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+/* Responsive Adjustments */
 @media (max-width: 992px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .form-grid { grid-template-columns: repeat(2, 1fr); }

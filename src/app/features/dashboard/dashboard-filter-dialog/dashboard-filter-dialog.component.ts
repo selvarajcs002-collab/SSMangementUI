@@ -113,16 +113,26 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
     this.inwardService.getDesignStyleColour(companyId).subscribe({
       next: (data) => {
         if (data && data.length > 0) {
-          const styles = Array.from(new Set(data.map(item => item.styleNo?.toString().trim())))
-            .filter(Boolean).map(style => ({ key: style, value: style }));
-          const designs = Array.from(new Set(data.map(item => item.designName?.toString().trim())))
-            .filter(Boolean).map(design => ({ key: design, value: design }));
-          const colours = Array.from(new Set(data.map(item => (item.colourName || item.colour)?.toString().trim())))
-            .filter(Boolean).map(colour => ({ key: colour, value: colour }));
+          const getUniqueOptions = (items: any[], selector: (item: any) => any) => {
+            const map = new Map<string, string>();
+            items.forEach(item => {
+              const val = selector(item);
+              if (val) {
+                const str = val.toString().trim();
+                if (str) {
+                  const lower = str.toLowerCase();
+                  if (!map.has(lower)) {
+                    map.set(lower, str);
+                  }
+                }
+              }
+            });
+            return Array.from(map.values()).map(val => ({ key: val, value: val }));
+          };
 
-          this.styleOptions = styles;
-          this.designOptions = designs;
-          this.colourOptions = colours;
+          this.styleOptions = getUniqueOptions(data, item => item.styleNo);
+          this.designOptions = getUniqueOptions(data, item => item.designName);
+          this.colourOptions = getUniqueOptions(data, item => item.colourName || item.colour);
         } else {
           this.styleOptions = [];
           this.designOptions = [];

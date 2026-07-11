@@ -37,7 +37,6 @@
 .inward-card {
   width: 100%;
   max-width: 100%;
-  max-width: 880px;
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
@@ -113,9 +112,13 @@
 // ── Form Grid ─────────────────────────────────────────────────────────────────
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px 32px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
+  gap: 24px 32px;
   margin-bottom: 32px;
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 768px) {
@@ -186,7 +189,6 @@
   transition: all 0.2s ease;
   min-height: 80px;
   max-width: 100%;
-  max-width: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -405,6 +407,7 @@
   .col-row-num {
     width: 50px;
     flex-shrink: 0;
+    text-align: center;
   }
 
   .col-meter,
@@ -413,6 +416,7 @@
     flex: 2;
     display: flex;
     flex-direction: column;
+    padding: 0 12px;
 
     small {
       color: #64748B;
@@ -420,6 +424,11 @@
       font-size: 11px;
       margin-top: 4px;
     }
+  }
+
+  .col-total {
+    align-items: center;
+    text-align: center;
   }
 
   .col-action {
@@ -1103,7 +1112,7 @@
 .modal-container {
   background: white;
   width: 100%;
-  max-width: 400px;
+  max-width: 90vw;
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideDownFade 0.3s ease-out;
@@ -1168,7 +1177,7 @@
   }
 
   &.large-modal {
-    max-width: 700px;
+    max-width: 80vw;
   }
 }
 
@@ -1293,6 +1302,16 @@
       border-color: var(--primary);
       box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1), 0 2px 4px -1px rgba(14, 165, 233, 0.06);
       transform: translateY(-1px);
+
+      .chip-add-icon {
+        opacity: 1;
+        color: var(--primary);
+      }
+    }
+
+    &.selected {
+      border-color: var(--primary);
+      background-color: rgba(14, 165, 233, 0.05);
 
       .chip-add-icon {
         opacity: 1;

@@ -12,12 +12,13 @@
         <p>{{ summary.totalInwardQty | number }}</p>
       </div>
       <div class="card-footer" [ngClass]="summary.totalInwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small" [innerHTML]="(summary.totalInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span class="icon-small"
+          [innerHTML]="(summary.totalInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
         <span>{{ summary.totalInwardPercent }}%</span>
         <span class="footer-text">vs last month</span>
       </div>
     </div>
-    
+
     <div class="card">
       <div class="card-icon bg-green">
         <span class="icon" [innerHTML]="icons.upload | safeHtml"></span>
@@ -27,12 +28,13 @@
         <p>{{ summary.totalOutwardQty | number }}</p>
       </div>
       <div class="card-footer" [ngClass]="summary.totalOutwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small" [innerHTML]="(summary.totalOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span class="icon-small"
+          [innerHTML]="(summary.totalOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
         <span>{{ summary.totalOutwardPercent }}%</span>
         <span class="footer-text">vs last month</span>
       </div>
     </div>
-    
+
     <div class="card">
       <div class="card-icon bg-purple">
         <span class="icon" [innerHTML]="icons.boxes | safeHtml"></span>
@@ -42,12 +44,13 @@
         <p>{{ summary.availableStock | number }}</p>
       </div>
       <div class="card-footer" [ngClass]="summary.availableStockPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small" [innerHTML]="(summary.availableStockPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span class="icon-small"
+          [innerHTML]="(summary.availableStockPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
         <span>{{ summary.availableStockPercent }}%</span>
         <span class="footer-text">vs last month</span>
       </div>
     </div>
-    
+
     <div class="card">
       <div class="card-icon bg-orange">
         <span class="icon" [innerHTML]="icons.calendarOrange | safeHtml"></span>
@@ -57,12 +60,13 @@
         <p>{{ summary.todaysInward | number }}</p>
       </div>
       <div class="card-footer" [ngClass]="summary.todaysInwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small" [innerHTML]="(summary.todaysInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span class="icon-small"
+          [innerHTML]="(summary.todaysInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
         <span>{{ summary.todaysInwardPercent }}%</span>
         <span class="footer-text">vs yesterday</span>
       </div>
     </div>
-    
+
     <div class="card">
       <div class="card-icon bg-teal">
         <span class="icon" [innerHTML]="icons.calendarTeal | safeHtml"></span>
@@ -72,12 +76,13 @@
         <p>{{ summary.todaysOutward | number }}</p>
       </div>
       <div class="card-footer" [ngClass]="summary.todaysOutwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small" [innerHTML]="(summary.todaysOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span class="icon-small"
+          [innerHTML]="(summary.todaysOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
         <span>{{ summary.todaysOutwardPercent }}%</span>
         <span class="footer-text">vs yesterday</span>
       </div>
     </div>
-    
+
     <div class="card card-alert">
       <div class="card-icon bg-red">
         <span class="icon" [innerHTML]="icons.alertTriangle | safeHtml"></span>
@@ -119,23 +124,23 @@
           </button>
         </div>
       </div>
-      
+
       <div class="stock-balance-content" *ngIf="isStockBalanceVisible">
         <div class="sub-header">
-          <span><strong>Company:</strong> {{ getDisplayCompanyName() }}</span>
-          <span><strong>Style:</strong> {{ getDisplayValue('styleNo') }}</span>
-          <span><strong>Design:</strong> {{ getDisplayValue('designName') }}</span>
-          <span><strong>Color:</strong> {{ getDisplayValue('colour') }}</span>
+          <span><strong>Company:</strong> {{ getDisplayCompanyName()        }}</span>
+          <span><strong>Style:</strong>   {{ getDisplayValue('styleNo')     }}</span>
+          <span><strong>Design:</strong> {{ getDisplayValue('designName')   }}</span>
+          <span><strong>Color:</strong>  {{ getDisplayValue('colour')        }}</span>
         </div>
 
         <div class="table-container">
           <table class="styled-table">
             <thead>
               <tr>
-                <th class="text-left">Size</th>
-                <th class="text-center">Total Inward</th>
-                <th class="text-center">Total Outward</th>
-                <th class="text-center">Available</th>
+                <th class="text-left"> Size </th>
+                <th class="text-center">Total Inward </th>
+                <th class="text-center">Total Outward </th>
+                <th class="text-center">Available </th>
                 <th class="text-center">Difference (In - Out)</th>
               </tr>
             </thead>
@@ -163,9 +168,10 @@
               </ng-template>
             </tbody>
           </table>
-          
+
           <div class="pagination" *ngIf="stockBalanceData.length > 0">
-            <div class="page-info">Showing {{ (sbPageNumber - 1) * sbPageSize + 1 }} to {{ (sbPageNumber - 1) * sbPageSize + sbPaginatedData.length }} of {{ stockBalanceData.length }} entries</div>
+            <div class="page-info">Showing {{ (sbPageNumber - 1) * sbPageSize + 1 }} to {{ (sbPageNumber - 1) *
+              sbPageSize + sbPaginatedData.length }} of {{ stockBalanceData.length }} entries</div>
             <div class="page-controls-wrapper">
               <div class="page-controls-new">
                 <button type="button" (click)="sbPrevPage()" [disabled]="sbPageNumber === 1">&lt;</button>
@@ -189,7 +195,7 @@
         </div>
         <div class="mini-card">
           <h5>Total Outward</h5>
-          <p class="text-red font-bold">{{ sbTotalOutward | number }}</p>
+          <p class="text-red  font-bold">{{ sbTotalOutward | number }}</p>
           <span>Pcs</span>
         </div>
         <div class="mini-card">
@@ -198,13 +204,13 @@
           <span>Pcs</span>
         </div>
       </div>
-      
+
       <div class="summary-difference" *ngIf="isStockBalanceVisible">
         <h5>Difference (Inward - Outward)</h5>
         <p class="text-green font-bold">+{{ sbTotalDifference | number }}</p>
         <span>Pcs</span>
       </div>
-      
+
       <div class="hidden-placeholder" *ngIf="!isStockBalanceVisible">
         <span class="icon-large text-muted" [innerHTML]="icons.eyeOff | safeHtml"></span>
         <p class="text-muted">Click View icon to load stock details.</p>
@@ -277,15 +283,17 @@
           </ng-template>
         </tbody>
       </table>
-      
+
       <!-- Pagination -->
       <div class="pagination" *ngIf="transactionsData.length > 0">
-        <div class="page-info">Showing {{ (ltPageNumber - 1) * ltPageSize + 1 }} to {{ (ltPageNumber - 1) * ltPageSize + ltPaginatedData.length }} of {{ transactionsData.length }} entries</div>
+        <div class="page-info">Showing {{ (ltPageNumber - 1) * ltPageSize + 1 }} to {{ (ltPageNumber - 1) * ltPageSize +
+          ltPaginatedData.length }} of {{ transactionsData.length }} entries</div>
         <div class="page-controls-wrapper">
           <div class="page-controls-new">
             <button type="button" (click)="ltPrevPage()" [disabled]="ltPageNumber === 1">&lt;</button>
             <ng-container *ngFor="let p of [].constructor(ltTotalPages); let i = index">
-              <button type="button" [class.active]="ltPageNumber === (i + 1)" (click)="ltPageNumber = (i + 1); updateLTPagination()">
+              <button type="button" [class.active]="ltPageNumber === (i + 1)"
+                (click)="ltPageNumber = (i + 1); updateLTPagination()">
                 {{ i + 1 }}
               </button>
             </ng-container>
@@ -363,8 +371,5 @@
 </div>
 
 <!-- Filter Modal -->
-<app-dashboard-filter-dialog 
-  *ngIf="isFilterModalOpen" 
-  (apply)="closeFilterModal()" 
-  (cancel)="closeFilterModal()">
+<app-dashboard-filter-dialog *ngIf="isFilterModalOpen" (apply)="closeFilterModal()" (cancel)="closeFilterModal()">
 </app-dashboard-filter-dialog>

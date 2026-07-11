@@ -51,7 +51,7 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
           <!-- Basic Details Section -->
           <app-section-header title="Basic Details" [icon]="icons.building"></app-section-header>
           
-          <app-grid-layout gap="20px">
+          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
             <ng-container *ngIf="mode === 'update'; else addNameTemplate">
               <app-select-field
                 label="Company Name"
@@ -62,7 +62,6 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
                 [icon]="icons.building"
                 [error]="getErrorMessage('companyId')"
                 (change)="onCompanyChange($event)"
-                gridColumn="1 / span 2"
               ></app-select-field>
             </ng-container>
 
@@ -73,7 +72,6 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
                 formControlName="companyName"
                 [required]="true"
                 [icon]="icons.building"
-                gridColumn="1 / span 2"
               ></app-input-field>
               <div *ngIf="companyForm.controls['companyName'].touched && companyForm.controls['companyName'].invalid" class="text-red-500 text-xs mt-1">
                 Company Name is required
@@ -86,7 +84,6 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
               formControlName="phoneNumber"
               [required]="false"
               [icon]="icons.phone"
-              gridColumn="1 / span 1"
             ></app-input-field>
 
             <app-input-field
@@ -96,11 +93,10 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
               [required]="true"
               [icon]="icons.hash"
               [error]="getErrorMessage('gst_No')"
-              gridColumn="2 / span 1"
             ></app-input-field>
 
           <!-- Delivery To Locations (Kendo Chip Style) -->
-          <div class="delivery-to-section" style="grid-column: 1 / span 2; margin-top: 10px;">
+          <div class="delivery-to-section" style="grid-column: 1 / -1; margin-top: 10px;">
             <label style="font-size: 14px; font-weight: 500; color: var(--text-main); margin-bottom: 8px; display: block;">Delivery To Locations</label>
             
             <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px;">
@@ -137,7 +133,7 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
           <!-- Address Information Section -->
           <app-section-header title="Address Information" [icon]="icons.mapPin"></app-section-header>
           
-          <app-grid-layout gap="20px" columns="1fr 2.5fr">
+          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
             <app-input-field
               label="Door No"
               placeholder="e.g. 402/A"
@@ -157,7 +153,7 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
             ></app-input-field>
           </app-grid-layout>
 
-          <app-grid-layout gap="20px" columns="1fr">
+          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
             <app-input-field
               label="Nearby / Landmark"
               placeholder="e.g. Near City Center"
@@ -167,7 +163,7 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
             ></app-input-field>
           </app-grid-layout>
 
-          <app-grid-layout gap="20px" columns="1.5fr 1fr">
+          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
              <app-input-field
               label="City"
               placeholder="Enter city"
@@ -227,7 +223,6 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
       box-shadow: var(--shadow-soft);
       padding: 40px;
       width: 100%;
-      max-width: 680px;
       border: 1px solid var(--border);
     }
 

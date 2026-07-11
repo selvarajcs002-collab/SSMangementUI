@@ -35,7 +35,7 @@
 
 .outward-card {
   width: 100%;
-  max-width: 100%; max-width: 880px;
+  max-width: 100%;
   background: var(--bg-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
@@ -50,8 +50,8 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px 32px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
+  gap: 24px 32px;
   margin-bottom: 32px;
 
   .full-width {
@@ -160,7 +160,7 @@ select.form-control {
   background: #FAFAFA;
   transition: all 0.2s ease;
   min-height: 80px;
-  max-width: 100%; max-width: 400px;
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -883,7 +883,7 @@ select.form-control {
   background: var(--surface-card);
   border-radius: 12px;
   width: 100%;
-  max-width: 100%; max-width: 500px;
+  max-width: 90vw;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;

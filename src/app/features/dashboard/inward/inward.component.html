@@ -29,6 +29,18 @@
               </div>
             </div>
 
+            <!-- Inward Date -->
+            <div class="input-group">
+              <label>Inward Date <span class="required">*</span></label>
+              <app-date-picker 
+                formControlName="inwardDate"
+                [error]="(inwardForm.get('inwardDate')?.touched && inwardForm.get('inwardDate')?.invalid) || false">
+              </app-date-picker>
+              <div class="error-text" *ngIf="inwardForm.get('inwardDate')?.touched && inwardForm.get('inwardDate')?.invalid">
+                Inward Date is required
+              </div>
+            </div>
+
             <!-- Inward DC No -->
             <div class="input-group">
               <label>Inward DC No <span class="required">*</span></label>
@@ -449,12 +461,14 @@
         </div>
 
         <div class="master-chip-grid" *ngIf="!isMasterColoursLoading && filteredMasterColours.length > 0">
-          <div class="master-chip" *ngFor="let c of filteredMasterColours" (click)="selectMasterColour(c)">
+          <div class="master-chip" *ngFor="let c of filteredMasterColours" (click)="selectMasterColour(c)"
+               [class.selected]="isColourSelected(c)">
             <div class="chip-content">
               <span class="chip-dot"></span>
               <span class="chip-text">{{ c }}</span>
             </div>
-            <span class="chip-add-icon" [innerHTML]="icons.plus | safeHtml"></span>
+            <span class="chip-add-icon" *ngIf="!isColourSelected(c)" [innerHTML]="icons.plus | safeHtml"></span>
+            <span class="chip-add-icon" *ngIf="isColourSelected(c)" [innerHTML]="icons.check | safeHtml"></span>
           </div>
         </div>
       </div>
@@ -522,11 +536,13 @@
           Sizes</label>
 
         <div class="master-chip-grid size-chip-grid">
-          <div class="master-chip size-chip" *ngFor="let s of popularSizes" (click)="selectPopularSize(s)">
+          <div class="master-chip size-chip" *ngFor="let s of popularSizes" (click)="selectPopularSize(s)"
+               [class.selected]="isSizeSelected(s)">
             <div class="chip-content">
               <span class="chip-text" style="font-weight: 700;">{{ s }}</span>
             </div>
-            <span class="chip-add-icon" [innerHTML]="icons.plus | safeHtml"></span>
+            <span class="chip-add-icon" *ngIf="!isSizeSelected(s)" [innerHTML]="icons.plus | safeHtml"></span>
+            <span class="chip-add-icon" *ngIf="isSizeSelected(s)" [innerHTML]="icons.check | safeHtml"></span>
           </div>
         </div>
       </div>

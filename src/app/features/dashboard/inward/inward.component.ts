@@ -13,11 +13,12 @@ import { UpdateModalService } from '../../../core/services/update-modal.service'
 import { MessageService } from '../../../core/services/message.service';
 import { OutwardService } from '../../../core/services/outward.service';
 import { Subject, takeUntil, take, forkJoin } from 'rxjs';
+import { AppDatePickerComponent } from '../../../shared/components/app-date-picker/app-date-picker.component';
 
 @Component({
   selector: 'app-inward',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, SectionHeaderComponent, SafeHtmlPipe, AlertComponent, CustomSelectComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, SectionHeaderComponent, SafeHtmlPipe, AlertComponent, CustomSelectComponent, AppDatePickerComponent],
   templateUrl: './inward.component.html',
   styleUrl: './inward.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -158,6 +159,7 @@ export class InwardComponent implements OnInit {
     const isMeterBased = data.entryType === 'M' || (data.meterDetails && data.meterDetails.length > 0);
 
     this.inwardForm.patchValue({
+      inwardDate: data.inwardDate ? new Date(data.inwardDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       entryType: isMeterBased ? 'M' : 'S',
       companyId: data.companyId,
       colour: data.colour,
@@ -167,6 +169,13 @@ export class InwardComponent implements OnInit {
       poNo: data.poNo || '',
       uploadURL: data.uploadURL
     }, { emitEvent: false });
+    
+    // Explicitly handle colour state since we patched with emitEvent: false
+    if (isMeterBased && data.companyId) {
+      this.inwardForm.get('colour')?.enable();
+    } else {
+      this.inwardForm.get('colour')?.disable();
+    }
 
     if (isMeterBased) {
       this.meterDetails.clear();
@@ -225,6 +234,23 @@ export class InwardComponent implements OnInit {
     }, 0);
   }
 
+  private getUniqueStrings(items: any[], selector: (item: any) => any): string[] {
+    const map = new Map<string, string>();
+    items.forEach(item => {
+      const val = selector(item);
+      if (val) {
+        const str = val.toString().trim();
+        if (str) {
+          const lower = str.toLowerCase();
+          if (!map.has(lower)) {
+            map.set(lower, str);
+          }
+        }
+      }
+    });
+    return Array.from(map.values());
+  }
+
   private initForm(): void {
     const duplicateMeterValidator = (control: any) => {
       const formArray = control as FormArray;
@@ -237,7 +263,9 @@ export class InwardComponent implements OnInit {
       return null;
     };
 
+    const today = new Date().toISOString().split('T')[0];
     this.inwardForm = this.fb.group({
+      inwardDate: [{ value: today, disabled: true }, Validators.required],
       entryType: ['S', Validators.required], // 'S' for Size, 'M' for Meter
       companyId: [null, Validators.required],
       colour: [{ value: '', disabled: true }],
@@ -256,8 +284,12 @@ export class InwardComponent implements OnInit {
     this.inwardForm.get('entryType')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(type => {
       if (type === 'S') {
         this.meterDetails.clear();
+        this.inwardForm.get('colour')?.disable();
       } else if (type === 'M') {
         if (this.meterDetails.length === 0) this.addEmptyMeterRow();
+        if (this.isCompanySelected) {
+          this.inwardForm.get('colour')?.enable();
+        }
       }
       this.calculateTotals();
       this.calculateMeterTotal();
@@ -286,7 +318,7 @@ export class InwardComponent implements OnInit {
   openAddColourModal(): void {
     if (!this.isCompanySelected) return;
     this.tempColourName = '';
-    this.tempColours = [];
+    this.tempColours = [...this.colourChips.value];
     this.isAddColourModalOpen = true;
     this.loadMasterColours();
   }
@@ -304,7 +336,7 @@ export class InwardComponent implements OnInit {
         // Map based on the expected /Master/list/type response, usually objects with a name/value property
         // We handle strings directly if it's an array of strings, or extract 'name'/'value'
         const names = res.map(item => typeof item === 'string' ? item : (item.name || item.value || item.colourName || '')).filter(n => !!n);
-        this.masterColours = [...new Set(names)];
+        this.masterColours = this.getUniqueStrings(names, x => x);
         this.filteredMasterColours = [...this.masterColours];
         this.isMasterColoursLoading = false;
       },
@@ -359,12 +391,32 @@ export class InwardComponent implements OnInit {
     this.onColourSearchChange(); // reset filter
   }
 
+  isColourSelected(colour: string): boolean {
+    return this.tempColours.some(c => c.toLowerCase() === colour.toLowerCase());
+  }
+
   selectMasterColour(colour: string): void {
-    this.tempColourName = colour;
-    this.addTempColour();
+    const index = this.tempColours.findIndex(c => c.toLowerCase() === colour.toLowerCase());
+    if (index >= 0) {
+      this.removeTempColour(index);
+    } else {
+      this.tempColourName = colour;
+      this.addTempColour();
+    }
   }
 
   removeTempColour(index: number): void {
+    const colourToRemove = this.tempColours[index];
+    const existingIndex = this.colourChips.value.findIndex((c: string) => c.toLowerCase() === colourToRemove.toLowerCase());
+    
+    if (existingIndex >= 0) {
+      const row = this.matrix.at(existingIndex);
+      const hasValues = Object.values(row.value.quantities || {}).some(v => v !== null && v !== '' && Number(v) > 0);
+      if (hasValues) {
+        if (!confirm('This colour contains entered quantities in the grid. Removing it will delete those quantities. Continue?')) return;
+      }
+    }
+    
     this.tempColours.splice(index, 1);
   }
 
@@ -373,9 +425,24 @@ export class InwardComponent implements OnInit {
       this.addTempColour();
     }
 
+    // Remove unselected colours
+    for (let i = this.colourChips.length - 1; i >= 0; i--) {
+      const c = this.colourChips.at(i).value;
+      if (!this.tempColours.some(tc => tc.toLowerCase() === c.toLowerCase())) {
+        this.colourChips.removeAt(i);
+        this.matrix.removeAt(i);
+      }
+    }
+
+    // Add new colours
     this.tempColours.forEach(c => {
-      this.addColourChip(c);
+      const exists = this.colourChips.value.some((ext: string) => ext.toLowerCase() === c.toLowerCase());
+      if (!exists) {
+        this.addColourChip(c);
+      }
     });
+    
+    this.calculateTotals();
     this.isAddColourModalOpen = false;
   }
 
@@ -415,7 +482,7 @@ export class InwardComponent implements OnInit {
   openAddSizeModal(): void {
     if (!this.isCompanySelected) return;
     this.tempSizeName = '';
-    this.tempSizes = [];
+    this.tempSizes = [...this.sizeChips.value];
     this.isAddSizeModalOpen = true;
   }
 
@@ -448,12 +515,39 @@ export class InwardComponent implements OnInit {
     this.tempSizeName = '';
   }
 
+  isSizeSelected(size: string): boolean {
+    return this.tempSizes.some(s => s.toLowerCase() === size.toLowerCase());
+  }
+
   selectPopularSize(size: string): void {
-    this.tempSizeName = size;
-    this.addTempSize();
+    const index = this.tempSizes.findIndex(s => s.toLowerCase() === size.toLowerCase());
+    if (index >= 0) {
+      this.removeTempSize(index);
+    } else {
+      this.tempSizeName = size;
+      this.addTempSize();
+    }
   }
 
   removeTempSize(index: number): void {
+    const sizeToRemove = this.tempSizes[index];
+    const existingIndex = this.sizeChips.value.findIndex((s: string) => s.toLowerCase() === sizeToRemove.toLowerCase());
+    
+    if (existingIndex >= 0) {
+       let hasValues = false;
+       for (let i = 0; i < this.matrix.length; i++) {
+         const row = this.matrix.at(i);
+         const val = row.get('quantities')?.get(sizeToRemove)?.value;
+         if (val !== null && val !== '' && Number(val) > 0) {
+           hasValues = true;
+           break;
+         }
+       }
+       if (hasValues) {
+         if (!confirm(`Size '${sizeToRemove}' has entered quantities. Removing it will delete those quantities. Continue?`)) return;
+       }
+    }
+    
     this.tempSizes.splice(index, 1);
   }
 
@@ -462,9 +556,26 @@ export class InwardComponent implements OnInit {
       this.addTempSize();
     }
 
+    // Remove unselected sizes
+    for (let i = this.sizeChips.length - 1; i >= 0; i--) {
+      const s = this.sizeChips.at(i).value;
+      if (!this.tempSizes.some(ts => ts.toLowerCase() === s.toLowerCase())) {
+        this.sizeChips.removeAt(i);
+        this.matrix.controls.forEach(row => {
+          (row.get('quantities') as FormGroup).removeControl(s);
+        });
+      }
+    }
+
+    // Add new sizes
     this.tempSizes.forEach(s => {
-      this.addSizeChip(s);
+      const exists = this.sizeChips.value.some((ext: string) => ext.toLowerCase() === s.toLowerCase());
+      if (!exists) {
+        this.addSizeChip(s);
+      }
     });
+    
+    this.calculateTotals();
     this.isAddSizeModalOpen = false;
   }
 
@@ -547,8 +658,14 @@ export class InwardComponent implements OnInit {
     if (companyId) {
       this.isCompanySelected = true;
       // Enable dependent fields
-      const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL', 'poNo'];
+      const fields = ['inwardDate', 'designName', 'styleNo', 'inwardDcNo', 'poNo', 'uploadURL'];
       fields.forEach(f => this.inwardForm.get(f)?.enable());
+      
+      if (this.inwardForm.get('entryType')?.value === 'M') {
+        this.inwardForm.get('colour')?.enable();
+      } else {
+        this.inwardForm.get('colour')?.disable();
+      }
     } else {
       this.isCompanySelected = false;
       this.resetForm();
@@ -676,6 +793,7 @@ export class InwardComponent implements OnInit {
         const updatePayload = {
           inward_id: this.editId!,
           company_id: Number(formVal.companyId),
+          inward_date: formVal.inwardDate,
           colour: formVal.colour,
           design_name: formVal.designName,
           style_no: formVal.styleNo,
@@ -723,6 +841,7 @@ export class InwardComponent implements OnInit {
               const updatePayload = {
                 inward_id: this.editId!,
                 company_id: Number(formVal.companyId),
+                inward_date: formVal.inwardDate,
                 colour: row.colour,
                 design_name: formVal.designName,
                 style_no: formVal.styleNo,
@@ -739,6 +858,7 @@ export class InwardComponent implements OnInit {
               const savePayload = {
                 inward: {
                   companyId: Number(formVal.companyId),
+                  inwardDate: formVal.inwardDate,
                   colour: row.colour,
                   designName: formVal.designName,
                   styleNo: formVal.styleNo,
@@ -778,6 +898,7 @@ export class InwardComponent implements OnInit {
         const meterPayload = {
           entryType: 'M',
           companyId: Number(formVal.companyId),
+          inwardDate: formVal.inwardDate,
           colour: formVal.colour,
           designName: formVal.designName,
           styleNo: formVal.styleNo,
@@ -823,6 +944,7 @@ export class InwardComponent implements OnInit {
             const payload = {
               inward: {
                 companyId: Number(formVal.companyId),
+                inwardDate: formVal.inwardDate,
                 colour: row.colour,
                 designName: formVal.designName,
                 styleNo: formVal.styleNo,
@@ -872,7 +994,7 @@ export class InwardComponent implements OnInit {
     this.inwardForm.reset({ entryType: defaultEntry });
 
     // Lock fields back down
-    const fields = ['colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL', 'poNo'];
+    const fields = ['inwardDate', 'colour', 'designName', 'styleNo', 'inwardDcNo', 'uploadURL', 'poNo'];
     fields.forEach(f => this.inwardForm.get(f)?.disable());
     this.isCompanySelected = false;
 

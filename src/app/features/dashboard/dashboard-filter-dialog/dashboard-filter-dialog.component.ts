@@ -2,8 +2,9 @@ import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, Output, 
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Observable, Subscription, map } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CompanyService, CompanySummary } from '../../../core/services/company.service';
-import { InwardService } from '../../../core/services/inward.service';
+import { StockManagementService } from '../../../core/services/stock-management.service';
 import { MessageService } from '../../../core/services/message.service';
 import { DashboardFilterStateService, DashboardFilterState } from '../../../core/services/dashboard-filter-state.service';
 import { SelectOption, CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
@@ -28,6 +29,15 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
   designOptions: SelectOption[] = [];
   colourOptions: SelectOption[] = [];
   
+  dcOptions: SelectOption[] = [];
+  
+  isStyleLoading: boolean = false;
+  isDesignLoading: boolean = false;
+  isColourLoading: boolean = false;
+  isDcLoading: boolean = false;
+  
+  private cache = new Map<string, SelectOption[]>();
+  
   private destroy$ = new Subscription();
   private originalState!: DashboardFilterState;
 
@@ -43,19 +53,25 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
     all: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`,
     info: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
     reset: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
-    close: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`
+    close: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+    dc: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`
   };
 
   constructor(
     private fb: FormBuilder,
     private companyService: CompanyService,
-    private inwardService: InwardService,
+    private stockService: StockManagementService,
     private filterStateService: DashboardFilterStateService,
     private cdr: ChangeDetectorRef,
     private messageService: MessageService
   ) {
     this.companies$ = this.companyService.getCompanies() as unknown as Observable<SelectOption[]>;
   }
+
+  private styleSub?: Subscription;
+  private designSub?: Subscription;
+  private colourSub?: Subscription;
+  private dcSub?: Subscription;
 
   ngOnInit(): void {
     // Lock scroll
@@ -64,9 +80,10 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
     // Get current state
     this.originalState = { ...this.filterStateService.currentState };
     this.initForm(this.originalState);
+    this.setupDcDependency();
     
     if (this.originalState.companyId) {
-      this.fetchStyleAndDesign(Number(this.originalState.companyId));
+      this.fetchStyles(Number(this.originalState.companyId), this.originalState.styleNo);
     }
   }
 
@@ -74,6 +91,10 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
     // Unlock scroll
     document.body.style.overflow = '';
     this.destroy$.unsubscribe();
+    if (this.styleSub) this.styleSub.unsubscribe();
+    if (this.designSub) this.designSub.unsubscribe();
+    if (this.colourSub) this.colourSub.unsubscribe();
+    if (this.dcSub) this.dcSub.unsubscribe();
   }
 
   private initForm(state: DashboardFilterState): void {
@@ -82,68 +103,251 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
       toDate: [state.toDate],
       companyId: [state.companyId],
       styleNo: [{ value: state.styleNo, disabled: !state.companyId }],
-      designName: [{ value: state.designName, disabled: !state.companyId }],
-      colour: [{ value: state.colour, disabled: !state.companyId }],
-      mode: [state.mode || 'S']
+      designName: [{ value: state.designName, disabled: !state.styleNo }],
+      colour: [{ value: state.colour, disabled: !state.designName }],
+      mode: [state.mode || 'S'],
+      isDcBased: [state.isDcBased || false],
+      deliveryChallans: [{ value: state.deliveryChallans || [], disabled: true }]
     });
   }
 
   onCompanyChange(companyId: any): void {
+    this.filterForm.patchValue({ styleNo: null, designName: null, colour: null, deliveryChallans: [] });
+    this.filterForm.get('styleNo')?.disable();
+    this.filterForm.get('designName')?.disable();
+    this.filterForm.get('colour')?.disable();
+    this.filterForm.get('deliveryChallans')?.disable();
+    
+    this.styleOptions = [];
+    this.designOptions = [];
+    this.colourOptions = [];
+    this.dcOptions = [];
+
     if (companyId) {
-      this.filterForm.get('styleNo')?.enable();
-      this.filterForm.get('designName')?.enable();
-      this.filterForm.get('colour')?.enable();
-      
-      this.filterForm.patchValue({ styleNo: null, designName: null, colour: null });
-      this.fetchStyleAndDesign(companyId);
-    } else {
-      this.filterForm.get('styleNo')?.disable();
-      this.filterForm.get('designName')?.disable();
-      this.filterForm.get('colour')?.disable();
-      
-      this.filterForm.patchValue({ styleNo: null, designName: null, colour: null });
-      this.styleOptions = [];
-      this.designOptions = [];
-      this.colourOptions = [];
+      this.fetchStyles(companyId);
     }
     this.cdr.markForCheck();
   }
 
-  private fetchStyleAndDesign(companyId: number): void {
-    this.inwardService.getDesignStyleColour(companyId).subscribe({
-      next: (data) => {
-        if (data && data.length > 0) {
-          const getUniqueOptions = (items: any[], selector: (item: any) => any) => {
-            const map = new Map<string, string>();
-            items.forEach(item => {
-              const val = selector(item);
-              if (val) {
-                const str = val.toString().trim();
-                if (str) {
-                  const lower = str.toLowerCase();
-                  if (!map.has(lower)) {
-                    map.set(lower, str);
-                  }
-                }
-              }
-            });
-            return Array.from(map.values()).map(val => ({ key: val, value: val }));
-          };
+  onStyleChange(styleNo: any): void {
+    this.filterForm.patchValue({ designName: null, colour: null, deliveryChallans: [] });
+    this.filterForm.get('designName')?.disable();
+    this.filterForm.get('colour')?.disable();
+    this.filterForm.get('deliveryChallans')?.disable();
+    
+    this.designOptions = [];
+    this.colourOptions = [];
+    this.dcOptions = [];
 
-          this.styleOptions = getUniqueOptions(data, item => item.styleNo);
-          this.designOptions = getUniqueOptions(data, item => item.designName);
-          this.colourOptions = getUniqueOptions(data, item => item.colourName || item.colour);
-        } else {
-          this.styleOptions = [];
-          this.designOptions = [];
-          this.colourOptions = [];
+    const companyId = this.filterForm.get('companyId')?.value;
+    if (companyId && styleNo) {
+      this.fetchDesigns(companyId, styleNo);
+    }
+    this.cdr.markForCheck();
+  }
+
+  onDesignChange(designName: any): void {
+    this.filterForm.patchValue({ colour: null, deliveryChallans: [] });
+    this.filterForm.get('colour')?.disable();
+    this.filterForm.get('deliveryChallans')?.disable();
+    
+    this.colourOptions = [];
+    this.dcOptions = [];
+
+    const companyId = this.filterForm.get('companyId')?.value;
+    const styleNo = this.filterForm.get('styleNo')?.value;
+    if (companyId && styleNo && designName) {
+      this.fetchColours(companyId, styleNo, designName);
+    }
+    this.cdr.markForCheck();
+  }
+
+  onColourChange(colour: any): void {
+    this.filterForm.patchValue({ deliveryChallans: [] });
+    this.filterForm.get('deliveryChallans')?.disable();
+    this.dcOptions = [];
+
+    const companyId = this.filterForm.get('companyId')?.value;
+    const styleNo = this.filterForm.get('styleNo')?.value;
+    const designName = this.filterForm.get('designName')?.value;
+    
+    if (companyId && styleNo && designName && colour && this.filterForm.get('isDcBased')?.value) {
+      this.fetchDeliveryChallans(companyId, styleNo, designName, colour);
+    }
+    this.cdr.markForCheck();
+  }
+
+  private fetchStyles(companyId: number, setVal?: string | null): void {
+    const cacheKey = `styles_${companyId}`;
+    if (this.cache.has(cacheKey)) {
+      this.styleOptions = this.cache.get(cacheKey) || [];
+      if (this.styleOptions.length > 0) this.filterForm.get('styleNo')?.enable();
+      if (setVal) {
+        this.filterForm.patchValue({ styleNo: setVal });
+        this.fetchDesigns(companyId, setVal, this.originalState.designName);
+      }
+      return;
+    }
+
+    if (this.styleSub) this.styleSub.unsubscribe();
+    this.isStyleLoading = true;
+    this.filterForm.get('styleNo')?.disable({ emitEvent: false });
+    this.cdr.markForCheck();
+
+    this.styleSub = this.stockService.getStyles(companyId).subscribe({
+      next: (res) => {
+        this.styleOptions = (res || []).map((s: any) => ({ key: s.value, value: s.displayText }));
+        this.cache.set(cacheKey, this.styleOptions);
+        if (this.styleOptions.length > 0) {
+          this.filterForm.get('styleNo')?.enable({ emitEvent: false });
+          if (setVal) {
+            this.filterForm.patchValue({ styleNo: setVal });
+            this.fetchDesigns(companyId, setVal, this.originalState.designName);
+          }
         }
+        this.isStyleLoading = false;
         this.cdr.markForCheck();
       },
       error: () => {
         this.styleOptions = [];
+        this.isStyleLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private fetchDesigns(companyId: number, styleNo: string, setVal?: string | null): void {
+    const cacheKey = `designs_${companyId}_${styleNo}`;
+    if (this.cache.has(cacheKey)) {
+      this.designOptions = this.cache.get(cacheKey) || [];
+      if (this.designOptions.length > 0) this.filterForm.get('designName')?.enable();
+      if (setVal) {
+        this.filterForm.patchValue({ designName: setVal });
+        this.fetchColours(companyId, styleNo, setVal, this.originalState.colour);
+      }
+      return;
+    }
+
+    if (this.designSub) this.designSub.unsubscribe();
+    this.isDesignLoading = true;
+    this.filterForm.get('designName')?.disable({ emitEvent: false });
+    this.cdr.markForCheck();
+
+    this.designSub = this.stockService.getDesigns(companyId, styleNo).subscribe({
+      next: (res) => {
+        this.designOptions = (res || []).map((s: any) => ({ key: s.value, value: s.displayText }));
+        this.cache.set(cacheKey, this.designOptions);
+        if (this.designOptions.length > 0) {
+          this.filterForm.get('designName')?.enable({ emitEvent: false });
+          if (setVal) {
+            this.filterForm.patchValue({ designName: setVal });
+            this.fetchColours(companyId, styleNo, setVal, this.originalState.colour);
+          }
+        }
+        this.isDesignLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
         this.designOptions = [];
+        this.isDesignLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private fetchColours(companyId: number, styleNo: string, designName: string, setVal?: string | null): void {
+    const cacheKey = `colours_${companyId}_${styleNo}_${designName}`;
+    if (this.cache.has(cacheKey)) {
+      this.colourOptions = this.cache.get(cacheKey) || [];
+      if (this.colourOptions.length > 0) this.filterForm.get('colour')?.enable();
+      if (setVal) {
+        this.filterForm.patchValue({ colour: setVal });
+        if (this.filterForm.get('isDcBased')?.value) {
+            this.fetchDeliveryChallans(companyId, styleNo, designName, setVal, this.originalState.deliveryChallans);
+        }
+      }
+      return;
+    }
+
+    if (this.colourSub) this.colourSub.unsubscribe();
+    this.isColourLoading = true;
+    this.filterForm.get('colour')?.disable({ emitEvent: false });
+    this.cdr.markForCheck();
+
+    this.colourSub = this.stockService.getColours(companyId, styleNo, designName).subscribe({
+      next: (res) => {
+        this.colourOptions = (res || []).map((s: any) => ({ key: s.value, value: s.displayText }));
+        this.cache.set(cacheKey, this.colourOptions);
+        if (this.colourOptions.length > 0) {
+          this.filterForm.get('colour')?.enable({ emitEvent: false });
+          if (setVal) {
+            this.filterForm.patchValue({ colour: setVal });
+            if (this.filterForm.get('isDcBased')?.value) {
+                this.fetchDeliveryChallans(companyId, styleNo, designName, setVal, this.originalState.deliveryChallans);
+            }
+          }
+        }
+        this.isColourLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
         this.colourOptions = [];
+        this.isColourLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private setupDcDependency(): void {
+    const sub = this.filterForm.get('isDcBased')?.valueChanges.subscribe(isDc => {
+        if (isDc) {
+            const vals = this.filterForm.getRawValue();
+            if (vals.companyId && vals.styleNo && vals.designName && vals.colour) {
+                this.fetchDeliveryChallans(vals.companyId, vals.styleNo, vals.designName, vals.colour);
+            }
+        } else {
+            this.filterForm.get('deliveryChallans')?.disable({ emitEvent: false });
+            this.filterForm.get('deliveryChallans')?.setValue([], { emitEvent: false });
+            this.dcOptions = [];
+        }
+    });
+    if (sub) this.destroy$.add(sub);
+  }
+
+  private fetchDeliveryChallans(companyId: number, styleNo: string, designName: string, colour: string, setVal?: any[] | null): void {
+    const cacheKey = `dc_${companyId}_${styleNo}_${designName}_${colour}`;
+    if (this.cache.has(cacheKey)) {
+      this.dcOptions = this.cache.get(cacheKey) || [];
+      if (this.dcOptions.length > 0) this.filterForm.get('deliveryChallans')?.enable();
+      if (setVal) this.filterForm.patchValue({ deliveryChallans: setVal });
+      return;
+    }
+
+    if (this.dcSub) this.dcSub.unsubscribe();
+    this.isDcLoading = true;
+    this.filterForm.get('deliveryChallans')?.disable({ emitEvent: false });
+    this.cdr.markForCheck();
+
+    this.dcSub = this.stockService.getDeliveryChallans(companyId, styleNo, designName, colour).subscribe({
+      next: (res) => {
+        if (res && res.length > 0) {
+          this.dcOptions = res.map((dc: any) => ({
+            key: dc.deliveryChallanNo || dc.inwardDcNo || dc.value || dc,
+            value: dc.deliveryChallanNo || dc.inwardDcNo || dc.displayText || dc
+          }));
+          this.cache.set(cacheKey, this.dcOptions);
+          this.filterForm.get('deliveryChallans')?.enable({ emitEvent: false });
+          if (setVal) this.filterForm.patchValue({ deliveryChallans: setVal });
+        } else {
+          this.dcOptions = [];
+          this.cache.set(cacheKey, []);
+        }
+        this.isDcLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.dcOptions = [];
+        this.isDcLoading = false;
         this.cdr.markForCheck();
       }
     });
@@ -160,7 +364,9 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
       styleNo: state.styleNo,
       designName: state.designName,
       colour: state.colour,
-      mode: state.mode
+      mode: state.mode,
+      isDcBased: state.isDcBased,
+      deliveryChallans: state.deliveryChallans || []
     });
 
     this.filterForm.get('styleNo')?.disable();
@@ -191,6 +397,15 @@ export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
           this.messageService.error('From Date cannot be greater than To Date.');
           return;
         }
+      }
+
+      if (formValues.isDcBased) {
+        if (!formValues.deliveryChallans || formValues.deliveryChallans.length === 0) {
+          this.messageService.error('Please select at least one Delivery Challan.');
+          return;
+        }
+      } else {
+        formValues.deliveryChallans = [];
       }
 
       this.filterStateService.updateState(formValues);

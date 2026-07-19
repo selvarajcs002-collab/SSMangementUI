@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, forwardRef, HostListener, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
 
 export interface SelectOption {
@@ -11,7 +11,7 @@ export interface SelectOption {
 @Component({
   selector: 'app-custom-select',
   standalone: true,
-  imports: [CommonModule, SafeHtmlPipe],
+  imports: [CommonModule, FormsModule, SafeHtmlPipe],
   templateUrl: './custom-select.component.html',
   styleUrl: './custom-select.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,17 +31,22 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   @Input() loading: boolean = false;
   @Input() isInvalid: boolean = false;
   @Input() multiple: boolean = false;
-  
+  @Input() showSearch: boolean = false;
+  @Input() emptyMessage: string = 'No options available';
+
   @Output() change = new EventEmitter<any>();
+
+  searchTerm: string = '';
+  selectedChips: SelectOption[] = [];
 
   selectedValue: any = null;
   selectedLabel: string = '';
   isOpen: boolean = false;
 
-  onChange = (value: any) => {};
-  onTouched = () => {};
+  onChange = (value: any) => { };
+  onTouched = () => { };
 
-  constructor(private elementRef: ElementRef, private cdr: ChangeDetectorRef) {}
+  constructor(private elementRef: ElementRef, private cdr: ChangeDetectorRef) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['options'] || changes['disabled']) {
@@ -52,8 +57,46 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   toggle() {
     if (!this.disabled && !this.loading) {
       this.isOpen = !this.isOpen;
+      if (this.isOpen) {
+        this.searchTerm = ''; // Reset search on open
+      }
       this.onTouched();
       this.cdr.markForCheck();
+    }
+  }
+
+  get filteredOptions(): SelectOption[] {
+    if (!this.options) return [];
+    if (!this.searchTerm) return this.options;
+    const term = this.searchTerm.toLowerCase();
+    return this.options.filter(o => o.value.toLowerCase().includes(term));
+  }
+
+  selectAll() {
+    if (this.options && this.multiple) {
+      this.selectedValue = this.options.map(o => o.key);
+      this.onChange(this.selectedValue);
+      this.change.emit(this.selectedValue);
+      this.updateSelectedLabel();
+    }
+  }
+
+  clearAll() {
+    if (this.multiple) {
+      this.selectedValue = [];
+      this.onChange(this.selectedValue);
+      this.change.emit(this.selectedValue);
+      this.updateSelectedLabel();
+    }
+  }
+
+  removeChip(option: SelectOption, event: Event) {
+    event.stopPropagation();
+    if (this.multiple && Array.isArray(this.selectedValue)) {
+      this.selectedValue = this.selectedValue.filter(k => k !== option.key);
+      this.onChange(this.selectedValue);
+      this.change.emit(this.selectedValue);
+      this.updateSelectedLabel();
     }
   }
 
@@ -116,6 +159,7 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   onClickOutside(event: Event) {
     if (!this.elementRef.nativeElement.contains(event.target)) {
       this.isOpen = false;
+      this.searchTerm = '';
       this.cdr.markForCheck();
     }
   }
@@ -125,8 +169,10 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
       if (this.multiple) {
         if (Array.isArray(this.selectedValue) && this.selectedValue.length > 0) {
           const selectedOptions = this.options.filter(o => this.selectedValue.includes(o.key));
+          this.selectedChips = selectedOptions;
           this.selectedLabel = selectedOptions.map(o => o.value).join(', ');
         } else {
+          this.selectedChips = [];
           this.selectedLabel = '';
         }
       } else {

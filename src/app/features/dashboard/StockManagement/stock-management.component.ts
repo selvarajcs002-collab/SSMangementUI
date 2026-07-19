@@ -127,6 +127,11 @@ export class StockManagementComponent implements OnInit, OnDestroy {
     const filters = { ...this.currentFilters };
     delete filters.mode; // Mode is not used by Stock API
     
+    if (!filters.isDcBased) {
+      delete filters.isDcBased;
+      delete filters.deliveryChallans;
+    }
+    
     this.stockService.getSummary(filters).subscribe(res => {
       this.summary = res;
       this.cdr.markForCheck();
@@ -153,6 +158,10 @@ export class StockManagementComponent implements OnInit, OnDestroy {
     if (this.isStockBalanceVisible && !this.hasStockBalanceLoaded) {
       const filters = { ...this.currentFilters };
       delete filters.mode;
+      if (!filters.isDcBased) {
+        delete filters.isDcBased;
+        delete filters.deliveryChallans;
+      }
       this.fetchStockBalance(filters);
     }
     this.cdr.markForCheck();

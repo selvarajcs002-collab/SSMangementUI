@@ -386,6 +386,8 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
       }];
     }
 
+    const entryType = data?.entryType || rawData?.entryType || 'S';
+
     const previewData: ChallanData = {
       company: {
         name: 'SS Embroidery',
@@ -397,9 +399,27 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
       dcNo: data?.dcNo || data?.outwardDcNo || data?.OutwardDcNo || '-',
       receiverName: company?.companyName || company?.CompanyName || data?.companyName || data?.receiverName || 'Company Name',
       receiverAddress: this.buildReceiverAddress(company, data),
+      receiverGst: company?.gst_No || company?.Gst_No || '',
       items: items,
-      totalQty
+      totalQty,
+      entryType: entryType,
+      deliveryTo: data?.deliveryTo || rawData?.deliveryTo || '',
+      poNo: data?.poNo || rawData?.poNo || '',
+      weight: data?.weight || rawData?.weight || '',
+      noOfBundles: data?.noOfBundles || rawData?.noOfBundles || '',
+      supplierDcNo: data?.selectedDcNos && Array.isArray(data.selectedDcNos) ? data.selectedDcNos.join(', ') : (data?.selectedDcNos || ''),
+      remarks: data?.remarks || rawData?.remarks || ''
     };
+
+    if (entryType === 'M') {
+      previewData.meterDetails = data?.meterDetails || [];
+      previewData.totalMeterSum = previewData.meterDetails!.reduce((sum: number, md: any) => sum + (Number(md.totalMeter) || 0), 0);
+      previewData.totalPiecesSum = previewData.meterDetails!.reduce((sum: number, md: any) => sum + (Number(md.piecesCount) || 0), 0);
+      if (items.length > 0) {
+        items[0].count = previewData.totalMeterSum;
+      }
+      previewData.totalQty = previewData.totalMeterSum;
+    }
 
     this.outwardPreviewService.setPreviewData(previewData);
     this.isLoading = false;

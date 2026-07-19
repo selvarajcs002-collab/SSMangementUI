@@ -61,6 +61,9 @@
               <label>Style Number <span class="required">*</span></label>
               <input type="text" formControlName="styleNo" placeholder="e.g. SN-8820" class="form-control"
                 [class.invalid]="inwardForm.get('styleNo')?.touched && inwardForm.get('styleNo')?.invalid">
+              <div class="error-text" *ngIf="inwardForm.get('styleNo')?.touched && inwardForm.get('styleNo')?.invalid">
+                Style Number is required
+              </div>
             </div>
 
             <!-- Design Name -->
@@ -68,6 +71,9 @@
               <label>Design Name <span class="required">*</span></label>
               <input type="text" formControlName="designName" placeholder="e.g. Floral Pattern" class="form-control"
                 [class.invalid]="inwardForm.get('designName')?.touched && inwardForm.get('designName')?.invalid">
+              <div class="error-text" *ngIf="inwardForm.get('designName')?.touched && inwardForm.get('designName')?.invalid">
+                Design Name is required
+              </div>
             </div>
 
             <!-- Colour -->
@@ -77,6 +83,9 @@
                 <span class="input-icon" [innerHTML]="icons.palette | safeHtml"></span>
                 <input type="text" formControlName="colour" placeholder="e.g. Royal Blue" class="form-control with-icon"
                   [class.invalid]="inwardForm.get('colour')?.touched && inwardForm.get('colour')?.invalid">
+              </div>
+              <div class="error-text" *ngIf="inwardForm.get('colour')?.touched && inwardForm.get('colour')?.invalid">
+                Colour is required
               </div>
             </div>
 

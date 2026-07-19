@@ -268,7 +268,7 @@ export class InwardComponent implements OnInit {
       inwardDate: [{ value: today, disabled: true }, Validators.required],
       entryType: ['S', Validators.required], // 'S' for Size, 'M' for Meter
       companyId: [null, Validators.required],
-      colour: [{ value: '', disabled: true }],
+      colour: [{ value: '', disabled: true }, Validators.required],
       designName: [{ value: '', disabled: true }, Validators.required],
       styleNo: [{ value: '', disabled: true }, Validators.required],
       inwardDcNo: [{ value: '', disabled: true }, Validators.required],

@@ -246,7 +246,7 @@ export class OutwardComponent implements OnInit {
             const row = this.fb.group({
               meterPerBit: [md.meterValue || md.meterPerBit, [Validators.required, Validators.min(0.01)]],
               bitsCount: [md.bitsCount, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
-              piecesCount: [md.piecesCount || null, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
+              piecesCount: [md.piecesCount ?? null, [Validators.pattern(/^[0-9]+$/)]],
               totalMeter: [{ value: md.totalMeter, disabled: true }]
             });
 
@@ -1007,6 +1007,19 @@ export class OutwardComponent implements OnInit {
           this.fullDcData = [];
           this.dcNoOptions = [];
         }
+
+        // Fix Issue 3 & 5 & 6: Preserve selected DCs in options to prevent CustomSelectComponent from resetting them
+        if (this.isEditMode) {
+          const currentVals = this.outwardForm.getRawValue();
+          if (currentVals.selectedDcNos && currentVals.selectedDcNos.length > 0) {
+            currentVals.selectedDcNos.forEach((dc: string) => {
+              if (!this.dcNoOptions.includes(dc)) {
+                this.dcNoOptions.push(dc);
+              }
+            });
+          }
+        }
+
         this.cdr.markForCheck();
       },
       error: () => {
@@ -1121,7 +1134,7 @@ export class OutwardComponent implements OnInit {
     const row = this.fb.group({
       meterPerBit: [meterValue !== undefined ? meterValue : null, [Validators.required, Validators.min(0.01)]],
       bitsCount: [null, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
-      piecesCount: [null, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
+      piecesCount: [null, [Validators.pattern(/^[0-9]+$/)]],
       totalMeter: [{ value: 0, disabled: true }]
     });
 
@@ -1213,6 +1226,7 @@ export class OutwardComponent implements OnInit {
         poNo: formVal.poNo || '',
         weight: formVal.weight || '',
         noOfBundles: formVal.noOfBundles || '',
+        selectedDcNos: formVal.isDeliveryChallan ? formVal.selectedDcNos : [],
         meterDetails: this.meterBreakdown.getRawValue().map((r: any) => ({
           meterPerBit: Number(r.meterPerBit),
           bitsCount: Number(r.bitsCount),

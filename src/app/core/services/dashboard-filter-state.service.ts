@@ -9,6 +9,8 @@ export interface DashboardFilterState {
   mode: 'S' | 'M' | 'ALL';
   fromDate: string | null;
   toDate: string | null;
+  isDcBased?: boolean;
+  deliveryChallans?: string[];
 }
 
 @Injectable({
@@ -22,7 +24,9 @@ export class DashboardFilterStateService {
     colour: null,
     mode: 'S',
     fromDate: this.getDefaultFromDate(),
-    toDate: this.getDefaultToDate()
+    toDate: this.getDefaultToDate(),
+    isDcBased: false,
+    deliveryChallans: []
   };
 
   private stateSubject = new BehaviorSubject<DashboardFilterState>({ ...this.initialState });

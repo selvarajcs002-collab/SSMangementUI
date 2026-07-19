@@ -43,6 +43,7 @@ export interface MeterOutwardSavePayload {
   poNo?: string;
   weight?: string;
   noOfBundles?: string;
+  selectedDcNos?: string[];
   meterDetails: {
     meterPerBit: number;
     bitsCount: number;

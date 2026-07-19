@@ -79,10 +79,11 @@ export class InwardService {
     return this.api.get<any[]>('inward/meters', params);
   }
 
-  getInwardDcs(companyId: number, styleNo?: string, designName?: string): Observable<any> {
+  getInwardDcs(companyId: number, styleNo?: string, designName?: string, colour?: string): Observable<any> {
     const params: any = {};
     if (styleNo) params.styleNo = styleNo;
     if (designName) params.designName = designName;
+    if (colour) params.colour = colour;
     return this.api.get<any>(`DcDetail/inward-dcs/${companyId}`, params);
   }
 

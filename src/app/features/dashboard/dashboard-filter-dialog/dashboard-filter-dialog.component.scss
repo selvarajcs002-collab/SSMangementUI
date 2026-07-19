@@ -162,6 +162,94 @@ $radius-md: 8px;
   }
 }
 
+// Delivery Challan Section
+.dc-section {
+  background: $bg-white;
+  border: 1px solid $border-color;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+
+  &.is-active {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+
+  .dc-toggle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .dc-title {
+      h4 {
+        margin: 0 0 0.25rem 0;
+        color: $text-main;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      p {
+        margin: 0;
+        color: $text-muted;
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  .dc-dropdown-container {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed $border-color;
+  }
+}
+
+/* Modern Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  flex-shrink: 0;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:checked + .slider {
+      background-color: $primary;
+    }
+
+    &:checked + .slider:before {
+      transform: translateX(22px);
+    }
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .4s;
+    border-radius: 34px;
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  }
+}
+
 // Radio Group Squares
 .radio-group-squares {
   display: flex;

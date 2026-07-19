@@ -1,34 +1,68 @@
-<div class="custom-select-wrapper" [class.is-open]="isOpen" [class.is-disabled]="disabled" [class.is-loading]="loading" [class.is-invalid]="isInvalid">
+<div class="custom-select-wrapper" [class.is-open]="isOpen" [class.is-disabled]="disabled" [class.is-loading]="loading"
+  [class.is-invalid]="isInvalid">
   <div class="select-trigger" (click)="toggle()">
     <div class="left-section">
       <span class="icon" *ngIf="icon" [innerHTML]="icon | safeHtml"></span>
-      <span class="label" [class.has-selection]="selectedLabel">
-        {{ selectedLabel || placeholder }}
-      </span>
+      <ng-container *ngIf="!multiple || selectedChips.length === 0">
+        <span class="label" [class.has-selection]="selectedLabel">
+          {{ selectedLabel || placeholder }}
+        </span>
+      </ng-container>
+      <div class="chips-container" *ngIf="multiple && selectedChips.length > 0">
+        <span class="chip" *ngFor="let chip of selectedChips">
+          {{ chip.value }}
+          <span class="chip-remove" (click)="removeChip(chip, $event)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </span>
+        </span>
+      </div>
     </div>
     <div class="right-section">
       <span *ngIf="loading" class="spinner"></span>
       <span *ngIf="!loading" class="chevron animate-chevron">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+          class="lucide-chevron-down">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
       </span>
     </div>
   </div>
 
   <div class="options-menu animate-dropdown" *ngIf="isOpen">
+    <div class="menu-header" *ngIf="multiple || showSearch">
+      <div class="search-box" *ngIf="showSearch || multiple">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Search..." (click)="$event.stopPropagation()">
+      </div>
+      <div class="action-buttons" *ngIf="multiple">
+        <button type="button" class="btn-select-all" (click)="selectAll(); $event.stopPropagation()">Select All</button>
+        <button type="button" class="btn-clear-all" (click)="clearAll(); $event.stopPropagation()">Clear</button>
+      </div>
+    </div>
     <div class="options-scroll">
-      <div 
-        *ngFor="let option of options" 
-        class="option-item" 
-        [class.is-selected]="isSelected(option)"
+      <div *ngFor="let option of filteredOptions" class="option-item" [class.is-selected]="isSelected(option)"
         (click)="selectOption(option)">
         <span class="option-text">{{ option.value }}</span>
         <span class="check-icon" *ngIf="isSelected(option)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+            class="lucide-check">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
         </span>
       </div>
-      
+
       <div class="no-options" *ngIf="!options || options.length === 0">
-        No options available
+        {{ emptyMessage }}
       </div>
     </div>
   </div>

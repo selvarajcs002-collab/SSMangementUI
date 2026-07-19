@@ -26,7 +26,7 @@
             [options]="(companies$ | async) || []" 
             placeholder="Select Company" 
             [icon]="icons.company"
-            (valueChange)="onCompanyChange($event)">
+            (ngModelChange)="onCompanyChange($event)">
           </app-custom-select>
         </div>
 
@@ -39,7 +39,9 @@
             valueKey="key" 
             labelKey="value"
             placeholder="Select Style" 
-            [icon]="icons.style">
+            [icon]="icons.style"
+            [loading]="isStyleLoading"
+            (ngModelChange)="onStyleChange($event)">
           </app-custom-select>
         </div>
 
@@ -52,7 +54,9 @@
             valueKey="key" 
             labelKey="value"
             placeholder="Select Design" 
-            [icon]="icons.design">
+            [icon]="icons.design"
+            [loading]="isDesignLoading"
+            (ngModelChange)="onDesignChange($event)">
           </app-custom-select>
         </div>
 
@@ -65,8 +69,39 @@
             valueKey="key" 
             labelKey="value"
             placeholder="Select Colour" 
-            [icon]="icons.colour">
+            [icon]="icons.colour"
+            [loading]="isColourLoading"
+            (ngModelChange)="onColourChange($event)">
           </app-custom-select>
+        </div>
+      </div>
+
+      <!-- Section 1.5: Delivery Challan Toggle -->
+      <div class="dc-section" [class.is-active]="filterForm.get('isDcBased')?.value">
+        <div class="dc-toggle-header">
+          <div class="dc-title">
+            <h4>Delivery Challan Based Stock</h4>
+            <p>Enable this option to calculate stock only for selected Delivery Challan(s).</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" formControlName="isDcBased">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="dc-dropdown-container animate-fade-in" *ngIf="filterForm.get('isDcBased')?.value">
+          <div class="form-group">
+            <label class="form-label">Delivery Challan</label>
+            <app-custom-select 
+              formControlName="deliveryChallans" 
+              [options]="dcOptions" 
+              [multiple]="true"
+              [showSearch]="true"
+              [loading]="isDcLoading"
+              placeholder="Select Company, Style, Design and Colour first" 
+              [icon]="icons.dc">
+            </app-custom-select>
+          </div>
         </div>
       </div>
 

@@ -107,6 +107,18 @@
     </button>
   </div>
 
+  <!-- Active Filter Summary -->
+  <div class="active-filter-summary" *ngIf="currentFilters.isDcBased && currentFilters.deliveryChallans?.length">
+    <div class="filter-badge">
+      <span class="filter-label">Delivery Challan Based :</span>
+      <span class="filter-value text-blue">Yes</span>
+    </div>
+    <div class="filter-badge">
+      <span class="filter-label">Selected DCs :</span>
+      <span class="filter-value">{{ currentFilters.deliveryChallans.join(', ') }}</span>
+    </div>
+  </div>
+
   <!-- Middle Split Section -->
   <div class="split-section">
     <!-- Left: Stock Balance -->

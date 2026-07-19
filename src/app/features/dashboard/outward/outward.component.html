@@ -329,7 +329,7 @@
                   <small>Enter bits</small>
                 </div>
                 <div class="mg-col mg-pieces">
-                  <div>No of Pieces <span class="required">*</span></div>
+                  <div>No of Pieces</div>
                   <small>Enter pieces</small>
                 </div>
                 <div class="mg-col mg-total">
@@ -356,15 +356,8 @@
                     *ngIf="row.get('bitsCount')?.touched && row.get('bitsCount')?.errors?.['min']">Must be â‰¥ 1</div>
                 </div>
                 <div class="mg-col mg-pieces">
-                  <input type="number" formControlName="piecesCount" class="form-control" min="1" step="1"
-                    placeholder="e.g. 50"
-                    [class.invalid]="row.get('piecesCount')?.touched && row.get('piecesCount')?.invalid">
-                  <div class="error-text"
-                    *ngIf="row.get('piecesCount')?.touched && row.get('piecesCount')?.errors?.['required']">Required
-                  </div>
-                  <div class="error-text"
-                    *ngIf="row.get('piecesCount')?.touched && row.get('piecesCount')?.errors?.['min']">Must be â‰¥ 1
-                  </div>
+                  <input type="number" formControlName="piecesCount" class="form-control" min="0" step="1"
+                    placeholder="e.g. 50">
                 </div>
                 <div class="mg-col mg-total">
                   <span class="meter-total-val">{{ row.get('totalMeter')?.value | number:'1.2-3' }}</span>

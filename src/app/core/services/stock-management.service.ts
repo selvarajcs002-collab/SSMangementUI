@@ -58,6 +58,11 @@ export class StockManagementService {
     if (payload.styleNo === 'All') payload.styleNo = null;
     if (payload.designName === 'All') payload.designName = null;
     if (payload.colour === 'All') payload.colour = null;
+    
+    // Map Angular state properties to C# API properties
+    payload.deliveryChallanBased = payload.isDcBased || false;
+    payload.deliveryChallanNumbers = payload.deliveryChallans || [];
+    
     return payload;
   }
 
@@ -76,6 +81,26 @@ export class StockManagementService {
   getLastTransactions(filters: any): Observable<LastTransaction[]> {
     const payload = this.formatFilters(filters);
     return this.api.post<ApiResponse<LastTransaction[]>>(`${this.baseRoute}/transactions`, payload)
+      .pipe(map(res => res.data));
+  }
+
+  getStyles(companyId: number): Observable<any[]> {
+    return this.api.get<ApiResponse<any[]>>(`${this.baseRoute}/styles`, { companyId })
+      .pipe(map(res => res.data));
+  }
+
+  getDesigns(companyId: number, styleNo: string): Observable<any[]> {
+    return this.api.get<ApiResponse<any[]>>(`${this.baseRoute}/designs`, { companyId, styleNo })
+      .pipe(map(res => res.data));
+  }
+
+  getColours(companyId: number, styleNo: string, designNo: string): Observable<any[]> {
+    return this.api.get<ApiResponse<any[]>>(`${this.baseRoute}/colours`, { companyId, styleNo, designNo })
+      .pipe(map(res => res.data));
+  }
+
+  getDeliveryChallans(companyId: number, styleNo: string, designNo: string, colour: string): Observable<any[]> {
+    return this.api.get<ApiResponse<any[]>>(`${this.baseRoute}/deliverychallans`, { companyId, styleNo, designNo, colour })
       .pipe(map(res => res.data));
   }
 }

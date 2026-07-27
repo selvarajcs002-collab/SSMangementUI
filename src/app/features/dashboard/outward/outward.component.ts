@@ -487,7 +487,7 @@ export class OutwardComponent implements OnInit {
         }
 
         // Populate PO Numbers from Inward options
-        const validPoNos = res.options.map((x: any) => x.poNo).filter((po: any) => po);
+        const validPoNos = res.options.filter((x: any) => x.poNo && x.status === 'Active').map((x: any) => x.poNo);
         this.poNoOptions = [...new Set(validPoNos)].map((po: any) => ({ key: po, value: po }));
 
         // Enable dependent fields

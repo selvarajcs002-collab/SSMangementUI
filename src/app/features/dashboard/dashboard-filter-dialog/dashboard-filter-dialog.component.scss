@@ -127,12 +127,16 @@ $radius-md: 8px;
 
   &.dropdown-section {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    position: relative;
+    z-index: 30;
   }
 
   &.bottom-section {
     grid-template-columns: auto 1fr 1fr; // Auto for mode boxes, 1fr for dates
     align-items: start;
     gap: 2rem;
+    position: relative;
+    z-index: 10;
   }
 }
 
@@ -169,6 +173,8 @@ $radius-md: 8px;
   border-radius: $radius-lg;
   padding: 1.5rem;
   transition: all 0.3s ease;
+  position: relative;
+  z-index: 20;
 
   &.is-active {
     border-color: #bfdbfe;

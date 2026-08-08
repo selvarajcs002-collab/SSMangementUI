@@ -105,6 +105,11 @@
     <button class="btn btn-icon btn-outline" (click)="onRefresh()" title="Refresh">
       <span class="icon text-blue" [innerHTML]="icons.refresh | safeHtml"></span>
     </button>
+    <button class="btn btn-outline" (click)="exportExcel()" [disabled]="isExporting">
+      <span class="icon text-green" *ngIf="!isExporting" [innerHTML]="icons.excel | safeHtml"></span>
+      <span class="icon text-muted" *ngIf="isExporting" [innerHTML]="icons.refresh | safeHtml"></span>
+      <span>{{ isExporting ? 'Exporting...' : 'Excel Report' }}</span>
+    </button>
   </div>
 
   <!-- Active Filter Summary -->
@@ -130,19 +135,15 @@
             <span class="icon" [innerHTML]="(isStockBalanceVisible ? icons.eyeOff : icons.eye) | safeHtml"></span>
             {{ isStockBalanceVisible ? 'Hide' : 'View' }}
           </button>
-          <button class="btn btn-outline btn-sm">
-            <span class="icon text-green" [innerHTML]="icons.excel | safeHtml"></span>
-            Export Excel
-          </button>
         </div>
       </div>
 
       <div class="stock-balance-content" *ngIf="isStockBalanceVisible">
         <div class="sub-header">
-          <span><strong>Company:</strong> {{ getDisplayCompanyName()        }}</span>
-          <span><strong>Style:</strong>   {{ getDisplayValue('styleNo')     }}</span>
-          <span><strong>Design:</strong> {{ getDisplayValue('designName')   }}</span>
-          <span><strong>Color:</strong>  {{ getDisplayValue('colour')        }}</span>
+          <span><strong>Company:</strong> {{ getDisplayCompanyName() }}</span>
+          <span><strong>Style:</strong> {{ getDisplayValue('styleNo') }}</span>
+          <span><strong>Design:</strong> {{ getDisplayValue('designName') }}</span>
+          <span><strong>Color:</strong> {{ getDisplayValue('colour') }}</span>
         </div>
 
         <div class="table-container">
@@ -186,9 +187,11 @@
               sbPageSize + sbPaginatedData.length }} of {{ stockBalanceData.length }} entries</div>
             <div class="page-controls-wrapper">
               <div class="page-controls-new">
+                <button type="button" (click)="sbFirstPage()" [disabled]="sbPageNumber === 1">&lt;&lt;</button>
                 <button type="button" (click)="sbPrevPage()" [disabled]="sbPageNumber === 1">&lt;</button>
                 <button type="button" class="active">{{ sbPageNumber }}</button>
                 <button type="button" (click)="sbNextPage()" [disabled]="sbPageNumber === sbTotalPages">&gt;</button>
+                <button type="button" (click)="sbLastPage()" [disabled]="sbPageNumber === sbTotalPages">&gt;&gt;</button>
               </div>
             </div>
           </div>
@@ -244,10 +247,6 @@
         <button class="btn btn-primary btn-sm" (click)="openViewAllModal()">
           View All
         </button>
-        <button class="btn btn-outline btn-sm">
-          <span class="icon text-green" [innerHTML]="icons.excel | safeHtml"></span>
-          Export Excel
-        </button>
       </div>
     </div>
 
@@ -255,7 +254,9 @@
       <table class="styled-table text-center transaction-table">
         <thead>
           <tr>
-            <th>Date</th>
+            <th (click)="toggleLtSort()" style="cursor: pointer; user-select: none;" title="Sort by Date">
+              Date <span class="icon" style="display: inline-block; vertical-align: middle; margin-left: 2px;" [innerHTML]="(ltSortDirection === 'asc' ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+            </th>
             <th>Type</th>
             <th>DC No</th>
             <th>Company</th>
@@ -302,14 +303,11 @@
           ltPaginatedData.length }} of {{ transactionsData.length }} entries</div>
         <div class="page-controls-wrapper">
           <div class="page-controls-new">
+            <button type="button" (click)="ltFirstPage()" [disabled]="ltPageNumber === 1">&lt;&lt;</button>
             <button type="button" (click)="ltPrevPage()" [disabled]="ltPageNumber === 1">&lt;</button>
-            <ng-container *ngFor="let p of [].constructor(ltTotalPages); let i = index">
-              <button type="button" [class.active]="ltPageNumber === (i + 1)"
-                (click)="ltPageNumber = (i + 1); updateLTPagination()">
-                {{ i + 1 }}
-              </button>
-            </ng-container>
+            <button type="button" class="active">{{ ltPageNumber }}</button>
             <button type="button" (click)="ltNextPage()" [disabled]="ltPageNumber === ltTotalPages">&gt;</button>
+            <button type="button" (click)="ltLastPage()" [disabled]="ltPageNumber === ltTotalPages">&gt;&gt;</button>
           </div>
           <div class="page-size-selector">
             <select (change)="changeLtPageSize($event)">
@@ -338,7 +336,9 @@
       <table class="styled-table text-center transaction-table">
         <thead>
           <tr>
-            <th>Date</th>
+            <th (click)="toggleLtSort()" style="cursor: pointer; user-select: none;" title="Sort by Date">
+              Date <span class="icon" style="display: inline-block; vertical-align: middle; margin-left: 2px;" [innerHTML]="(ltSortDirection === 'asc' ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+            </th>
             <th>Type</th>
             <th>DC No</th>
             <th>Company</th>

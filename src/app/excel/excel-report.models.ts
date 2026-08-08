@@ -31,3 +31,13 @@ export interface ReportResponse {
   dynamicColumns: string[];
   data: ReportDataRow[];
 }
+
+export interface StockManagementReport {
+  summary: any;
+  stockBalances: any[];
+  transactions: any[];
+  fromDate: string;
+  toDate: string;
+  companyName: string;
+  branch: string;
+}

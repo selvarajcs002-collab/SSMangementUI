@@ -9,15 +9,17 @@ import { AppConfigService } from '../core/services/app-config.service';
 })
 export class ExcelReportService {
   get apiUrl(): string {
-    return `${this.configService.apiBaseUrl}/ExcelReport/delivery-challan`;
+    return `${this.configService.apiBaseUrl}/ExcelReport`;
   }
 
   constructor(private http: HttpClient, private configService: AppConfigService) {
   }
 
-// duplicate constructor removed
-
   getDeliveryChallanReport(payload: ReportFilterRequest): Observable<ReportResponse> {
-    return this.http.post<ReportResponse>(this.apiUrl, payload);
+    return this.http.post<ReportResponse>(`${this.apiUrl}/delivery-challan`, payload);
+  }
+
+  getStockManagementReport(filters: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/stock-management`, filters);
   }
 }

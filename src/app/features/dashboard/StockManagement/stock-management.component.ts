@@ -9,6 +9,9 @@ import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { DashboardFilterStateService } from '../../../core/services/dashboard-filter-state.service';
 import { DashboardFilterDialogComponent } from '../dashboard-filter-dialog/dashboard-filter-dialog.component';
+import { ExcelReportComponent } from '../../../excel/excel-report.component';
+import { ExcelReportService } from '../../../excel/excel-report.service';
+import { StockManagementExcelService } from '../../../excel/stock-management-excel.service';
 
 @Component({
   selector: 'app-stock-management',
@@ -22,16 +25,18 @@ export class StockManagementComponent implements OnInit, OnDestroy {
   companyOptions: any[] = [];
   companies$!: Observable<any[]>;
   currentFilters: any = {};
+  excelReportPayload: any = {};
   private filterSub!: Subscription;
-  
+
   // UI State
   loading: boolean = false;
-  
+  isExporting: boolean = false;
+
   // Data State
   summary: StockSummary | null = null;
   stockBalanceData: StockBalanceSizeWise[] = [];
   transactionsData: LastTransaction[] = [];
-  
+
   // Pagination - Stock Balance (Max 5)
   sbPageNumber: number = 1;
   sbPageSize: number = 5;
@@ -47,6 +52,7 @@ export class StockManagementComponent implements OnInit, OnDestroy {
   // Totals for Last Transactions
   ltTotalInward: number = 0;
   ltTotalOutward: number = 0;
+  ltSortDirection: 'asc' | 'desc' = 'desc';
 
   // Summary calculated from Stock Balance
   sbTotalInward: number = 0;
@@ -87,7 +93,9 @@ export class StockManagementComponent implements OnInit, OnDestroy {
     private stockService: StockManagementService,
     private messageService: MessageService,
     private filterStateService: DashboardFilterStateService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private excelReportService: ExcelReportService,
+    private smExcelService: StockManagementExcelService
   ) {
     // Load Companies for Dropdown
     this.companies$ = this.companyService.getCompanies().pipe(
@@ -125,13 +133,17 @@ export class StockManagementComponent implements OnInit, OnDestroy {
   private loadInitialData(): void {
     this.loading = true;
     const filters = { ...this.currentFilters };
+
+    // Update excel payload
+    this.excelReportPayload = this.buildExcelReportPayload();
+
     delete filters.mode; // Mode is not used by Stock API
-    
+
     if (!filters.isDcBased) {
       delete filters.isDcBased;
       delete filters.deliveryChallans;
     }
-    
+
     this.stockService.getSummary(filters).subscribe(res => {
       this.summary = res;
       this.cdr.markForCheck();
@@ -140,16 +152,35 @@ export class StockManagementComponent implements OnInit, OnDestroy {
     this.stockService.getLastTransactions(filters).subscribe(res => {
       this.transactionsData = res;
       this.ltPageNumber = 1;
+      this.sortTransactions();
       this.updateLTPagination();
       this.calculateLtTotals();
       this.loading = false;
       this.cdr.markForCheck();
     });
-    
+
     // If stock balance was already loaded, refresh it with new filters
     if (this.hasStockBalanceLoaded) {
       this.fetchStockBalance(filters);
     }
+  }
+
+  buildExcelReportPayload(): any {
+    const p: any = {
+      fromDate: this.currentFilters.fromDate,
+      toDate: this.currentFilters.toDate,
+      mode: this.currentFilters.mode || 'Inward',
+      type: this.currentFilters.type || 'Size',
+      companyId: this.currentFilters.companyId,
+      styleNo: this.currentFilters.styleNo,
+      designName: this.currentFilters.designName,
+      colour: this.currentFilters.colour
+    };
+    if (this.currentFilters.isDcBased) {
+      p.isDcBased = true;
+      p.deliveryChallans = this.currentFilters.deliveryChallans;
+    }
+    return p;
   }
 
   // --- Stock Balance Section ---
@@ -173,10 +204,10 @@ export class StockManagementComponent implements OnInit, OnDestroy {
       this.stockBalanceData = res;
       this.hasStockBalanceLoaded = true;
       this.calculateSbTotals();
-      
+
       this.sbPageNumber = 1;
       this.updateSBPagination();
-      
+
       this.loading = false;
       this.cdr.markForCheck();
     });
@@ -192,6 +223,22 @@ export class StockManagementComponent implements OnInit, OnDestroy {
   private calculateLtTotals(): void {
     this.ltTotalInward = this.transactionsData.reduce((acc, curr) => acc + (curr.inwardQty || 0), 0);
     this.ltTotalOutward = this.transactionsData.reduce((acc, curr) => acc + (curr.outwardQty || 0), 0);
+  }
+
+  toggleLtSort(): void {
+    this.ltSortDirection = this.ltSortDirection === 'asc' ? 'desc' : 'asc';
+    this.sortTransactions();
+    this.updateLTPagination();
+    this.cdr.markForCheck();
+  }
+
+  private sortTransactions(): void {
+    if (!this.transactionsData) return;
+    this.transactionsData.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return this.ltSortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+    });
   }
 
   // Get Dynamic Labels for Display
@@ -212,6 +259,20 @@ export class StockManagementComponent implements OnInit, OnDestroy {
     if (this.sbPageNumber > this.sbTotalPages) this.sbPageNumber = this.sbTotalPages;
     const startIndex = (this.sbPageNumber - 1) * this.sbPageSize;
     this.sbPaginatedData = this.stockBalanceData.slice(startIndex, startIndex + this.sbPageSize);
+  }
+
+  sbFirstPage(): void {
+    if (this.sbPageNumber !== 1) {
+      this.sbPageNumber = 1;
+      this.updateSBPagination();
+    }
+  }
+
+  sbLastPage(): void {
+    if (this.sbPageNumber !== this.sbTotalPages) {
+      this.sbPageNumber = this.sbTotalPages;
+      this.updateSBPagination();
+    }
   }
 
   sbNextPage(): void {
@@ -244,6 +305,20 @@ export class StockManagementComponent implements OnInit, OnDestroy {
     this.ltPaginatedData = this.transactionsData.slice(startIndex, startIndex + this.ltPageSize);
   }
 
+  ltFirstPage(): void {
+    if (this.ltPageNumber !== 1) {
+      this.ltPageNumber = 1;
+      this.updateLTPagination();
+    }
+  }
+
+  ltLastPage(): void {
+    if (this.ltPageNumber !== this.ltTotalPages) {
+      this.ltPageNumber = this.ltTotalPages;
+      this.updateLTPagination();
+    }
+  }
+
   ltNextPage(): void {
     if (this.ltPageNumber < this.ltTotalPages) {
       this.ltPageNumber++;
@@ -271,12 +346,12 @@ export class StockManagementComponent implements OnInit, OnDestroy {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${date.getDate().toString().padStart(2, '0')}-${months[date.getMonth()]}-${date.getFullYear()}`;
   }
-  
+
   // --- Toggles & Modals ---
   toggleFilters(): void {
     this.isFilterExpanded = !this.isFilterExpanded;
   }
-  
+
   toggleLastTransactions(): void {
     this.isLastTransactionsExpanded = !this.isLastTransactionsExpanded;
   }
@@ -289,12 +364,12 @@ export class StockManagementComponent implements OnInit, OnDestroy {
   closeFilterModal(): void {
     this.isFilterModalOpen = false;
   }
-  
+
   openViewAllModal(): void {
     this.isViewAllModalOpen = true;
     document.body.style.overflow = 'hidden';
   }
-  
+
   closeViewAllModal(): void {
     this.isViewAllModalOpen = false;
     document.body.style.overflow = '';
@@ -302,5 +377,40 @@ export class StockManagementComponent implements OnInit, OnDestroy {
 
   onRefresh(): void {
     this.onSearch();
+  }
+
+  exportExcel(): void {
+    this.isExporting = true;
+    this.cdr.markForCheck();
+    
+    // We get the latest filters that we used for the current view
+    const payload = this.buildExcelReportPayload();
+    // But we override mode to All so we get Inwards and Outwards
+    payload.mode = 'All';
+
+    this.excelReportService.getStockManagementReport(payload).subscribe({
+      next: (res) => {
+        // Hydrate with view specific strings
+        res.companyName = this.getDisplayCompanyName();
+        res.branch = 'Main Branch';
+        
+        this.smExcelService.generateAndDownload(res).then(() => {
+          this.isExporting = false;
+          this.messageService.success('Report exported successfully');
+          this.cdr.markForCheck();
+        }).catch(err => {
+          console.error(err);
+          this.isExporting = false;
+          this.messageService.error('Error generating Excel file');
+          this.cdr.markForCheck();
+        });
+      },
+      error: (err) => {
+        console.error(err);
+        this.isExporting = false;
+        this.messageService.error('Error fetching data for export');
+        this.cdr.markForCheck();
+      }
+    });
   }
 }

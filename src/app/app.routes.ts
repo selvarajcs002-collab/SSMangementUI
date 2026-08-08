@@ -76,6 +76,14 @@ export const routes: Routes = [
       {
         path: 'stock-management',
         loadComponent: () => import('./features/dashboard/StockManagement/stock-management.component').then(m => m.StockManagementComponent)
+      },
+      {
+        path: 'add-production',
+        loadComponent: () => import('./features/dashboard/add-production/add-production.component').then(m => m.AddProductionComponent)
+      },
+      {
+        path: 'add-production/employee-dashboard',
+        loadComponent: () => import('./features/dashboard/add-production/employee-dashboard/employee-dashboard-production/employee-dashboard-production').then(m => m.EmployeeDashboardProduction)
       }
     ]
   },

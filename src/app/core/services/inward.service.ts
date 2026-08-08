@@ -12,6 +12,7 @@ export interface InwardSavePayload {
     uploadURL: string;
     createdBy: number;
     poNo?: string;
+    inwardDate?: string;
   };
   sizes: {
     size: string;
@@ -29,6 +30,7 @@ export interface MeterInwardSavePayload {
   uploadURL: string;
   createdBy: number;
   poNo?: string;
+  inwardDate?: string;
   meterDetails: {
     meterValue: number;
     bitsCount: number;

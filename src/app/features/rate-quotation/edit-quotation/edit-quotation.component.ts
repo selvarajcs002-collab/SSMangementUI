@@ -41,7 +41,9 @@ export class EditQuotationComponent {
   isLoadingCompanies = true;
   isLoadingQuotation = true;
   isSaving = false;
+  isGeneratingPdf = false;
   quotationId: number | null = null;
+  quotationNo: string = '';
 
   companyOptions: CompanyDropdownModel[] = [];
 
@@ -146,6 +148,7 @@ export class EditQuotationComponent {
         }
 
         const data = response.data;
+        this.quotationNo = data.quotationNo || '';
         console.log('API Success: Fetched quotation details', data);
 
         // Verify company exists
@@ -169,6 +172,9 @@ export class EditQuotationComponent {
         });
 
         this.quotationForm.enable();
+        if (this.quotationId) {
+          this.imagePreview = this.rateQuotationService.getImageUrl(this.quotationId) + '?t=' + new Date().getTime();
+        }
         console.log('Form Patch Success');
       },
       error: (error: HttpErrorResponse) => {
@@ -193,9 +199,18 @@ export class EditQuotationComponent {
     });
   }
 
+  selectedFile: File | null = null;
+  imageRemoved: boolean = false;
+
+  onImageError() {
+    this.imagePreview = null;
+  }
+
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
+      this.selectedFile = file;
+      this.imageRemoved = false;
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target && e.target.result) {
@@ -207,7 +222,9 @@ export class EditQuotationComponent {
   }
 
   removeImage() {
+    this.selectedFile = null;
     this.imagePreview = null;
+    this.imageRemoved = true;
   }
 
   saveDraft() {
@@ -215,7 +232,38 @@ export class EditQuotationComponent {
   }
 
   generatePdf() {
-    console.log('Generating PDF...');
+    if (!this.quotationId) {
+      this.messageService.error('Please save the quotation first before generating PDF.');
+      return;
+    }
+
+    if (this.quotationForm.dirty && !this.isSaving) {
+      this.messageService.error('You have unsaved changes. Please update the quotation before generating PDF.');
+    }
+
+    this.isGeneratingPdf = true;
+    console.log(`Generating PDF for Quotation ID: ${this.quotationId}...`);
+
+    this.rateQuotationService.generatePdf(this.quotationId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+
+        const quoteNo = this.quotationNo || this.quotationForm.get('styleNo')?.value || 'Quotation';
+        anchor.href = url;
+        anchor.download = `RateQuotation_${quoteNo}.pdf`;
+        anchor.click();
+
+        window.URL.revokeObjectURL(url);
+        this.isGeneratingPdf = false;
+        this.messageService.success('PDF Generated Successfully');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isGeneratingPdf = false;
+        console.error('PDF Generation Failure:', error);
+        this.messageService.error('Failed to generate PDF. Please try again.');
+      }
+    });
   }
 
   submitQuotation() {
@@ -254,12 +302,44 @@ export class EditQuotationComponent {
 
       this.rateQuotationService.updateRateQuotation(this.quotationId, payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (response: any) => {
-          this.isSaving = false;
           if (response && response.success) {
             console.log('Update Success');
-            this.messageService.success('Rate Quotation Updated Successfully');
-            this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+
+            if (this.selectedFile) {
+              // Upload new image (overrides older image on server)
+              this.rateQuotationService.uploadImage(this.quotationId!, this.selectedFile).subscribe({
+                next: () => {
+                  this.isSaving = false;
+                  this.messageService.success('Rate Quotation updated and new image saved successfully.');
+                  this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+                },
+                error: (err) => {
+                  this.isSaving = false;
+                  console.error('Image upload error:', err);
+                  this.messageService.error('Failed to upload image. Please try again.');
+                }
+              });
+            } else if (this.imageRemoved) {
+              // Delete image on server
+              this.rateQuotationService.deleteImage(this.quotationId!).subscribe({
+                next: () => {
+                  this.isSaving = false;
+                  this.messageService.success('Rate Quotation updated and image removed.');
+                  this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+                },
+                error: () => {
+                  this.isSaving = false;
+                  this.messageService.success('Rate Quotation updated.');
+                  this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+                }
+              });
+            } else {
+              this.isSaving = false;
+              this.messageService.success('Rate Quotation Updated Successfully');
+              this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+            }
           } else {
+            this.isSaving = false;
             console.log('Update Failure', response);
             this.messageService.error(response?.message || 'Failed to update rate quotation.');
           }

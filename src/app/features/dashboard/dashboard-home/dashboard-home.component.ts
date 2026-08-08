@@ -65,6 +65,12 @@ export class DashboardHomeComponent {
       title: 'Stock Management',
       description: 'View stock balances and track last transactions',
       route: '/dashboard/stock-management'
+    },
+    {
+      icon: '📋',
+      title: 'Add Production',
+      description: 'Record and track daily production output and efficiency',
+      route: '/dashboard/add-production'
     }
   ];
 }

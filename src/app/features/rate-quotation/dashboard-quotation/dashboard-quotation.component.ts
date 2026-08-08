@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -10,7 +10,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 import { RateQuotationService, RateQuotationModel } from '../../../core/services/rate-quotation.service';
 
@@ -34,9 +34,11 @@ import { RateQuotationService, RateQuotationModel } from '../../../core/services
     CustomSelectComponent
   ]
 })
-export class DashboardQuotationComponent implements OnInit {
+export class DashboardQuotationComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['index', 'quoteNo', 'companyName', 'styleNo', 'embDesign', 'rate', 'date', 'actions'];
   dataSource = new MatTableDataSource<RateQuotationModel>([]);
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   companyOptions = [
     { key: 'all', value: 'All Companies' },
@@ -58,6 +60,10 @@ export class DashboardQuotationComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchQuotations();
+  }
+
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
   }
 
   fetchQuotations(): void {

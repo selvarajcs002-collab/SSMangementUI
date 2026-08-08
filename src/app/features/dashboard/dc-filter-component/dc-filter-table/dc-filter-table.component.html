@@ -12,9 +12,7 @@
         <div class="dropdown-menu" *ngIf="showColumnDropdown">
           <div class="dropdown-header">Show/Hide Columns</div>
           <label *ngFor="let col of columns" class="dropdown-item">
-            <input type="checkbox" 
-                   [checked]="!hiddenColumns.has(col.key)" 
-                   (change)="toggleColumn(col.key, $event)">
+            <input type="checkbox" [checked]="!hiddenColumns.has(col.key)" (change)="toggleColumn(col.key, $event)">
             <span>{{ col.label }}</span>
           </label>
         </div>
@@ -27,14 +25,14 @@
     <table class="modern-table">
       <thead>
         <tr>
-          <th *ngFor="let col of visibleColumns" [style.text-align]="col.align || 'left'">
+          <th *ngFor="let col of visibleColumns" [style.text-align]="col.align || 'left'" [ngClass]="'col-' + col.key">
             {{ col.label }}
           </th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let row of data; let i = index" class="table-row">
-          <td *ngFor="let col of visibleColumns" [style.text-align]="col.align || 'left'">
+          <td *ngFor="let col of visibleColumns" [style.text-align]="col.align || 'left'" [ngClass]="'col-' + col.key">
 
             <!-- S.No Column -->
             <ng-container *ngIf="col.key === 'sno'">

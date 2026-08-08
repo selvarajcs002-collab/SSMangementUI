@@ -158,8 +158,14 @@ export class InwardComponent implements OnInit {
     // Check if it's meter based payload based on response shape, default to 'S'
     const isMeterBased = data.entryType === 'M' || (data.meterDetails && data.meterDetails.length > 0);
 
+    const rawDate = data.inwardDate || data.createdDate;
+    let formattedDate = new Date().toISOString().split('T')[0];
+    if (rawDate) {
+      formattedDate = typeof rawDate === 'string' ? rawDate.split('T')[0].split(' ')[0] : new Date(rawDate).toISOString().split('T')[0];
+    }
+
     this.inwardForm.patchValue({
-      inwardDate: data.inwardDate ? new Date(data.inwardDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      inwardDate: formattedDate,
       entryType: isMeterBased ? 'M' : 'S',
       companyId: data.companyId,
       colour: data.colour,

@@ -120,9 +120,12 @@ export class CreateQuotationComponent {
     });
   }
 
+  selectedFile: File | null = null;
+
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
+      this.selectedFile = file;
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target && e.target.result) {
@@ -134,6 +137,7 @@ export class CreateQuotationComponent {
   }
 
   removeImage() {
+    this.selectedFile = null;
     this.imagePreview = null;
   }
 
@@ -147,6 +151,11 @@ export class CreateQuotationComponent {
 
   submitQuotation() {
     if (this.quotationForm.valid) {
+      if (!this.selectedFile) {
+        this.messageService.error('Please select an image before submitting.');
+        return;
+      }
+
       const formValue = this.quotationForm.value;
       const defaults = this.appConfig.defaultQuotationSettings;
       
@@ -181,8 +190,24 @@ export class CreateQuotationComponent {
       this.rateQuotationService.createRateQuotation(payload).subscribe({
         next: (response) => {
           if (response.success) {
-            this.messageService.success(response.message);
-            this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+            const newId = response.data;
+            if (this.selectedFile && newId) {
+              this.rateQuotationService.uploadImage(newId, this.selectedFile).subscribe({
+                next: () => {
+                  this.messageService.success('Rate Quotation created and image saved successfully.');
+                  this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+                },
+                error: (err) => {
+                  console.error('Image upload error:', err);
+                  this.rateQuotationService.deleteRateQuotation(newId).subscribe();
+                  this.messageService.error('Failed to save image. Rate Quotation was not saved.');
+                  // Remain on the same page
+                }
+              });
+            } else {
+              this.messageService.success(response.message || 'Rate Quotation created successfully.');
+              this.router.navigate(['/dashboard/rate-quotation/dashboard']);
+            }
           } else {
             this.messageService.error(response.message || 'Failed to create rate quotation.');
           }

@@ -59,5 +59,27 @@ export class RateQuotationService {
   updateRateQuotation(id: number, data: any): Observable<any> {
     return this.api.put<any>(`RateQuotation/update/${id}`, data);
   }
+
+  uploadImage(id: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.api.post<any>(`RateQuotation/upload-image/${id}`, formData);
+  }
+
+  getImageUrl(id: number): string {
+    return this.api.getFullUrl(`RateQuotation/image/${id}`);
+  }
+
+  deleteImage(id: number): Observable<any> {
+    return this.api.delete<any>(`RateQuotation/image/${id}`);
+  }
+
+  deleteRateQuotation(id: number): Observable<any> {
+    return this.api.delete<any>(`RateQuotation/delete/${id}?modifiedBy=1`);
+  }
+
+  generatePdf(id: number): Observable<Blob> {
+    return this.api.get<Blob>(`RateQuotation/pdf/${id}`, { responseType: 'blob' as 'json' });
+  }
 }
 

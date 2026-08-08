@@ -586,8 +586,9 @@ $text-muted: #6b7280;
     gap: 0.25rem;
 
     button {
-      width: 32px;
+      min-width: 32px;
       height: 32px;
+      padding: 0 6px;
       display: flex;
       align-items: center;
       justify-content: center;

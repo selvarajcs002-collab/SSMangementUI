@@ -7,7 +7,7 @@ import { AppConfigService } from './app-config.service';
 export class ApiService {
   constructor(private http: HttpClient, private configService: AppConfigService) { }
 
-  private getFullUrl(url: string): string {
+  public getFullUrl(url: string): string {
     if (url.startsWith('http') || url.startsWith('assets/')) {
       return url;
     }

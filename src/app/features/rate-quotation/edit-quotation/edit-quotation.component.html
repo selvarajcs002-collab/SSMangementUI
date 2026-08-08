@@ -109,7 +109,7 @@
           </div>
 
           <div class="preview-box" *ngIf="imagePreview">
-            <img [src]="imagePreview" alt="Design Preview">
+            <img [src]="imagePreview" (error)="onImageError()" alt="Design Preview">
             <div class="preview-overlay">
               <button mat-icon-button type="button" (click)="fileInput.click()"><mat-icon>edit</mat-icon></button>
               <button mat-icon-button type="button" color="warn" (click)="removeImage()"><mat-icon>delete</mat-icon></button>
@@ -147,8 +147,10 @@
       <button class="btn-save" type="button" (click)="saveDraft()">
         <mat-icon>save</mat-icon> SAVE DRAFT
       </button>
-      <button class="btn-pdf" type="button" (click)="generatePdf()">
-        <mat-icon>insert_drive_file</mat-icon> GENERATE PDF
+      <button class="btn-pdf" type="button" (click)="generatePdf()" [disabled]="isGeneratingPdf || !quotationId">
+        <mat-icon *ngIf="!isGeneratingPdf">insert_drive_file</mat-icon>
+        <mat-icon *ngIf="isGeneratingPdf" class="loading-spinner rotating">autorenew</mat-icon>
+        {{ isGeneratingPdf ? 'GENERATING PDF...' : 'GENERATE PDF' }}
       </button>
       <button class="btn-submit" type="submit" [disabled]="quotationForm.invalid || isSaving">
         <mat-icon>send</mat-icon> {{ isSaving ? 'UPDATING...' : 'UPDATE QUOTATION' }}

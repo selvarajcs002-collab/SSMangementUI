@@ -29,4 +29,4 @@ import { Component } from '@angular/core';
     }
   `],
 })
-export class DcFilterHeaderComponent {}
+export class DcFilterHeaderComponent { }

@@ -18,7 +18,7 @@ export class ExcelReportComponent {
     type: 'Size'
   };
 
-  constructor(private excelReportService: ExcelReportService) {}
+  constructor(private excelReportService: ExcelReportService) { }
 
   public downloadDeliveryChallanExcel(): void {
     // 1. Fetch Dynamic Data from API
@@ -50,7 +50,7 @@ export class ExcelReportComponent {
     // Total (Bits): 1
     const dynColsCount = reportData.dynamicColumns.length;
     const totalCols = 6 + dynColsCount + 1; // 6 static + dynamic + 1 total
-    
+
     // Helper to get letter for column (e.g., A=1, B=2, Z=26, AA=27). We only need up to ~AZ.
     const getColLetter = (colNum: number) => {
       let temp, letter = '';
@@ -197,7 +197,7 @@ export class ExcelReportComponent {
       const dataRow = [
         r.sno, r.dcNo, r.date, r.styleNo, r.designName, r.colour
       ];
-      
+
       reportData.dynamicColumns.forEach(col => {
         const val = r.dynamicValues[col] || '-';
         dataRow.push(val as never);
@@ -217,7 +217,7 @@ export class ExcelReportComponent {
     // Size Wise Total Row
     ws.mergeCells(`A${currentRowIdx}:F${currentRowIdx}`);
     ws.getCell(`A${currentRowIdx}`).value = 'SIZE WISE TOTAL (BITS)';
-    
+
     let cIdx = 7; // Col G
     reportData.dynamicColumns.forEach(col => {
       ws.getCell(`${getColLetter(cIdx)}${currentRowIdx}`).value = sizeTotals[col];
@@ -235,7 +235,7 @@ export class ExcelReportComponent {
     for (let c = 1; c <= totalCols; c++) {
       ws.getCell(currentRowIdx, c).style = totalRowStyle;
     }
-    
+
     // ---- Grand Total Section ----
     currentRowIdx += 3; // Gap
     ws.mergeCells(`B${currentRowIdx}:${lastColLetter}${currentRowIdx}`);
@@ -256,9 +256,9 @@ export class ExcelReportComponent {
       alignment: { horizontal: 'center', vertical: 'middle' },
       border: cellBorder
     } as any;
-    
-    for (let c = 2; c <= 6; c++) ws.getCell(currentRowIdx, c).style = grandTotalHeaderStyle; 
-    
+
+    for (let c = 2; c <= 6; c++) ws.getCell(currentRowIdx, c).style = grandTotalHeaderStyle;
+
     cIdx = 7;
     reportData.dynamicColumns.forEach(sz => {
       ws.getCell(`${getColLetter(cIdx)}${currentRowIdx}`).value = sz;
@@ -277,7 +277,7 @@ export class ExcelReportComponent {
       border: cellBorder
     } as any;
     for (let c = 2; c <= 6; c++) ws.getCell(currentRowIdx, c).style = grandTotalValueStyle;
-    
+
     cIdx = 7;
     reportData.dynamicColumns.forEach(sz => {
       ws.getCell(`${getColLetter(cIdx)}${currentRowIdx}`).value = sizeTotals[sz];
@@ -286,7 +286,7 @@ export class ExcelReportComponent {
     });
     ws.getCell(`${getColLetter(cIdx)}${currentRowIdx}`).value = reportData.summary.totalBitsCount;
     ws.getCell(`${getColLetter(cIdx)}${currentRowIdx}`).style = grandTotalValueStyle;
-    
+
     currentRowIdx += 2;
     ws.mergeCells(`A${currentRowIdx}:F${currentRowIdx}`);
     ws.getCell(`A${currentRowIdx}`).value = 'Note : "-" Represents zero / not applicable.';
@@ -299,9 +299,9 @@ export class ExcelReportComponent {
     ws.getColumn('D').width = 25; // STYLE NO
     ws.getColumn('E').width = 35; // DESIGN NAME
     ws.getColumn('F').width = 20; // COLOUR
-    
-    for(let c = 7; c <= totalCols - 1; c++) {
-       ws.getColumn(c).width = 10;
+
+    for (let c = 7; c <= totalCols - 1; c++) {
+      ws.getColumn(c).width = 10;
     }
     ws.getColumn(totalCols).width = 18; // TOTAL (BITS)
 

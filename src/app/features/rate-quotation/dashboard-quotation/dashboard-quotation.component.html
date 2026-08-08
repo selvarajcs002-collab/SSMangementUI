@@ -47,38 +47,38 @@
 
       <!-- Quote No Column -->
       <ng-container matColumnDef="quoteNo">
-        <th mat-header-cell *matHeaderCellDef class="text-center w-15 font-medium"> Quote No </th>
+        <th mat-header-cell *matHeaderCellDef class="w-15 font-medium"> Quote No </th>
         <td mat-cell *matCellDef="let element" class="font-medium text-dark"> {{element.quotationNo}} </td>
       </ng-container>
 
       <!-- Company Name Column -->
       <ng-container matColumnDef="companyName">
-        <th mat-header-cell *matHeaderCellDef class="text-center w-20 font-medium"> Company Name </th>
+        <th mat-header-cell *matHeaderCellDef class="w-20 font-medium"> Company Name </th>
         <td mat-cell *matCellDef="let element" class="text-dark"> {{element.companyName}} </td>
       </ng-container>
 
       <!-- Style No Column -->
       <ng-container matColumnDef="styleNo">
-        <th mat-header-cell *matHeaderCellDef class="text-center w-15 font-medium"> Style No </th>
+        <th mat-header-cell *matHeaderCellDef class="w-15 font-medium"> Style No </th>
         <td mat-cell *matCellDef="let element" class="text-dark"> {{element.styleNo}} </td>
       </ng-container>
 
       <!-- EMB Design Column -->
       <ng-container matColumnDef="embDesign">
-        <th mat-header-cell *matHeaderCellDef class="text-center w-20 font-medium"> EMB Design </th>
+        <th mat-header-cell *matHeaderCellDef class="w-20 font-medium"> EMB Design </th>
         <td mat-cell *matCellDef="let element" class="text-dark"> {{element.designName}} </td>
       </ng-container>
 
       <!-- Rate Column -->
       <ng-container matColumnDef="rate">
-        <th mat-header-cell *matHeaderCellDef class="text-center w-10 font-medium"> Rate / Meter </th>
+        <th mat-header-cell *matHeaderCellDef class="w-10 font-medium"> Rate / Meter </th>
         <td mat-cell *matCellDef="let element" class="font-medium text-dark"> {{element.ratePerMeter |
           currency:'INR':'symbol':'1.2-2'}} </td>
       </ng-container>
 
       <!-- Date Column -->
       <ng-container matColumnDef="date">
-        <th mat-header-cell *matHeaderCellDef class="text-center w-10 font-medium"> Date </th>
+        <th mat-header-cell *matHeaderCellDef class="w-10 font-medium"> Date </th>
         <td mat-cell *matCellDef="let element" class="text-dark"> {{element.quotationDate | date:'dd-MMM-yyyy'}} </td>
       </ng-container>
 
@@ -98,17 +98,6 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row-hover"></tr>
     </table>
 
-    <div class="custom-paginator">
-      <div class="paginator-info">Showing 1 to 9 of 45 entries</div>
-      <div class="paginator-controls">
-        <button class="page-btn"><mat-icon>chevron_left</mat-icon></button>
-        <button class="page-btn active">1</button>
-        <button class="page-btn">2</button>
-        <button class="page-btn">3</button>
-        <button class="page-btn">4</button>
-        <button class="page-btn">5</button>
-        <button class="page-btn"><mat-icon>chevron_right</mat-icon></button>
-      </div>
-    </div>
+    <mat-paginator [pageSizeOptions]="[10, 25, 100]" aria-label="Select page of quotations"></mat-paginator>
   </div>
 </div>

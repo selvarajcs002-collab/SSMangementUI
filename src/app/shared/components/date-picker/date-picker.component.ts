@@ -7,7 +7,7 @@ import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
 @Component({
   selector: 'app-date-picker',
   standalone: true,
-  imports: [CommonModule, FormsModule, SafeHtmlPipe],
+  imports: [CommonModule, FormsModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

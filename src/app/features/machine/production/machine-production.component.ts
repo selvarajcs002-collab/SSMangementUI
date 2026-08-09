@@ -25,7 +25,7 @@ interface ProductionEntry {
 @Component({
   selector: 'app-machine-production',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, InputFieldComponent, AppDatePickerComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, AppDatePickerComponent],
   templateUrl: './machine-production.component.html',
   styleUrls: ['./machine-production.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

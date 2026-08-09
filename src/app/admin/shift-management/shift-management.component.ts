@@ -48,7 +48,7 @@ export interface Employee {
 @Component({
   selector: 'app-shift-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
   templateUrl: './shift-management.component.html',
   styleUrls: ['./shift-management.component.scss'],
   animations: [

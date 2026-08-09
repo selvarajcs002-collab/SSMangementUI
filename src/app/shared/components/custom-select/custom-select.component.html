@@ -4,9 +4,14 @@
     <div class="left-section">
       <span class="icon" *ngIf="icon" [innerHTML]="icon | safeHtml"></span>
       <ng-container *ngIf="!multiple || selectedChips.length === 0">
-        <span class="label" [class.has-selection]="selectedLabel">
+        <span class="label" *ngIf="!enableTypeAhead" [class.has-selection]="selectedLabel">
           {{ selectedLabel || placeholder }}
         </span>
+        <input type="text" class="typeahead-input" *ngIf="enableTypeAhead" 
+               [(ngModel)]="searchTerm" 
+               (ngModelChange)="onSearchTermChange()"
+               [placeholder]="placeholder" 
+               (click)="onInputClick($event)">
       </ng-container>
       <div class="chips-container" *ngIf="multiple && selectedChips.length > 0">
         <span class="chip" *ngFor="let chip of selectedChips">
@@ -41,7 +46,7 @@
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
-        <input type="text" [(ngModel)]="searchTerm" placeholder="Search..." (click)="$event.stopPropagation()">
+        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange()" placeholder="Search..." (click)="$event.stopPropagation()">
       </div>
       <div class="action-buttons" *ngIf="multiple">
         <button type="button" class="btn-select-all" (click)="selectAll(); $event.stopPropagation()">Select All</button>

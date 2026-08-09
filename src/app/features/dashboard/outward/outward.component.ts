@@ -32,7 +32,6 @@ import { AppDatePickerComponent } from '../../../shared/components/app-date-pick
     SizePickerModalComponent,
     MeterPickerModalComponent,
     CustomSelectComponent,
-    ExcelReportComponent,
     AppDatePickerComponent
   ],
   templateUrl: './outward.component.html',
@@ -463,6 +462,7 @@ export class OutwardComponent implements OnInit {
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (res) => {
         console.log('Data Loaded for Company:', companyId);
+        // Data is now sorted by newest first directly from the Stored Procedure (CreatedDate DESC)
         this.fullData = res.options;
         this.selectedCompany = res.company;
         this.fullDcData = [];
@@ -487,7 +487,7 @@ export class OutwardComponent implements OnInit {
         }
 
         // Populate PO Numbers from Inward options
-        const validPoNos = res.options.filter((x: any) => x.poNo && x.status === 'Active').map((x: any) => x.poNo);
+        const validPoNos = this.fullData.filter((x: any) => x.poNo && x.status === 'Active').map((x: any) => x.poNo);
         this.poNoOptions = [...new Set(validPoNos)].map((po: any) => ({ key: po, value: po }));
 
         // Enable dependent fields
@@ -529,23 +529,23 @@ export class OutwardComponent implements OnInit {
     this.selectedStyle = styleNo;
     this.selectedColour = colour;
 
-    let filtered = this.fullData;
+    // Design options should be filtered by selectedStyle and selectedColour
+    let designFiltered = this.fullData;
+    if (this.selectedStyle) designFiltered = designFiltered.filter(x => x.styleNo === this.selectedStyle);
+    if (this.selectedColour && this.selectedColour !== 'MULTI') designFiltered = designFiltered.filter(x => x.colour === this.selectedColour);
+    this.designOptions = this.getUniqueStrings(designFiltered, (x: any) => x.designName);
 
-    if (this.selectedDesign) {
-      filtered = filtered.filter(x => x.designName === this.selectedDesign);
-    }
+    // Style options should be filtered by selectedColour and selectedDesign
+    let styleFiltered = this.fullData;
+    if (this.selectedDesign) styleFiltered = styleFiltered.filter(x => x.designName === this.selectedDesign);
+    if (this.selectedColour && this.selectedColour !== 'MULTI') styleFiltered = styleFiltered.filter(x => x.colour === this.selectedColour);
+    this.styleOptions = this.getUniqueStrings(styleFiltered, (x: any) => x.styleNo);
 
-    if (this.selectedStyle) {
-      filtered = filtered.filter(x => x.styleNo === this.selectedStyle);
-    }
-
-    if (this.selectedColour && this.selectedColour !== 'MULTI') {
-      filtered = filtered.filter(x => x.colour === this.selectedColour);
-    }
-
-    this.designOptions = this.getUniqueStrings(filtered, (x: any) => x.designName);
-    this.styleOptions = this.getUniqueStrings(filtered, (x: any) => x.styleNo);
-    this.colourOptions = this.getUniqueStrings(filtered, (x: any) => x.colour);
+    // Colour options should be filtered by selectedStyle and selectedDesign
+    let colourFiltered = this.fullData;
+    if (this.selectedDesign) colourFiltered = colourFiltered.filter(x => x.designName === this.selectedDesign);
+    if (this.selectedStyle) colourFiltered = colourFiltered.filter(x => x.styleNo === this.selectedStyle);
+    this.colourOptions = this.getUniqueStrings(colourFiltered, (x: any) => x.colour);
 
     if (!this.colourOptions.includes('MULTI')) {
       this.colourOptions.push('MULTI');
@@ -562,7 +562,12 @@ export class OutwardComponent implements OnInit {
       this.dcLoadSubject.next({ companyId, styleNo: this.selectedStyle, designRef: this.selectedDesign });
     }
 
-    this.selectedInwardId = filtered.length ? filtered[0].inwardId : null;
+    // fallback inward id
+    let totalFiltered = this.fullData;
+    if (this.selectedDesign) totalFiltered = totalFiltered.filter(x => x.designName === this.selectedDesign);
+    if (this.selectedStyle) totalFiltered = totalFiltered.filter(x => x.styleNo === this.selectedStyle);
+    if (this.selectedColour && this.selectedColour !== 'MULTI') totalFiltered = totalFiltered.filter(x => x.colour === this.selectedColour);
+    this.selectedInwardId = totalFiltered.length ? totalFiltered[0].inwardId : null;
   }
 
   openAddColourModal() {

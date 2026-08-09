@@ -41,6 +41,7 @@
             <div class="input-group">
               <label>Style Number <span class="required">*</span></label>
               <app-custom-select formControlName="styleNo" [options]="styleSelectOptions" placeholder="Select Style..."
+                [enableTypeAhead]="true"
                 (change)="onSelectionChange()">
               </app-custom-select>
               <div class="error-text"
@@ -52,6 +53,7 @@
             <div class="input-group" *ngIf="entryType === 'meter'">
               <label>Colour <span class="required">*</span></label>
               <app-custom-select formControlName="colour" [options]="colourSelectOptions" placeholder="Select Colour..."
+                [enableTypeAhead]="true"
                 (change)="onSelectionChange()"
                 [disabled]="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
               </app-custom-select>
@@ -67,6 +69,7 @@
             <div class="input-group">
               <label>Design Reference</label>
               <app-custom-select formControlName="designRef" [options]="designSelectOptions"
+                [enableTypeAhead]="true"
                 placeholder="Select Design Reference..." (change)="onSelectionChange()">
               </app-custom-select>
             </div>
@@ -104,6 +107,7 @@
             *ngIf="outwardForm.get('isDeliveryChallan')?.value">
             <label>Select the Dc No <span class="required">*</span></label>
             <app-custom-select formControlName="selectedDcNos" [options]="dcNoSelectOptions" [multiple]="true"
+              [showSearch]="true"
               placeholder="Choose DC Numbers...">
             </app-custom-select>
             <div class="selected-badges" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;"
@@ -568,7 +572,8 @@
         <div class="form-group">
           <label>Select Colour(s) <span class="text-danger">*</span></label>
           <app-custom-select [(ngModel)]="selectedColoursForModal" [ngModelOptions]="{standalone: true}"
-            [options]="availableColoursForModal" [multiple]="true" placeholder="Choose colours...">
+            [options]="availableColoursForModal" [multiple]="true" 
+            [showSearch]="true" placeholder="Choose colours...">
           </app-custom-select>
           <div *ngIf="availableColoursForModal.length === 0" class="no-colours-msg">
             No more colours available for this Style.
@@ -615,7 +620,7 @@
             Delivery To
           </label>
           <app-custom-select [(ngModel)]="tempAdditionalDetails.deliveryTo" [ngModelOptions]="{standalone: true}"
-            [options]="deliveryToOptions" placeholder="Select Delivery To..." style="width: 100%;">
+            [options]="deliveryToOptions" [enableTypeAhead]="true" placeholder="Select Delivery To..." style="width: 100%;">
           </app-custom-select>
         </div>
         <!-- PO No -->
@@ -633,7 +638,7 @@
             PO No
           </label>
           <app-custom-select [(ngModel)]="tempAdditionalDetails.poNo" [ngModelOptions]="{standalone: true}"
-            [options]="poNoOptions" placeholder="Select PO No..." style="width: 100%;">
+            [options]="poNoOptions" [enableTypeAhead]="true" placeholder="Select PO No..." style="width: 100%;">
           </app-custom-select>
         </div>
         <!-- Weight -->

@@ -42,7 +42,7 @@ export interface RateQuotationResponse {
   providedIn: 'root'
 })
 export class RateQuotationService {
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   getAllRateQuotations(): Observable<RateQuotationResponse> {
     return this.api.get<RateQuotationResponse>('RateQuotation/getall');
@@ -79,7 +79,7 @@ export class RateQuotationService {
   }
 
   generatePdf(id: number): Observable<Blob> {
-    return this.api.get<Blob>(`RateQuotation/pdf/${id}`, { responseType: 'blob' as 'json' });
+    return this.api.postBlob(`RateQuotation/download-pdf`, { quotationId: id });
   }
 }
 

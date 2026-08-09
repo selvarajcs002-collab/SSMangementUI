@@ -16,7 +16,7 @@
  - Apply `clamp()` for dynamic font scaling on larger headers.
  * ========================================= */
 
-@import '../../../shared/styles/responsive';
+@use '../../../shared/styles/responsive';
 
 .dashboard-page {
   padding-top: 12px !important;

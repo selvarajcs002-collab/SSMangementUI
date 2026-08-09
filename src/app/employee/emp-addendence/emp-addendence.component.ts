@@ -41,10 +41,6 @@ export interface CalendarDay {
     FormsModule,
     ReactiveFormsModule,
     RouterModule,
-    InputFieldComponent,
-    ButtonComponent,
-    SelectFieldComponent,
-    LoaderComponent,
     DatePickerComponent
   ],
   templateUrl: './emp-addendence.component.html',

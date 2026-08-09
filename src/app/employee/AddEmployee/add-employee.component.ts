@@ -19,7 +19,6 @@ import { AppDatePickerComponent } from '../../shared/components/app-date-picker/
     InputFieldComponent,
     ButtonComponent,
     SelectFieldComponent,
-    LoaderComponent,
     RouterModule,
     AppDatePickerComponent
   ],

@@ -6,7 +6,7 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
 @Component({
   selector: 'app-machine',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, SafeHtmlPipe],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './machine.component.html',
   styleUrls: ['./machine.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -32,6 +32,8 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   @Input() isInvalid: boolean = false;
   @Input() multiple: boolean = false;
   @Input() showSearch: boolean = false;
+  @Input() enableTypeAhead: boolean = false;
+  @Input() mruKey: string = '';
   @Input() emptyMessage: string = 'No options available';
 
   @Output() change = new EventEmitter<any>();
@@ -54,22 +56,96 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
     }
   }
 
+  onInputClick(event: Event) {
+    event.stopPropagation();
+    if (!this.isOpen) {
+      this.toggle();
+    }
+  }
+
+  onSearchTermChange() {
+    if (this.isOpen) {
+      this.cdr.markForCheck();
+    }
+  }
+
   toggle() {
     if (!this.disabled && !this.loading) {
       this.isOpen = !this.isOpen;
       if (this.isOpen) {
-        this.searchTerm = ''; // Reset search on open
+        if (this.enableTypeAhead && !this.multiple) {
+          this.searchTerm = '';
+        } else {
+          this.searchTerm = ''; // Reset search on open
+        }
+      } else {
+        this.closeAndReset();
+        return;
       }
       this.onTouched();
       this.cdr.markForCheck();
     }
   }
 
+  private closeAndReset() {
+    this.isOpen = false;
+    if (this.enableTypeAhead && !this.multiple) {
+      this.searchTerm = this.selectedLabel;
+    } else {
+      this.searchTerm = '';
+    }
+    this.cdr.markForCheck();
+  }
+
+  private getMruKeys(): any[] {
+    if (!this.mruKey) return [];
+    try {
+      const stored = localStorage.getItem(`mru_${this.mruKey}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private addToMru(key: any) {
+    if (!this.mruKey) return;
+    try {
+      let mru = this.getMruKeys();
+      mru = mru.filter(k => String(k) !== String(key));
+      mru.unshift(key);
+      if (mru.length > 5) mru = mru.slice(0, 5);
+      localStorage.setItem(`mru_${this.mruKey}`, JSON.stringify(mru));
+    } catch { }
+  }
+
   get filteredOptions(): SelectOption[] {
     if (!this.options) return [];
-    if (!this.searchTerm) return this.options;
-    const term = this.searchTerm.toLowerCase();
-    return this.options.filter(o => o.value.toLowerCase().includes(term));
+    
+    let filtered = this.options;
+    
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase().trim();
+      if (term) {
+        filtered = this.options.filter(o => o.value && String(o.value).toLowerCase().includes(term));
+      }
+    }
+
+    if (this.mruKey) {
+      const mru = this.getMruKeys();
+      if (mru.length > 0) {
+        filtered = [...filtered].sort((a, b) => {
+          const indexA = mru.findIndex(k => String(k) === String(a.key));
+          const indexB = mru.findIndex(k => String(k) === String(b.key));
+          const hasA = indexA !== -1;
+          const hasB = indexB !== -1;
+          if (hasA && hasB) return indexA - indexB;
+          if (hasA) return -1;
+          if (hasB) return 1;
+          return 0; // retain original relative order
+        });
+      }
+    }
+    return filtered;
   }
 
   selectAll() {
@@ -101,6 +177,7 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   }
 
   selectOption(option: SelectOption) {
+    this.addToMru(option.key);
     if (this.multiple) {
       if (!Array.isArray(this.selectedValue)) {
         this.selectedValue = [];
@@ -158,9 +235,9 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
     if (!this.elementRef.nativeElement.contains(event.target)) {
-      this.isOpen = false;
-      this.searchTerm = '';
-      this.cdr.markForCheck();
+      if (this.isOpen) {
+        this.closeAndReset();
+      }
     }
   }
 
@@ -182,9 +259,15 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
         } else {
           this.selectedLabel = '';
         }
+        if (this.enableTypeAhead && !this.isOpen) {
+          this.searchTerm = this.selectedLabel;
+        }
       }
     } else {
       this.selectedLabel = '';
+      if (this.enableTypeAhead && !this.multiple && !this.isOpen) {
+        this.searchTerm = '';
+      }
     }
     this.cdr.markForCheck();
   }

@@ -70,7 +70,7 @@ export interface ActivityLog {
 @Component({
   selector: 'app-inventory',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, SectionHeaderComponent, SafeHtmlPipe, CustomSelectComponent, AlertComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, SafeHtmlPipe, AlertComponent],
   templateUrl: './inventory.component.html',
   styleUrl: './inventory.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

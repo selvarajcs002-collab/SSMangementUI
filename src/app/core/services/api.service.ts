@@ -30,6 +30,10 @@ export class ApiService {
     return this.http.post<T>(this.getFullUrl(url), data);
   }
 
+  postBlob(url: string, data: unknown): Observable<Blob> {
+    return this.http.post(this.getFullUrl(url), data, { responseType: 'blob' });
+  }
+
   put<T>(url: string, data: unknown): Observable<T> {
     return this.http.put<T>(this.getFullUrl(url), data);
   }

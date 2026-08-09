@@ -37,14 +37,16 @@ pipeline {
         }
 
         stage('Deploy Angular') {
-            steps {
-                echo 'Deploying Angular application...'
+    steps {
+        echo 'Deploying Angular application...'
 
-                sh '''
-                    rsync -av --delete dist/ ${DEPLOY_PATH}/
-                '''
-            }
-        }
+        sh '''
+            rsync -av --delete \
+                dist/SSManagement/browser/ \
+                /var/www/SSManagement/DEV/angular/
+        '''
+    }
+}
     }
 
     post {

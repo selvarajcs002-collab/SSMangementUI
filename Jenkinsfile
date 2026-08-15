@@ -76,49 +76,45 @@ pipeline {
             }
         }
 
-        stage('Validate Build') {
-            steps {
-                sh '''
-                    set -e
+       stage('Validate Build') {
+    steps {
+        sh '''
+            set -e
 
-                    echo "======================================"
-                    echo "VALIDATING ANGULAR BUILD"
-                    echo "======================================"
+            echo "======================================"
+            echo "VALIDATING ANGULAR BUILD"
+            echo "======================================"
 
-                    if [ ! -d "dist" ]; then
-                        echo "ERROR: dist directory was not created."
-                        exit 1
-                    fi
+            if [ ! -d "dist" ]; then
+                echo "ERROR: dist directory was not created."
+                exit 1
+            fi
 
-                    if [ -d "dist/browser" ]; then
-                        BUILD_SOURCE="dist/browser"
-                    else
-                        BUILD_SOURCE="dist"
-                    fi
+            BUILD_SOURCE=$(find dist -type f -name "index.html" -print -quit | xargs -r dirname)
 
-                    echo "Build source: $BUILD_SOURCE"
+            if [ -z "$BUILD_SOURCE" ]; then
+                echo "ERROR: index.html was not found anywhere inside dist."
+                echo "Contents of dist:"
+                find dist -maxdepth 3 -type f | head -100
+                exit 1
+            fi
 
-                    if [ ! -f "$BUILD_SOURCE/index.html" ]; then
-                        echo "ERROR: index.html was not found."
-                        echo "Angular build is invalid."
-                        exit 1
-                    fi
+            echo "Angular build source:"
+            echo "$BUILD_SOURCE"
 
-                    echo "index.html found."
+            FILE_COUNT=$(find "$BUILD_SOURCE" -type f | wc -l)
 
-                    FILE_COUNT=$(find "$BUILD_SOURCE" -type f | wc -l)
+            echo "Build file count: $FILE_COUNT"
 
-                    echo "Build file count: $FILE_COUNT"
+            if [ "$FILE_COUNT" -eq 0 ]; then
+                echo "ERROR: Angular build contains no files."
+                exit 1
+            fi
 
-                    if [ "$FILE_COUNT" -eq 0 ]; then
-                        echo "ERROR: Build contains no files."
-                        exit 1
-                    fi
-
-                    echo "Angular build validation successful."
-                '''
-            }
-        }
+            echo "Angular build validation successful."
+        '''
+    }
+}
 
         stage('Prepare New Deployment') {
             steps {

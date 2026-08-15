@@ -50,9 +50,8 @@ pipeline {
                     echo "Node: $(node --version)"
                     echo "NPM : $(npm --version)"
 
-                    echo "Ensuring deployment directory exists..."
-                    sudo mkdir -p "$DEPLOY_BASE"
-                    sudo chmod -R 777 "$DEPLOY_BASE"
+                    echo "Checking deployment base directory..."
+                    mkdir -p "$DEPLOY_BASE"
 
                     echo "Environment validation successful."
                 '''
@@ -131,7 +130,6 @@ pipeline {
                         exit 1
                     fi
 
-                    sudo chmod -R 777 "$TEMP_DIR"
                     echo "Temporary deployment prepared successfully."
                 '''
             }
@@ -146,7 +144,6 @@ pipeline {
                     echo "BACKING UP CURRENT BUILD"
                     echo "======================================"
 
-                    # Check for both 'Angular' or lowercase 'angular' if previously created
                     TARGET_EXISTING=""
                     if [ -d "$DEPLOY_PATH" ] && [ "$(ls -A "$DEPLOY_PATH" 2>/dev/null)" ]; then
                         TARGET_EXISTING="$DEPLOY_PATH"
@@ -163,7 +160,7 @@ pipeline {
                         echo "$BACKUP_PATH" > "$DEPLOY_BASE/.last_backup"
                         echo "Backup created successfully."
                     else
-                        echo "No active files found in $DEPLOY_PATH. Skipping backup creation."
+                        echo "No active deployment found in $DEPLOY_PATH. Skipping backup."
                         rm -f "$DEPLOY_BASE/.last_backup"
                     fi
                 '''
@@ -186,9 +183,7 @@ pipeline {
                         exit 1
                     fi
 
-                    # Rename temporary build directory directly to the active Angular directory
                     mv "$TEMP_DIR" "$DEPLOY_PATH"
-                    sudo chmod -R 777 "$DEPLOY_PATH"
 
                     if [ ! -f "$DEPLOY_PATH/index.html" ]; then
                         echo "ERROR: Active deployment verification failed."
@@ -212,12 +207,12 @@ pipeline {
                     if pm2 describe "$PM2_APP" > /dev/null 2>&1; then
                         pm2 restart "$PM2_APP"
                     else
-                        echo "PM2 process $PM2_APP not found. Creating and launching on port $PORT..."
+                        echo "PM2 process $PM2_APP not found. Starting instance on port $PORT..."
                         pm2 start npx --name "$PM2_APP" -- http-server "$DEPLOY_PATH" -p "$PORT" -s --spa || pm2 start npx --name "$PM2_APP" -- serve -s "$DEPLOY_PATH" -l "$PORT"
                     fi
 
                     pm2 save
-                    echo "PM2 process $PM2_APP restarted."
+                    echo "PM2 process $PM2_APP restarted successfully."
                 '''
             }
         }

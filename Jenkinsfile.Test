@@ -1,0 +1,349 @@
+pipeline {
+
+    agent any
+
+    triggers {
+        githubPush()
+    }
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        skipDefaultCheckout(true)
+        timeout(time: 20, unit: 'MINUTES')
+        buildDiscarder(
+            logRotator(
+                numToKeepStr: '20',
+                artifactNumToKeepStr: '10'
+            )
+        )
+    }
+
+    environment {
+        DEPLOY_BASE = '/var/www/SSManagement/TEST'
+        DEPLOY_PATH = '/var/www/SSManagement/TEST/Angular'
+        PM2_APP     = 'AngularTEST'
+        PORT        = '4201'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo '======================================'
+                echo 'CHECKING OUT DEV BRANCH'
+                echo '======================================'
+
+                checkout scm
+            }
+        }
+
+        stage('Validate Environment') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "VALIDATING ENVIRONMENT"
+                    echo "======================================"
+
+                    echo "Node:"
+                    node --version
+
+                    echo "NPM:"
+                    npm --version
+
+                    echo "PM2:"
+                    pm2 --version || true
+
+                    echo "Ensuring deployment base directory exists..."
+                    sudo mkdir -p "$DEPLOY_BASE"
+                    sudo chmod -R 777 "$DEPLOY_BASE"
+
+                    echo "Environment validation successful."
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo '======================================'
+                echo 'INSTALLING NPM DEPENDENCIES'
+                echo '======================================'
+
+                sh '''
+                    set -e
+                    # Uses npm ci or falls back to install if package-lock is updating
+                    npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+                '''
+            }
+        }
+
+        stage('Build Angular') {
+            steps {
+                echo '======================================'
+                echo 'BUILDING ANGULAR APPLICATION (TEST)'
+                echo '======================================'
+
+                sh '''
+                    set -e
+                    rm -rf dist
+                    npm run build -- --configuration=production
+                '''
+            }
+        }
+
+        stage('Validate Build') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "VALIDATING ANGULAR BUILD"
+                    echo "======================================"
+
+                    # Dynamically locate the directory containing index.html
+                    BUILD_SOURCE=$(find dist -name "index.html" -exec dirname {} \\; | head -n 1)
+
+                    if [ -z "$BUILD_SOURCE" ] || [ ! -d "$BUILD_SOURCE" ]; then
+                        echo "ERROR: index.html not found inside dist folder."
+                        echo "Actual dist structure:"
+                        find dist -maxdepth 4 -type f || true
+                        exit 1
+                    fi
+
+                    echo "Found compiled build output at: $BUILD_SOURCE"
+
+                    FILE_COUNT=$(find "$BUILD_SOURCE" -type f | wc -l)
+                    echo "Build file count: $FILE_COUNT"
+
+                    if [ "$FILE_COUNT" -eq 0 ]; then
+                        echo "ERROR: Angular build directory is empty."
+                        exit 1
+                    fi
+
+                    echo "Angular build validation successful."
+                '''
+            }
+        }
+
+        stage('Prepare New Deployment') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "PREPARING NEW DEPLOYMENT"
+                    echo "======================================"
+
+                    TEMP_DIR="$DEPLOY_BASE/Angular_new"
+                    rm -rf "$TEMP_DIR"
+                    mkdir -p "$TEMP_DIR"
+
+                    # Find actual build output folder
+                    BUILD_SOURCE=$(find dist -name "index.html" -exec dirname {} \\; | head -n 1)
+
+                    cp -r "$BUILD_SOURCE"/. "$TEMP_DIR"/
+
+                    if [ ! -f "$TEMP_DIR/index.html" ]; then
+                        echo "ERROR: index.html missing from temporary deployment folder."
+                        rm -rf "$TEMP_DIR"
+                        exit 1
+                    fi
+
+                    sudo chmod -R 777 "$TEMP_DIR"
+                    echo "Temporary deployment prepared successfully."
+                '''
+            }
+        }
+
+        stage('Backup Current Deployment') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "BACKING UP CURRENT TEST BUILD"
+                    echo "======================================"
+
+                    if [ -d "$DEPLOY_PATH" ]; then
+                        TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+                        BACKUP_PATH="$DEPLOY_BASE/Angular_$TIMESTAMP"
+
+                        echo "Creating backup at: $BACKUP_PATH"
+
+                        if [ -e "$BACKUP_PATH" ]; then
+                            echo "ERROR: Backup directory already exists."
+                            exit 1
+                        fi
+
+                        mv "$DEPLOY_PATH" "$BACKUP_PATH"
+                        echo "$BACKUP_PATH" > "$DEPLOY_BASE/.last_backup"
+                        echo "Backup completed successfully."
+                    else
+                        echo "No existing Angular deployment folder found."
+                        rm -f "$DEPLOY_BASE/.last_backup"
+                    fi
+                '''
+            }
+        }
+
+        stage('Activate New Deployment') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "ACTIVATING NEW TEST BUILD"
+                    echo "======================================"
+
+                    TEMP_DIR="$DEPLOY_BASE/Angular_new"
+
+                    if [ ! -d "$TEMP_DIR" ]; then
+                        echo "ERROR: Temporary deployment does not exist."
+                        exit 1
+                    fi
+
+                    if [ ! -f "$TEMP_DIR/index.html" ]; then
+                        echo "ERROR: index.html missing."
+                        exit 1
+                    fi
+
+                    mv "$TEMP_DIR" "$DEPLOY_PATH"
+                    sudo chmod -R 777 "$DEPLOY_PATH"
+
+                    if [ ! -f "$DEPLOY_PATH/index.html" ]; then
+                        echo "ERROR: Active deployment is invalid."
+                        exit 1
+                    fi
+
+                    echo "Deployment activation successful."
+                '''
+            }
+        }
+
+        stage('Restart Angular TEST') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "RESTARTING ANGULAR TEST (PM2)"
+                    echo "======================================"
+
+                    # If PM2 app exists, restart it; otherwise start it via serve/http-server on port 4201
+                    if pm2 describe "$PM2_APP" > /dev/null 2>&1; then
+                        pm2 restart "$PM2_APP"
+                    else
+                        echo "PM2 app $PM2_APP not registered. Starting new instance on port $PORT..."
+                        pm2 start npx --name "$PM2_APP" -- http-server "$DEPLOY_PATH" -p "$PORT" -s --spa || pm2 start npx --name "$PM2_APP" -- serve -s "$DEPLOY_PATH" -l "$PORT"
+                    fi
+
+                    pm2 save
+                    echo "$PM2_APP restarted successfully."
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "======================================"
+                    echo "VERIFYING TEST DEPLOYMENT"
+                    echo "======================================"
+
+                    if [ ! -f "$DEPLOY_PATH/index.html" ]; then
+                        echo "ERROR: index.html not found in $DEPLOY_PATH."
+                        exit 1
+                    fi
+
+                    echo "PM2 status:"
+                    pm2 status "$PM2_APP"
+
+                    echo ""
+                    echo "Checking port $PORT..."
+                    PORT_OPEN=false
+                    for i in {1..10}; do
+                        if ss -lnt | grep -q ":$PORT "; then
+                            echo "Port $PORT is active and listening."
+                            PORT_OPEN=true
+                            break
+                        fi
+                        echo "Waiting for port $PORT to open... ($i/10)"
+                        sleep 2
+                    done
+
+                    if [ "$PORT_OPEN" != "true" ]; then
+                        echo "ERROR: Port $PORT is not listening."
+                        exit 1
+                    fi
+
+                    echo "Deployment verification successful."
+                '''
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo '''
+==========================================
+UI TEST DEPLOYMENT SUCCESSFUL
+==========================================
+URL         : http://200.141.4.172:4201
+PM2 App     : AngularTEST
+Port        : 4201
+Deploy Path : /var/www/SSManagement/TEST/Angular
+Backups     : /var/www/SSManagement/TEST/Angular_YYYYMMDD_HHMMSS
+==========================================
+'''
+        }
+
+        failure {
+            echo '''
+==========================================
+UI TEST DEPLOYMENT FAILED - ROLLING BACK
+==========================================
+'''
+            sh '''
+                set +e
+
+                BACKUP_FILE="$DEPLOY_BASE/.last_backup"
+
+                if [ -f "$BACKUP_FILE" ]; then
+                    BACKUP_PATH=$(cat "$BACKUP_FILE")
+
+                    if [ -d "$BACKUP_PATH" ]; then
+                        echo "Stopping $PM2_APP..."
+                        pm2 stop "$PM2_APP" || true
+
+                        echo "Removing broken deployment..."
+                        rm -rf "$DEPLOY_PATH"
+
+                        echo "Restoring from $BACKUP_PATH..."
+                        mv "$BACKUP_PATH" "$DEPLOY_PATH"
+
+                        echo "Restarting $PM2_APP..."
+                        pm2 restart "$PM2_APP" || true
+                        pm2 save || true
+
+                        echo "Rollback to previous working version completed."
+                    fi
+                else
+                    echo "No previous backup record found to restore."
+                fi
+            '''
+        }
+
+        always {
+            cleanWs(
+                deleteDirs: true,
+                disableDeferredWipeout: true,
+                notFailBuild: true
+            )
+        }
+    }
+}

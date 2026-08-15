@@ -4,7 +4,7 @@ pipeline {
 
     environment {
         DEPLOY_BASE = '/var/www/SSManagement/DEV'
-        DEPLOY_PATH = '/var/www/SSManagement/DEV/angular'
+         DEPLOY_PATH = '/var/www/SSManagement/DEV/angular'
         PM2_APP     = 'angular'
         PORT        = '4200'
     }

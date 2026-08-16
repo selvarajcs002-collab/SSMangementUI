@@ -1,0 +1,36 @@
+services:
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: development
+    image: ssmanagement:frontend-dev
+    container_name: angular-frontend-dev
+    ports:
+      - "4200:80"
+    restart: always
+
+  frontend-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: test
+    image: ssmanagement:frontend-test
+    container_name: angular-frontend-test
+    ports:
+      - "4201:80"
+    restart: always
+
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: production
+    image: ssmanagement:frontend-prod
+    container_name: angular-frontend-prod
+    ports:
+      - "4202:80"
+    restart: always

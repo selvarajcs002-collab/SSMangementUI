@@ -1,0 +1,64 @@
+<div class="modal-backdrop animate-fade-in" (click)="onCancel()">
+  <div class="modal-container animate-slide-up" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-left">
+        <h2>Select Meter Value</h2>
+        <p>Choose meters to add to your outward entry</p>
+      </div>
+      <button class="btn-close" (click)="onCancel()" title="Close">
+        <span [innerHTML]="icons.x | safeHtml"></span>
+      </button>
+    </div>
+
+    <!-- Modal Content -->
+    <div class="modal-content">
+      
+      <!-- Select All Toggle -->
+      <div class="select-all-row" (click)="toggleSelectAll()" *ngIf="availableMeters.length > 0">
+        <div class="custom-checkbox" [class.checked]="isAllSelected()">
+          <span *ngIf="isAllSelected()" [innerHTML]="icons.check | safeHtml"></span>
+        </div>
+        <span class="label">Select All Available Meters</span>
+      </div>
+
+      <div class="divider" *ngIf="availableMeters.length > 0"></div>
+
+      <!-- Meter Checklist Grid -->
+      <div class="meter-grid-picker">
+        <div *ngFor="let m of availableMeters" 
+             class="meter-item" 
+             [class.selected]="selectedMeters.has(m.meterValue)"
+             (click)="toggleMeter(m.meterValue)">
+          
+          <div class="meter-checkbox" [class.active]="selectedMeters.has(m.meterValue)">
+            <span *ngIf="selectedMeters.has(m.meterValue)" [innerHTML]="icons.check | safeHtml"></span>
+          </div>
+          
+          <div class="meter-details-wrap">
+            <span class="meter-value-label">{{ m.meterValue | number:'1.2-2' }} Mtr</span>
+            <span class="meter-stock-label">Stock: {{ m.availableBits | number:'1.0-0' }} Bits / {{ m.availableMeter | number:'1.2-2' }} Mtr</span>
+          </div>
+        </div>
+
+        <!-- No stock / empty state -->
+        <div class="meter-picker-empty" *ngIf="availableMeters.length === 0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+          <p>No meter stock available for this style/colour combination.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button class="btn-cancel-modal" (click)="onCancel()">Cancel</button>
+      <button class="btn-confirm-modal" 
+              (click)="onConfirm()" 
+              [disabled]="selectedMeters.size === 0">
+        Add {{ selectedMeters.size }} Meter{{ selectedMeters.size !== 1 ? 's' : '' }}
+      </button>
+    </div>
+
+  </div>
+</div>

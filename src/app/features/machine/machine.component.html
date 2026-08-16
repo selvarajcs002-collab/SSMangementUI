@@ -1,0 +1,120 @@
+<div class="machine-module-container" [class.sidebar-collapsed]="isSidebarCollapsed()">
+  <!-- Sidebar -->
+  <aside class="machine-sidebar" [class.mobile-open]="isMobileMenuOpen()">
+    <div class="sidebar-header">
+      <div class="logo-area">
+        <div class="machine-logo">
+          <span class="material-icons">precision_manufacturing</span>
+        </div>
+        <span class="brand-text">MachineOS</span>
+      </div>
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <span class="material-icons">{{ isSidebarCollapsed() ? 'menu_open' : 'menu' }}</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav custom-scrollbar">
+      <div class="nav-section" *ngFor="let section of menuSections">
+        <h3 class="section-title" *ngIf="!isSidebarCollapsed()">{{ section.title }}</h3>
+        <div class="section-divider" *ngIf="isSidebarCollapsed()"></div>
+        
+        <a [routerLink]="item.route" 
+           routerLinkActive="active" 
+           class="nav-item" 
+           *ngFor="let item of section.items"
+           [title]="item.label"
+           (click)="closeMobileMenu()">
+          <span class="material-icons item-icon">{{ item.icon }}</span>
+          <span class="item-label" *ngIf="!isSidebarCollapsed()">{{ item.label }}</span>
+          <span class="active-glow"></span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer" *ngIf="!isSidebarCollapsed()">
+      <div class="ai-status">
+        <div class="pulse-ring"></div>
+        <span class="status-text">AI Monitoring Active</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Overlay -->
+  <div class="sidebar-overlay" *ngIf="isMobileMenuOpen()" (click)="toggleMobileMenu()"></div>
+
+  <!-- Main Content -->
+  <main class="machine-main">
+    <!-- Sticky Top Header -->
+    <header class="machine-top-header">
+      <div class="header-left">
+        <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+          <span class="material-icons">menu</span>
+        </button>
+        <div class="breadcrumb">
+          <span class="root">Machine</span>
+          <span class="material-icons separator">chevron_right</span>
+          <span class="current">Dashboard</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="search-bar">
+          <span class="material-icons search-icon">search</span>
+          <input type="text" placeholder="Search machines, operators, or service logs...">
+          <kbd class="search-shortcut">/</kbd>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="filter-group">
+          <select class="header-select">
+            <option>All Shifts</option>
+            <option>Day Shift</option>
+            <option>Night Shift</option>
+          </select>
+        </div>
+        
+        <button class="icon-btn" title="AI Insights">
+          <span class="material-icons">psychology</span>
+          <span class="badge ai">AI</span>
+        </button>
+        
+        <button class="icon-btn" title="Notifications">
+          <span class="material-icons">notifications</span>
+          <span class="badge">3</span>
+        </button>
+
+        <div class="user-pill">
+          <div class="avatar-placeholder small">{{ getInitials('Admin User') }}</div>
+          <div class="user-details">
+            <span class="name">Admin User</span>
+            <span class="role">Operations Manager</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+
+    <!-- Floating Quick Actions -->
+    <div class="fab-container">
+      <button class="fab-main">
+        <span class="material-icons">add</span>
+      </button>
+      <div class="fab-actions">
+        <button class="fab-action" title="Add Machine">
+          <span class="material-icons">precision_manufacturing</span>
+        </button>
+        <button class="fab-action" title="Log Downtime">
+          <span class="material-icons">timer_off</span>
+        </button>
+        <button class="fab-action" title="Service Request">
+          <span class="material-icons">build</span>
+        </button>
+      </div>
+    </div>
+  </main>
+</div>

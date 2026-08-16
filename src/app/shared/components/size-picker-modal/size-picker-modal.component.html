@@ -1,0 +1,67 @@
+<div class="modal-backdrop animate-fade-in" (click)="onCancel()">
+  <div class="modal-container animate-slide-up" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-left">
+        <h2>Select Sizes - {{ colourName }}</h2>
+        <div class="info-alert">
+          <span class="info-icon">i</span>
+          <p>These sizes are available in the inward for the selected style, design and colour.</p>
+        </div>
+      </div>
+      <button class="btn-close" (click)="onCancel()" title="Close">
+        <span [innerHTML]="icons.x | safeHtml"></span>
+      </button>
+    </div>
+
+    <!-- Modal Content -->
+    <div class="modal-content" style="padding: 0;">
+      
+      <table class="sizes-table">
+        <thead>
+          <tr>
+            <th class="col-checkbox"></th>
+            <th>SIZE</th>
+            <th>AVAILABLE QUANTITY (PCS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of availableSizes" 
+              (click)="item.availableQty > 0 ? toggleSize(item.size) : null"
+              [class.disabled-row]="item.availableQty === 0"
+              [style.opacity]="item.availableQty === 0 ? '0.5' : '1'"
+              [style.cursor]="item.availableQty === 0 ? 'not-allowed' : 'pointer'">
+            <td class="col-checkbox">
+              <div class="custom-checkbox" [class.checked]="selectedSizes.has(item.size)" [style.background-color]="item.availableQty === 0 ? '#f1f5f9' : ''">
+                <span *ngIf="selectedSizes.has(item.size)" [innerHTML]="icons.check | safeHtml"></span>
+              </div>
+            </td>
+            <td>
+              {{ item.size }}
+              <span *ngIf="item.availableQty === 0" style="color: #ef4444; font-size: 11px; margin-left: 8px;">(Unavailable)</span>
+            </td>
+            <td>{{ item.availableQty }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="footer-left">
+        Available Sizes : {{ availableSizes.length }}
+      </div>
+      <div class="footer-right">
+        <button class="btn-cancel-modal" (click)="onCancel()">Cancel</button>
+        <button class="btn-confirm-modal" 
+                (click)="onConfirm()" 
+                [disabled]="selectedSizes.size === 0">
+          Add Selected {{ selectedSizes.size > 0 ? '(' + selectedSizes.size + ')' : '' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

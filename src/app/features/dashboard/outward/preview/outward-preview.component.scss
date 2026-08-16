@@ -1,0 +1,1021 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed widths (e.g., width: 300px) break on mobile screens smaller than the width.
+ - Fixed `min-width` can cause overflow if the screen is narrower than the value.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Replaced large fixed widths with `width: 100%; max-width: [value]px;` for fluid resizing.
+ - Wrapped `min-width: Xpx` with `min(100%, Xpx)`.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../../../shared/styles/responsive';
+
+/* ── Print page setup ─────────────────────────────────────────── */
+@page {
+  size: 210mm 148mm;
+  margin: 10mm;
+}
+
+/* ── Screen: host fills viewport with gray background ─────────── */
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #eef0f3;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ── No-print toolbar ─────────────────────────────────────────── */
+.preview-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  padding: 10px 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+  .toolbar-inner {
+    max-width: 100%; max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toolbar-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  color: #374151;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    transform: translateX(-2px);
+  }
+}
+
+.btn-print {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #111827;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: 0 3px 10px rgba(17, 24, 39, 0.22);
+
+  &:hover {
+    background: #030712;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(17, 24, 39, 0.32);
+  }
+}
+
+.btn-download {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.22);
+
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(37, 99, 235, 0.32);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+/* ── Screen preview wrapper ───────────────────────────────────── */
+.preview-page {
+  padding: 28px 16px 48px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DELIVERY CHALLAN CARD - A5 Portrait
+   ════════════════════════════════════════════════════════════════ */
+
+.dc-card {
+  box-sizing: border-box;
+  width: 148mm;
+  height: 210mm;
+  padding: 10mm 12mm;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  color: #111;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dc-card.exporting-pdf {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.dc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+
+  .header-left {
+    display: flex;
+    gap: 8px;
+    width: 35%;
+    
+    .company-logo {
+      height: 35px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .company-details {
+      display: flex;
+      flex-direction: column;
+      
+      .company-name {
+        color: #1e3a8a;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .company-address {
+        font-size: 8px;
+        color: #4b5563;
+        white-space: pre-line;
+        margin-top: 2px;
+        line-height: 1.2;
+      }
+      .company-phone {
+        font-size: 8px;
+        color: #4b5563;
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .header-center {
+    width: 30%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .doc-title {
+      color: #111;
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .doc-title-line {
+      width: 100%;
+      height: 2px;
+      background: #1e3a8a;
+      margin-top: 4px;
+    }
+  }
+
+  .header-right {
+    width: 35%;
+    display: flex;
+    justify-content: flex-end;
+    
+    .header-meta-table {
+      border-collapse: collapse;
+      
+      td {
+        border: 1px solid #111;
+        padding: 2px 6px;
+        font-size: 8px;
+      }
+
+      .meta-label {
+        font-weight: 600;
+        background: #f1f5f9;
+        width: 50px;
+      }
+      
+      .meta-value {
+        font-weight: 700;
+        text-align: left;
+        min-width: min(100%, 70px);
+      }
+    }
+  }
+}
+
+/* ── Details Section ─────────────────────────────────────────── */
+.detail-section {
+  display: flex;
+  width: 100%;
+  border: 1px solid #111;
+  margin-bottom: 8px;
+  
+  .detail-col {
+    flex: 1;
+    border-right: 1px solid #111;
+    display: flex;
+    flex-direction: column;
+
+    &:last-child {
+      border-right: none;
+    }
+
+    .detail-heading {
+      background: #e2e8f0;
+      color: #111;
+      font-size: 8px;
+      font-weight: 700;
+      text-align: center;
+      padding: 3px;
+      border-bottom: 1px solid #111;
+    }
+
+    .detail-content {
+      padding: 4px 6px;
+      flex: 1;
+
+      .detail-row {
+        display: flex;
+        font-size: 8px;
+        margin-bottom: 2px;
+
+        .lbl {
+          width: 55px;
+          color: #4b5563;
+          font-weight: 600;
+        }
+
+        .val {
+          flex: 1;
+          color: #111;
+          font-weight: 700;
+        }
+      }
+    }
+    
+    .empty-content {
+      min-height: 35px;
+    }
+  }
+}
+
+/* ── Remarks Section ─────────────────────────────────────────── */
+.remarks-section {
+  display: flex;
+  margin-bottom: 8px;
+  align-items: stretch;
+  border: 1px solid #111;
+
+  .remarks-label {
+    background: #e2e8f0;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border-right: 1px solid #111;
+    display: flex;
+    align-items: center;
+  }
+  
+  .remarks-box {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 8px;
+    color: #111;
+    min-height: 20px;
+    max-height: 40px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* ── Multi Colour Size Breakdown ─────────────────────────────── */
+.table-section {
+  flex: 1;
+  margin-bottom: 8px;
+
+  .table-heading {
+    background: #e2e8f0;
+    color: #111;
+    font-size: 9px;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px;
+    border: 1px solid #111;
+    border-bottom: none;
+  }
+
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #111;
+
+    th, td {
+      border: 1px solid #111;
+      font-size: 8.5px;
+      padding: 4px;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .col-sno { width: 5%; text-align: center; }
+    .col-color { width: 25%; font-weight: 600; }
+    .col-size { text-align: center; }
+    .col-qty { width: 15%; text-align: right; }
+
+    td.row-total {
+      font-weight: 700;
+    }
+
+    tfoot {
+      td {
+        background: #f1f5f9;
+        font-weight: 700;
+      }
+      .total-label {
+        text-align: right;
+      }
+      .grand-total-cell {
+        font-size: 9.5px;
+        color: #1e3a8a;
+      }
+    }
+  }
+}
+
+/* ── Grand Total Section ─────────────────────────────────────── */
+.grand-total-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+
+  .grand-total-text {
+    font-size: 14px;
+    font-weight: 800;
+    
+    .highlight-qty {
+      color: #16a34a;
+    }
+  }
+}
+
+/* ── Signature Section ───────────────────────────────────────── */
+.signature-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  .sig-col {
+    width: 22%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    .sig-line {
+      width: 100%;
+      border-top: 1px solid #111;
+      margin-bottom: 4px;
+    }
+
+    .sig-title {
+      font-size: 8px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 2px;
+    }
+
+    .sig-date {
+      font-size: 7.5px;
+      color: #4b5563;
+    }
+  }
+}
+
+/* ── Notes Section ───────────────────────────────────────────── */
+.notes-section {
+  margin-top: auto;
+  border-top: 1px dashed #94a3b8;
+  padding-top: 6px;
+
+  .notes-title {
+    font-size: 7.5px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .notes-list {
+    margin: 0;
+    padding-left: 12px;
+    font-size: 7px;
+    color: #4b5563;
+    
+    li {
+      margin-bottom: 1px;
+    }
+  }
+}
+
+/* ── Print styles ─────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: 148mm 210mm; /* A5 Portrait */
+    margin: 0;
+  }
+
+  :host {
+    background: #fff !important;
+    display: block;
+  }
+
+  .preview-toolbar {
+    display: none !important;
+  }
+
+  .preview-page {
+    padding: 0;
+    margin: 0;
+    background: #fff;
+  }
+
+  .dc-card {
+    width: 148mm !important;
+    height: 210mm !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    border: none !important;
+    page-break-inside: avoid;
+  }
+  
+  /* Retain meter badge green on print */
+  .badge.green {
+    background: #bbf7d0 !important;
+    color: #166534 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+// ── NEW: Meter Based Preview Styles ─────────────────────────────────────────
+.meter-dc-card {
+  .header-right {
+    .badge.green {
+      display: inline-block;
+      background: #bbf7d0;
+      color: #166534;
+      font-size: 8.5px;
+      font-weight: 700;
+      padding: 3px 12px;
+      margin-top: 4px;
+    }
+  }
+}
+
+.meter-job-info {
+  width: 250px !important;
+  gap: 2px !important;
+
+  .job-val {
+    font-weight: 700 !important;
+  }
+
+  .bold-type {
+    color: #2563eb;
+    font-weight: 800 !important;
+  }
+}
+
+.meter-dc-card {
+  height: auto !important;
+  min-height: 148mm;
+  display: flex;
+  flex-direction: column;
+}
+
+.meter-table-section {
+  .meter-preview-table {
+    border: 1px solid #000 !important;
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-bottom: 8px;
+    
+    th, td {
+      border: 1px solid #000 !important;
+      font-size: 9px !important;
+      padding: 5px 8px !important;
+      height: 24px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f0f7ff !important; // Soft blue header
+      color: #000000 !important;
+      font-weight: 700 !important;
+      text-align: center !important;
+    }
+
+    .col-sno { width: 10%; text-align: center !important; }
+    .col-meter { width: 30%; text-align: right !important; }
+    .col-bits { width: 30%; text-align: center !important; }
+    .col-total { width: 30%; text-align: right !important; }
+
+    .align-right-val {
+      text-align: right !important;
+    }
+
+    .align-center-val {
+      text-align: center !important;
+    }
+  }
+}
+
+.meter-summary-section {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+  margin-bottom: 15px;
+
+  .summary-card {
+    border: 1px solid #000;
+    background: #f8fafc;
+    padding: 6px 12px;
+    width: 100%; max-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 9.5px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    color: #334155;
+    
+    .summary-lbl {
+      font-weight: 600;
+    }
+    .summary-val {
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 700;
+    }
+  }
+
+  .summary-row.highlight-row {
+    color: #1e3a8a;
+    font-size: 10.5px;
+    font-weight: 800;
+    border-top: 1px dashed #94a3b8;
+    padding-top: 3px;
+    margin-top: 2px;
+    
+    .summary-val {
+      font-size: 11px;
+    }
+  }
+}
+
+.dc-footer.three-cols {
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-top: auto;
+  padding-bottom: 10px;
+
+  .sign-col {
+    width: 170px !important;
+    text-align: center !important;
+  }
+
+  .sig-line {
+    border-top: 1.2px solid #000 !important;
+    margin-bottom: 6px;
+  }
+
+  .sig-label {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #000000;
+  }
+}
+
+
+\n/* ── Header ──────────────────────────────────────────────────── */
+.dc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+
+  .header-left {
+    display: flex;
+    gap: 8px;
+    width: 35%;
+    
+    .company-logo {
+      height: 35px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .company-details {
+      display: flex;
+      flex-direction: column;
+      
+      .company-name {
+        color: #1e3a8a;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .company-address {
+        font-size: 8px;
+        color: #4b5563;
+        white-space: pre-line;
+        margin-top: 2px;
+        line-height: 1.2;
+      }
+      .company-phone {
+        font-size: 8px;
+        color: #4b5563;
+        margin-top: 2px;
+      }
+    }
+  }
+
+  .header-center {
+    width: 30%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .doc-title {
+      color: #111;
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .doc-title-line {
+      width: 100%;
+      height: 2px;
+      background: #1e3a8a;
+      margin-top: 4px;
+    }
+  }
+
+  .header-right {
+    width: 35%;
+    display: flex;
+    justify-content: flex-end;
+    
+    .header-meta-table {
+      border-collapse: collapse;
+      
+      td {
+        border: 1px solid #111;
+        padding: 2px 6px;
+        font-size: 8px;
+      }
+
+      .meta-label {
+        font-weight: 600;
+        background: #f1f5f9;
+        width: 50px;
+      }
+      
+      .meta-value {
+        font-weight: 700;
+        text-align: left;
+        min-width: min(100%, 70px);
+      }
+    }
+  }
+}
+
+/* ── Details Section ─────────────────────────────────────────── */
+.detail-section {
+  display: flex;
+  width: 100%;
+  border: 1px solid #111;
+  margin-bottom: 8px;
+  
+  .detail-col {
+    flex: 1;
+    border-right: 1px solid #111;
+    display: flex;
+    flex-direction: column;
+
+    &:last-child {
+      border-right: none;
+    }
+
+    .detail-heading {
+      background: #e2e8f0;
+      color: #111;
+      font-size: 8px;
+      font-weight: 700;
+      text-align: center;
+      padding: 3px;
+      border-bottom: 1px solid #111;
+    }
+
+    .detail-content {
+      padding: 4px 6px;
+      flex: 1;
+
+      .detail-row {
+        display: flex;
+        font-size: 8px;
+        margin-bottom: 2px;
+
+        .lbl {
+          width: 55px;
+          color: #4b5563;
+          font-weight: 600;
+        }
+
+        .val {
+          flex: 1;
+          color: #111;
+          font-weight: 700;
+        }
+      }
+    }
+    
+    .empty-content {
+      min-height: 35px;
+    }
+  }
+}
+
+/* ── Remarks Section ─────────────────────────────────────────── */
+.remarks-section {
+  display: flex;
+  margin-bottom: 8px;
+  align-items: stretch;
+  border: 1px solid #111;
+
+  .remarks-label {
+    background: #e2e8f0;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border-right: 1px solid #111;
+    display: flex;
+    align-items: center;
+  }
+  
+  .remarks-box {
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 8px;
+    color: #111;
+    min-height: 20px;
+    max-height: 40px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* ── Multi Colour Size Breakdown ─────────────────────────────── */
+.table-section {
+  flex: 1;
+  margin-bottom: 8px;
+
+  .table-heading {
+    background: #e2e8f0;
+    color: #111;
+    font-size: 9px;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px;
+    border: 1px solid #111;
+    border-bottom: none;
+  }
+
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #111;
+
+    th, td {
+      border: 1px solid #111;
+      font-size: 8.5px;
+      padding: 4px;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .col-sno { width: 5%; text-align: center; }
+    .col-color { width: 25%; font-weight: 600; }
+    .col-size { text-align: center; }
+    .col-qty { width: 15%; text-align: right; }
+
+    td.row-total {
+      font-weight: 700;
+    }
+
+    tfoot {
+      td {
+        background: #f1f5f9;
+        font-weight: 700;
+      }
+      .total-label {
+        text-align: right;
+      }
+      .grand-total-cell {
+        font-size: 9.5px;
+        color: #1e3a8a;
+      }
+    }
+  }
+}
+
+/* ── Grand Total Section ─────────────────────────────────────── */
+.grand-total-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+
+  .grand-total-text {
+    font-size: 14px;
+    font-weight: 800;
+    
+    .highlight-qty {
+      color: #16a34a;
+    }
+  }
+}
+
+/* ── Signature Section ───────────────────────────────────────── */
+.signature-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  .sig-col {
+    width: 22%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    .sig-line {
+      width: 100%;
+      border-top: 1px solid #111;
+      margin-bottom: 4px;
+    }
+
+    .sig-title {
+      font-size: 8px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 2px;
+    }
+
+    .sig-date {
+      font-size: 7.5px;
+      color: #4b5563;
+    }
+  }
+}
+
+/* ── Notes Section ───────────────────────────────────────────── */
+.notes-section {
+  margin-top: auto;
+  border-top: 1px dashed #94a3b8;
+  padding-top: 6px;
+
+  .notes-title {
+    font-size: 7.5px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .notes-list {
+    margin: 0;
+    padding-left: 12px;
+    font-size: 7px;
+    color: #4b5563;
+    
+    li {
+      margin-bottom: 1px;
+    }
+  }
+}
+
+/* ── Print styles ─────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: 148mm 210mm; /* A5 Portrait */
+    margin: 0;
+  }
+
+  :host {
+    background: #fff !important;
+    display: block;
+  }
+
+  .preview-toolbar {
+    display: none !important;
+  }
+
+  .preview-page {
+    padding: 0;
+    margin: 0;
+    background: #fff;
+  }
+
+  .dc-card {
+    width: 148mm !important;
+    height: 210mm !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    border: none !important;
+    page-break-inside: avoid;
+  }
+  
+  /* Retain meter badge green on print */
+  .badge.green {
+    background: #bbf7d0 !important;
+    color: #166534 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

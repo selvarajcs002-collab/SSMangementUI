@@ -1,0 +1,269 @@
+<div class="app-layout no-print-bg">
+  <!-- Sidebar -->
+  <aside class="sidebar no-print" [class.collapsed]="isSidebarCollapsed()">
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
+          </svg>
+        </div>
+        <span class="logo-text">SS Management <span class="pro-badge">ADMIN</span></span>
+      </div>
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <span class="material-icons" [class.rotated]="isSidebarCollapsed()">menu_open</span>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a *ngFor="let item of menuItems" 
+         [routerLink]="item.route" 
+         class="nav-item" 
+         [class.active]="item.active">
+        <div class="nav-icon">
+          <span class="material-icons">{{ item.icon }}</span>
+        </div>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-container">
+
+
+    <div class="content-wrapper-scroll">
+      <div class="payroll-dashboard">
+        <div class="page-header no-print">
+          <div class="title-section">
+            <h1>Payroll Management</h1>
+            <p>Monthly salary distribution and voucher generation</p>
+          </div>
+          <div class="summary-cards">
+            <div class="s-card total">
+              <div class="s-icon"><span class="material-icons">payments</span></div>
+              <div class="s-info">
+                <span class="s-value">₹{{ stats().totalPayout | number:'1.0-0' }}</span>
+                <span class="s-label">Total Monthly Payout</span>
+              </div>
+            </div>
+            <div class="s-card avg">
+              <div class="s-icon"><span class="material-icons">trending_up</span></div>
+              <div class="s-info">
+                <span class="s-value">₹{{ stats().avgSalary | number:'1.0-0' }}</span>
+                <span class="s-label">Avg. Base Salary</span>
+              </div>
+            </div>
+            <div class="s-card peak">
+              <div class="s-icon"><span class="material-icons">auto_awesome</span></div>
+              <div class="s-info">
+                <span class="s-value">₹{{ stats().maxIncentive | number:'1.0-0' }}</span>
+                <span class="s-label">Peak Incentive</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employee Cards Grid -->
+        <div class="employee-grid no-print" [@staggerCards]>
+        <div class="employee-card" 
+             *ngFor="let emp of filteredEmployees()"
+             [class.salary-paid]="isCompleted(emp.id)">
+            <div class="card-header">
+              <div class="avatar-placeholder">{{ getInitials(emp.name) }}</div>
+              <div class="emp-main-info">
+                <h3>{{ emp.name }}</h3>
+                <span class="emp-id">{{ emp.id }}</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">Designation</span>
+                <span class="value">{{ emp.designation }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Base Salary</span>
+                <span class="value">₹{{ emp.baseSalary | number }}</span>
+              </div>
+              <div class="info-row highlight">
+                <span class="label">Net Payable</span>
+                <span class="value">₹{{ calculateNetPay(emp) | number }}</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn-action view" (click)="openPayrollModal(emp)">
+                <span class="material-icons">visibility</span>
+                View
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payroll Detail Modal -->
+    <div class="modal-overlay no-print" *ngIf="isModalOpen()" [@fadeScale]>
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span class="material-icons">receipt_long</span>
+            <h2>Salary Voucher Details</h2>
+          </div>
+          <button class="close-btn" (click)="closeModal()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <div class="modal-body" *ngIf="selectedEmployee() as emp">
+          <div class="profile-summary">
+            <div class="avatar-placeholder large">{{ getInitials(emp.name) }}</div>
+            <div class="profile-text">
+              <h3>{{ emp.name }}</h3>
+              <p>{{ emp.designation }} • {{ emp.id }}</p>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="s-label">Working Days</span>
+              <span class="s-value present">{{ emp.workingDays }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="s-label">Absent Days</span>
+              <span class="s-value absent">{{ emp.absentDays }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="s-label">Total Days</span>
+              <span class="s-value">{{ daysInMonth() }}</span>
+            </div>
+          </div>
+
+          <div class="calculation-table">
+            <div class="calc-row">
+              <span class="c-label">Base Monthly Salary</span>
+              <span class="c-value">₹{{ emp.baseSalary | number }}</span>
+            </div>
+            <div class="calc-row">
+              <span class="c-label">Attendance Based Pay ({{ emp.workingDays }}/{{ daysInMonth() }})</span>
+              <span class="c-value">₹{{ (emp.baseSalary / daysInMonth() * emp.workingDays) | number:'1.0-0' }}</span>
+            </div>
+            <div class="calc-row editable">
+              <span class="c-label">Performance Incentive</span>
+              <div class="input-wrapper">
+                <span class="currency">₹</span>
+                <input type="number" [value]="emp.incentive" (input)="updateIncentive($event)">
+              </div>
+            </div>
+            <div class="calc-divider"></div>
+            <div class="calc-row grand-total">
+              <span class="c-label">Total Net Amount</span>
+              <span class="c-value">₹{{ calculateNetPay(emp) | number }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-print" (click)="printVoucher()">
+            <span class="material-icons">print</span>
+            Print Voucher (A5)
+          </button>
+          <button class="btn-completed" (click)="markCompleted()">
+            <span class="material-icons">check_circle</span>
+            Completed
+          </button>
+          <button class="btn-save" (click)="savePayroll()">
+            <span class="material-icons">save</span>
+            Save & Update
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="print-template" *ngIf="selectedEmployee() as emp">
+      <div class="dc-card">
+        <!-- ── HEADER ─────────────────────────────────────── -->
+        <div class="dc-header">
+          <div class="logo-col">
+            <div class="logo-placeholder">
+              <span class="material-icons">diamond</span>
+            </div>
+          </div>
+          <div class="company">
+            <div class="company-name">SS MANAGEMENT SYSTEMS</div>
+            <div class="company-address">Industrial Estate, Phase II, New Delhi - 110020</div>
+          </div>
+          <div class="meta">
+            <div class="meta-row">
+              <span class="meta-label">DATE</span>
+              <span class="meta-value">{{ (lastSaved() | date:'dd-MMM-yyyy') || '13-May-2026' }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Voc No:</span>
+              <span class="meta-value">SV-{{ emp.id }}-{{ (lastSaved() | date:'MM') || '05' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── EMPLOYEE BOX ──────────────────────────────── -->
+        <div class="receiver">
+          <div class="receiver-title">EMPLOYEE DETAILS</div>
+          <div class="receiver-body">
+            <div class="receiver-name">{{ emp.name }}</div>
+            <div class="receiver-address">
+              • {{ emp.designation }}<br>
+              WORKING DAYS: {{ emp.workingDays }} / {{ daysInMonth() }}
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ITEMS TABLE ───────────────────────────────── -->
+        <div class="items-section">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 60%;">DESCRIPTION</th>
+                <th style="width: 20%; text-align: right;">Days</th>
+                <th style="width: 20%; text-align: right;">AMOUNT (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Basic Attendance Pay (Prorated)</td>
+                <td style="text-align: right;">{{ emp.workingDays }}</td>
+                <td style="text-align: right;">₹{{ (emp.baseSalary / daysInMonth() * emp.workingDays) | number:'1.0-0' }}</td>
+              </tr>
+              <tr>
+                <td>Performance Incentive</td>
+                <td style="text-align: right;">1</td>
+                <td style="text-align: right;">₹{{ emp.incentive | number }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- ── TOTALS ─────────────────────────────────────── -->
+        <div class="totals">
+          <div class="totals-row grand">
+            <span class="label">NET PAYABLE:</span>
+            <span class="val">₹{{ calculateNetPay(emp) | number }}</span>
+          </div>
+        </div>
+
+        <!-- ── FOOTER SIGNATURES ─────────────────────────── -->
+        <div class="dc-footer">
+          <div class="sign-left">
+            <div class="sig-line"></div>
+            <span class="sig-label">EMPLOYEE SIGNATURE</span>
+          </div>
+          <div class="sign-right">
+            <div class="sig-line"></div>
+            <span class="sig-label">AUTHORIZED BY</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

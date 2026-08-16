@@ -1,0 +1,64 @@
+<div class="date-picker-container" (document:click)="onDocumentClick($event)">
+  <label *ngIf="label" class="label">
+    {{ label }} <span *ngIf="required" class="required">*</span>
+  </label>
+  
+  <div class="input-wrapper" [class.disabled]="disabled" [class.invalid]="error" (click)="togglePopup($event)">
+    <span class="input-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    </span>
+    
+    <input 
+      type="text" 
+      class="input"
+      [placeholder]="placeholder"
+      [value]="displayValue"
+      [disabled]="disabled"
+      readonly
+    >
+  </div>
+  <div class="error-message" *ngIf="error && error !== true">
+    {{ error }}
+  </div>
+
+  <div class="calendar-popup" *ngIf="isOpen" (click)="$event.stopPropagation()">
+    <div class="calendar-header">
+      <button type="button" class="nav-btn" (click)="prevMonth()" [disabled]="isPrevMonthDisabled()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      
+      <span class="month-year">{{ currentMonthName }} {{ currentYear }}</span>
+      
+      <button type="button" class="nav-btn" (click)="nextMonth()" [disabled]="isNextMonthDisabled()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="calendar-grid">
+      <div class="weekdays">
+        <div class="weekday" *ngFor="let day of weekdays">{{ day }}</div>
+      </div>
+      
+      <div class="days">
+        <button 
+          type="button" 
+          class="day-btn" 
+          *ngFor="let day of days"
+          [class.empty]="!day.date"
+          [class.today]="day.isToday"
+          [class.selected]="day.isSelected"
+          [disabled]="day.isDisabled || !day.date"
+          (click)="selectDate(day)"
+        >
+          {{ day.date ? day.date.getDate() : '' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

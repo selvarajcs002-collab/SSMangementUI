@@ -1,0 +1,33 @@
+<app-loader></app-loader>
+
+<div class="global-alerts" *ngIf="messageService.alert() as alert">
+  <app-alert [message]="alert.message" [type]="alert.type" (close)="messageService.clear()"></app-alert>
+</div>
+
+<app-header *ngIf="showHeader()"></app-header>
+<main [ngClass]="showHeader() ? 'dashboard-view' : 'auth-view min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-b from-[#f8fafc] to-[#dceeff] overflow-y-auto'">
+  <router-outlet></router-outlet>
+</main>
+
+<!-- Global Confirmation Modal -->
+<app-confirmation-modal
+  *ngIf="modalService.isOpen()"
+  [title]="modalService.modalConfig()?.title || ''"
+  [message]="modalService.modalConfig()?.message || ''"
+  [confirmLabel]="modalService.modalConfig()?.confirmLabel || 'OK'"
+  [cancelLabel]="modalService.modalConfig()?.cancelLabel || 'Cancel'"
+  (onConfirm)="modalService.confirm()"
+  (onCancel)="modalService.cancel()">
+</app-confirmation-modal>
+
+<!-- Update Selection Modal -->
+<app-update-modal *ngIf="updateModalService.isOpen()"></app-update-modal>
+
+<!-- Validation Error Modal -->
+<app-validation-error-modal
+  *ngIf="validationErrorService.isOpen()"
+  [title]="validationErrorService.title()"
+  [errorLines]="validationErrorService.errorList()"
+  (close)="validationErrorService.close()">
+</app-validation-error-modal>
+

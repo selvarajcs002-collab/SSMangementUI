@@ -1,0 +1,374 @@
+/* === RESPONSIVE REFACTORING ANALYSIS ===
+ * Original Issues Found:
+ - Fixed widths (e.g., width: 300px) break on mobile screens smaller than the width.
+ - Fixed `min-width` can cause overflow if the screen is narrower than the value.
+ *
+ * Why it breaks:
+ * Fixed pixel values and hardcoded dimensions prevent elements from shrinking on mobile screens (320px - 767px),
+ * resulting in horizontal scrolling, content clipping, or UI overlap.
+ *
+ * The Fix:
+ - Replaced large fixed widths with `width: 100%; max-width: [value]px;` for fluid resizing.
+ - Wrapped `min-width: Xpx` with `min(100%, Xpx)`.
+ *
+ * Additional Improvements Suggested:
+ - Use CSS variables for colors instead of SCSS variables for dynamic theming (e.g., dark mode).
+ - Apply `clamp()` for dynamic font scaling on larger headers.
+ * ========================================= */
+
+@import '../../../../shared/styles/responsive';
+
+.dc-container {
+  padding: 40px 0;
+  max-width: 100%;
+  max-width: 1600px;
+  width: 95%;
+  margin: 0 auto;
+  min-height: calc(100vh - 72px);
+}
+
+:host {
+  display: block;
+  background-color: #F1F5F9;
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.toggle-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: #64748B;
+  font-weight: 500;
+  gap: 16px;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #E2E8F0;
+    border-top: 3px solid #3B82F6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card-wrapper {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+}
+
+.section-filter {
+  position: relative;
+  z-index: 100;
+}
+
+.section-table {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .dc-container {
+    padding: 20px 0;
+    width: 95%;
+  }
+}
+
+.pagination-controls-wrapper {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+
+  .pagination-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    padding: 8px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+    .btn-nav {
+      padding: 8px 24px;
+      border-radius: 20px;
+      border: 1px solid #E2E8F0;
+      background: #FFFFFF;
+      color: #1E293B;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover:not(:disabled) {
+        background: #F8FAFC;
+        border-color: #CBD5E1;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #F1F5F9;
+      }
+    }
+
+    .page-info {
+      font-weight: 700;
+      color: #3B82F6;
+      font-size: 0.9375rem;
+      min-width: min(100%, 80px);
+      text-align: center;
+    }
+  }
+
+  .pagination-info {
+    color: #64748B;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.summary-section {
+  margin-top: 20px;
+  padding: 24px;
+  border-top: 4px solid #3B82F6;
+
+  .summary-title {
+    margin: 0 0 16px 0;
+    color: #1E293B;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .summary-grid {
+    display: flex;
+    gap: 40px;
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .summary-label {
+        color: #64748B;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+      }
+
+      .summary-value {
+        color: #0F172A;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+.filter-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  .btn-toggle-filter {
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 12px;
+    border: 1px solid #d9e1ec;
+    background: #fff;
+    color: #3f4c65;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .3s ease;
+
+    &:hover {
+      background: #f8fafc;
+    }
+
+    svg {
+      color: #3f4c65;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-controls {
+    justify-content: center;
+
+    .btn-toggle-filter {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+.view-type-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 24px;
+}
+
+.empty-state-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 20px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+
+  .empty-state {
+    text-align: center;
+    color: #64748B;
+
+    .empty-icon {
+      margin-bottom: 16px;
+      color: #94A3B8;
+    }
+
+    p {
+      font-size: 1.125rem;
+      font-weight: 500;
+      margin: 0;
+    }
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content.modern-dialog {
+  background: #FFFFFF;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+
+  .modal-header {
+    padding: 24px 24px 16px;
+    text-align: center;
+    border-bottom: 1px solid #F1F5F9;
+
+    .modal-title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0F172A;
+    }
+  }
+
+  .modal-body {
+    padding: 24px;
+    text-align: center;
+
+    .modal-text {
+      margin: 0;
+      color: #475569;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+  }
+
+  .modal-footer {
+    padding: 16px 24px 24px;
+    text-align: center;
+
+    .btn-ok {
+      background: #3B82F6;
+      color: #FFFFFF;
+      border: none;
+      padding: 10px 32px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #2563EB;
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

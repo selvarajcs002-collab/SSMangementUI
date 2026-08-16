@@ -1,0 +1,113 @@
+<div class="dc-container animate-fade-in">
+
+  <!-- Header Section -->
+  <div class="section-header">
+    <app-dc-filter-header></app-dc-filter-header>
+  </div>
+
+  <!-- Toggle Section (Inward/Outward only) -->
+  <div class="toggle-wrapper">
+    <app-dynamic-toggle [config]="toggleConfig" [(value)]="activeView" (valueChange)="onToggleChange($event)">
+    </app-dynamic-toggle>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div class="loader-container" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <span>Loading Records...</span>
+  </div>
+
+  <!-- Filter Control Button -->
+  <div class="filter-controls" *ngIf="!isLoading">
+    <app-excel-report [filters]="excelReportPayload"></app-excel-report>
+    <button class="btn-toggle-filter" (click)="openFilterDialog()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+      </svg>
+      Filters
+    </button>
+  </div>
+
+  <!-- New Filter Dialog -->
+  <app-dashboard-filter-dialog 
+    *ngIf="showFilter" 
+    (apply)="closeFilterDialog()" 
+    (cancel)="closeFilterDialog()">
+  </app-dashboard-filter-dialog>
+
+
+
+
+  <!-- Table Section -->
+  <div class="section-table" *ngIf="!isLoading && tableData.length > 0">
+    <app-dc-filter-table [columns]="tableColumns" [data]="tableData" [totalRecords]="totalRecords"
+      [currentPage]="pageNumber" [showViewAction]="activeView === 'outward'" (view)="onView($event)"
+      (edit)="onEdit($event)" (delete)="onDelete($event)" (pageChange)="onPageChange($event)">
+    </app-dc-filter-table>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state-wrapper" *ngIf="!isLoading && tableData.length === 0">
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+      <p>No matching records found.</p>
+    </div>
+  </div>
+
+  <!-- No Data Dialog Modal -->
+  <div class="modal-overlay" *ngIf="showNoDataModal">
+    <div class="modal-content modern-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">No Records Found</h3>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text">Sorry mama, there is nothing to show for the selected filters.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ok" (click)="closeNoDataModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Section -->
+  <div class="summary-section card-wrapper" *ngIf="!isLoading && tableData.length > 0">
+    <div class="summary-content">
+      <h3 class="summary-title">Summary</h3>
+      <div class="summary-grid">
+        <div class="summary-item" *ngIf="currentViewType === 'S'">
+          <span class="summary-label">Total Bits Count:</span>
+          <span class="summary-value">{{ summaryTotals.totalBitsCount }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Total Meter:</span>
+          <span class="summary-value">{{ summaryTotals.totalMeter }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination Controls (Explicit) -->
+  <div class="pagination-controls-wrapper" *ngIf="!isLoading && totalRecords > 0">
+    <div class="pagination-info">
+      Showing {{ (pageNumber - 1) * pageSize + 1 }} to {{ Math.min(pageNumber * pageSize, totalRecords) }} of {{
+      totalRecords }} entries
+    </div>
+    <div class="pagination-actions">
+      <button class="btn-nav" [disabled]="pageNumber === 1" (click)="prevPage()">
+        Prev
+      </button>
+
+      <span class="page-info">Page {{ pageNumber }} of {{ totalPages }}</span>
+
+      <button class="btn-nav" [disabled]="pageNumber === totalPages" (click)="nextPage()">
+        Next
+      </button>
+    </div>
+  </div>
+
+</div>

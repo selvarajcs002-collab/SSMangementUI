@@ -1,0 +1,125 @@
+<div class="machine-status-container">
+  <div class="page-header">
+    <div class="header-titles">
+      <h1>Machine UP || DOWN Status</h1>
+      <p>Monitor and manage real-time machine operational status</p>
+    </div>
+    <div class="header-actions">
+      <div class="status-summary">
+        <div class="summary-item up">
+          <span class="count">{{ getCount('UP') }}</span>
+          <span class="label">Running</span>
+        </div>
+        <div class="summary-item down">
+          <span class="count">{{ getCount('DOWN') }}</span>
+          <span class="label">Stopped</span>
+        </div>
+        <div class="summary-item other">
+          <span class="count">{{ getCount('In Service') + getCount('Holiday') }}</span>
+          <span class="label">Others</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="machine-grid">
+    <div class="machine-card" *ngFor="let machine of machines" [class.status-down]="machine.status === 'DOWN'" [class.status-up]="machine.status === 'UP'">
+      <div class="card-glass"></div>
+      
+      <div class="card-header">
+        <div class="machine-info">
+          <div class="machine-icon">
+            <span class="material-icons">{{ getMachineIcon(machine.status) }}</span>
+          </div>
+          <div class="name-area">
+            <h3>{{ machine.name }}</h3>
+            <span class="machine-id">ID: {{ machine.id }}</span>
+          </div>
+        </div>
+        <div class="status-badge" [attr.data-status]="machine.status">
+          <span class="pulse" *ngIf="machine.status === 'UP'"></span>
+          {{ machine.status }}
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="time-metrics">
+          <div class="metric">
+            <span class="metric-label">UP TIME</span>
+            <span class="metric-value up">{{ machine.upTime }}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">DOWN TIME</span>
+            <span class="metric-value down">{{ machine.downTime }}</span>
+          </div>
+        </div>
+
+        <div class="status-indicator-bar">
+          <div class="progress-segment up" [style.width.%]="65"></div>
+          <div class="progress-segment down" [style.width.%]="35"></div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button class="action-btn up" (click)="setStatus(machine, 'UP')" [disabled]="machine.status === 'UP' || machine.status === 'Holiday' || machine.status === 'In Service'">
+          <span class="material-icons">play_arrow</span>
+          UP
+        </button>
+        <button class="action-btn down" (click)="setStatus(machine, 'DOWN')" [disabled]="machine.status === 'DOWN' || machine.status === 'Holiday' || machine.status === 'In Service'">
+          <span class="material-icons">stop</span>
+          DOWN
+        </button>
+        <div class="footer-icons">
+          <button class="icon-btn-tool" [class.active]="machine.status === 'In Service'" [title]="machine.status === 'In Service' ? 'End Service' : 'Start Service'" (click)="toggleService(machine)" [disabled]="machine.status === 'Holiday'">
+            <span class="material-icons">build</span>
+          </button>
+          <button class="icon-btn-tool" [class.active]="machine.status === 'Holiday'" [title]="machine.status === 'Holiday' ? 'End Holiday' : 'Mark Holiday'" (click)="toggleHoliday(machine)" [disabled]="machine.status === 'In Service'">
+            <span class="material-icons">{{ machine.status === 'Holiday' ? 'event_available' : 'event_busy' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history-section" *ngIf="history.length > 0">
+    <div class="section-header">
+      <span class="material-icons">history</span>
+      <h2>Operational History</h2>
+    </div>
+    
+    <div class="history-table-container">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Machine</th>
+            <th>Status Change</th>
+            <th>Previous State Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let record of history" [class.new-entry]="true">
+            <td class="time-cell">
+              <span class="date">{{ record.timestamp | date:'shortDate' }}</span>
+              <span class="time">{{ record.timestamp | date:'mediumTime' }}</span>
+            </td>
+            <td class="machine-cell">
+              <span class="m-name">{{ record.machineName }}</span>
+              <span class="m-id">{{ record.machineId }}</span>
+            </td>
+            <td class="status-cell">
+              <div class="status-flow">
+                <span class="status-tag small" [attr.data-status]="record.previousStatus">{{ record.previousStatus }}</span>
+                <span class="material-icons arrow">east</span>
+                <span class="status-tag small" [attr.data-status]="record.newStatus">{{ record.newStatus }}</span>
+              </div>
+            </td>
+            <td class="duration-cell">
+              <span class="duration-badge">{{ record.duration }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

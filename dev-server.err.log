@@ -1,0 +1,31 @@
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2345: Argument of type '{ margin: number[]; filename: string; image: { type: "jpeg"; quality: number; }; html2canvas: { scale: number; useCORS: boolean; letterRendering: boolean; allowTaint: boolean; logging: boolean; backgroundColor: string; }; jsPDF: { ...; }; pagebreak: { ...; }; }' is not assignable to parameter of type 'Html2PdfOptions'.
+  Types of property 'margin' are incompatible.
+    Type 'number[]' is not assignable to type 'number | [number, number] | [number, number, number, number] | undefined'.
+      Type 'number[]' is not assignable to type '[number, number] | [number, number, number, number]'.
+        Type 'number[]' is not assignable to type '[number, number, number, number]'.
+          Target requires 4 element(s) but source may have fewer.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/dashboard/outward/preview/outward-preview.component.ts:62:33:
+[37m      62 │     html2pdf().from(element).set([32mopt[37m).outputPdf('datauristring').t...
+         ╵                                  [32m~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2345: Argument of type '{ margin: number[]; filename: string; image: { type: "jpeg"; quality: number; }; html2canvas: { scale: number; useCORS: boolean; letterRendering: boolean; allowTaint: boolean; logging: boolean; backgroundColor: string; }; jsPDF: { ...; }; pagebreak: { ...; }; }' is not assignable to parameter of type 'Html2PdfOptions'.
+  Types of property 'margin' are incompatible.
+    Type 'number[]' is not assignable to type 'number | [number, number] | [number, number, number, number] | undefined'.
+      Type 'number[]' is not assignable to type '[number, number] | [number, number, number, number]'.
+        Type 'number[]' is not assignable to type '[number, number, number, number]'.
+          Target requires 4 element(s) but source may have fewer.[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/dashboard/outward/preview/outward-preview.component.ts:64:33:
+[37m      64 │     html2pdf().from(element).set([32mopt[37m).outputPdf('datauristring').t...
+         ╵                                  [32m~~~[0m
+
+[39m[22m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: SafeHtmlPipe is not used within the template of HeaderComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/core/layout/header/header.component.ts:12:64:
+[37m      12 │ ...CommonModule, RouterModule, DynamicToggleComponent, [32mSafeHtmlPipe[37m],
+         ╵                                                        [32m~~~~~~~~~~~~[0m
+
+[39m[22m

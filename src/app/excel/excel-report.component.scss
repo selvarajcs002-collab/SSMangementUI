@@ -1,0 +1,41 @@
+/* Styles for ExcelReportComponent */
+.app-excel-report {
+  /* Add any custom styles if needed */
+}
+
+.excel-report-btn {
+    height: 44px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #107C41 0%, #21A366 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 124, 65, 0.25);
+
+    i {
+        font-size: 18px;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(16, 124, 65, 0.35);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .excel-report-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

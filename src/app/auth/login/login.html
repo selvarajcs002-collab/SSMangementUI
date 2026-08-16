@@ -1,0 +1,68 @@
+<div class="login-page-container animate-fade-in">
+  <div class="login-card">
+    <div class="flex flex-col items-center">
+      <div class="icon-container" style="background: transparent;">
+        <img src="logo.jpg" alt="SS Management Logo"
+          style="width: 100%; height: 100%; object-fit: contain; border-radius: 20px;" />
+      </div>
+      <h2 class="login-title">Welcome Back</h2>
+      <p class="login-subtitle">Login to your account</p>
+    </div>
+
+    <form [formGroup]="loginForm" class="flex flex-col">
+
+
+      <div class="input-wrapper">
+        <div class="label-container">
+          <label class="input-label">Email Address</label>
+        </div>
+        <app-input-field formControlName="email" type="email" placeholder="Enter your email" icon="email">
+        </app-input-field>
+        <div *ngIf="loginForm.controls['email'].touched && loginForm.controls['email'].invalid"
+          class="text-red-500 text-xs mt-1">
+          Valid email is required
+        </div>
+      </div>
+
+      <div class="input-wrapper" style="margin-bottom: 24px;">
+        <div class="label-container">
+          <label class="input-label">Password</label>
+          <a href="#" class="forgot-password">Forgot password?</a>
+        </div>
+        <app-input-field formControlName="password" type="password" placeholder="Enter your password">
+        </app-input-field>
+        <div *ngIf="loginForm.controls['password'].touched && loginForm.controls['password'].invalid"
+          class="text-red-500 text-xs mt-1">
+          Password is required
+        </div>
+      </div>
+
+      <app-button text="Login" [type]="'button'" (click)="onLogin()" [disabled]="loginForm.invalid">
+      </app-button>
+    </form>
+
+    <div class="divider-container">
+      <div class="divider-line"></div>
+      <span class="divider-text">OR CONTINUE WITH</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <app-button variant="google" text="Sign in with Google">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#FFC107"
+          d="M43.6 20.1H42V20H24v8h11.3C34.7 32.8 30 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l5.8-5.8C34.1 6.3 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20c11 0 19.6-8.5 19.6-19.6 0-1.5-.2-2.9-.6-4.3z" />
+        <path fill="#FF3D00"
+          d="M24 4c5.3 0 10.1 2.3 13.7 6.2l-5.8 5.8C30.3 14.5 27.3 13.5 24 13.5c-6.6 0-12 5.4-12 12H4.1C5.7 13.6 13.9 4 24 4z" />
+        <path fill="#4CAF50"
+          d="M24 44c5.1 0 9.8-1.9 13.4-5.1l-6.1-5c-2.1 1.4-4.6 2.1-7.3 2.1-6.6 0-12-5.4-12-12H4.1C5.7 34.4 13.9 44 24 44z" />
+        <path fill="#1976D2"
+          d="M43.6 20.1C43.8 21.4 44 22.7 44 24c0 11-8.5 19.6-19.6 19.6v-8c6.6 0 12-5.4 12-12 0-1.2-.2-2.4-.6-3.5h-12V20h19.8z" />
+      </svg>
+    </app-button>
+
+    <div class="footer-text">
+      <p>Don't have an account? <a routerLink="/signup"
+          class="text-[#4096FF] font-semibold hover:underline cursor-pointer">Sign Up</a></p>
+    </div>
+  </div>
+</div>

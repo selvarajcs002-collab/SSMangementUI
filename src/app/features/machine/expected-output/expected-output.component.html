@@ -1,0 +1,192 @@
+<div class="page-container">
+  <!-- Premium Sticky Header -->
+  <header class="main-header sticky-header">
+    <div class="header-content">
+      <div class="header-left">
+        <div class="title-section">
+          <h1>Expected Output Management</h1>
+          <p class="subtitle">Configure production targets for industrial efficiency</p>
+        </div>
+        <div class="active-badge">
+          <span class="pulse-dot"></span>
+          {{ targets().length }} Active Targets
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn-outline">
+          <span class="material-icons">download</span>
+          Export
+        </button>
+        <button class="btn-primary" (click)="openAddTarget()">
+          <span class="material-icons">add</span>
+          Add New Target
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Modern KPI Cards -->
+  <section class="kpi-section">
+    <div class="kpi-grid">
+      <div class="kpi-card" *ngFor="let card of kpiCards" [attr.data-color]="card.color">
+        <div class="kpi-card-inner">
+          <div class="kpi-header">
+            <div class="kpi-icon-wrap">
+              <span class="material-icons">{{ card.icon }}</span>
+            </div>
+            <div class="kpi-trend" [class.up]="card.up" [class.down]="!card.up">
+              <span class="material-icons">{{ card.up ? 'trending_up' : 'trending_down' }}</span>
+              {{ card.trend }}
+            </div>
+          </div>
+          <div class="kpi-body">
+            <span class="kpi-label">{{ card.title }}</span>
+            <h2 class="kpi-value">{{ card.value }}</h2>
+          </div>
+          <div class="kpi-footer">
+            <div class="mini-progress-bar">
+              <div class="progress-fill" [style.width.%]="card.progress"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Active Target Grid -->
+  <section class="grid-section">
+    <div class="glass-panel table-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="material-icons">format_list_bulleted</span>
+          <h3>Active Production Targets</h3>
+        </div>
+        <div class="panel-actions">
+          <div class="search-compact">
+            <span class="material-icons">search</span>
+            <input type="text" placeholder="Search target...">
+          </div>
+          <button class="icon-btn"><span class="material-icons">filter_list</span></button>
+          <button class="icon-btn"><span class="material-icons">refresh</span></button>
+        </div>
+      </div>
+      
+      <div class="table-scroll custom-scrollbar">
+        <table class="enterprise-table">
+          <thead>
+            <tr>
+              <th>Machine</th>
+              <th>Design / Style</th>
+              <th>Shift</th>
+              <th class="text-right">Daily Target</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody @listAnimation>
+            <tr *ngFor="let item of targets(); let i = index" [attr.data-status]="item.status.toLowerCase()">
+              <td class="sticky-col">
+                <div class="machine-cell">
+                  <div class="machine-icon"><span class="material-icons">precision_manufacturing</span></div>
+                  <strong>{{ item.machine }}</strong>
+                </div>
+              </td>
+              <td>
+                <div class="style-cell">
+                  <span class="design-name">{{ item.design }}</span>
+                  <span class="style-num">{{ item.style }}</span>
+                </div>
+              </td>
+              <td><span class="shift-pill">{{ item.shift }}</span></td>
+              <td class="text-right"><span class="qty-val">{{ item.daily }}</span></td>
+              <td class="text-center">
+                <button class="icon-btn edit-btn" (click)="editTarget(item, i)" title="Edit Target">
+                  <span class="material-icons">edit</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Add Target Modal/Dialog -->
+  <div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()" @overlayAnimation>
+    <div class="modal-container compact-modal" (click)="$event.stopPropagation()" @modalAnimation>
+      <header class="modal-header">
+        <div class="modal-title-area">
+          <h2>{{ editingIndex() !== null ? 'Edit Production Target' : 'Add Production Target' }}</h2>
+          <p>{{ editingIndex() !== null ? 'Update existing production parameters' : 'Quickly configure new production parameters' }}</p>
+        </div>
+        <button class="close-btn" (click)="closeModal()"><span class="material-icons">close</span></button>
+      </header>
+
+      <div class="modal-body custom-scrollbar">
+        <form [formGroup]="targetForm" (ngSubmit)="onSubmit()" class="dialog-form">
+          <div class="form-grid compact-grid">
+            <div class="form-field">
+              <label>Machine Name <span class="req">*</span></label>
+              <select formControlName="machineName">
+                <option value="">Select Machine</option>
+                <option value="CNC-01">CNC-01 (Milling)</option>
+                <option value="LATH-04">LATH-04 (Turning)</option>
+                <option value="MILL-02">MILL-02 (Drilling)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Machine ID</label>
+              <input type="text" formControlName="machineId" readonly class="readonly">
+            </div>
+            <div class="form-field">
+              <label>Design Name <span class="req">*</span></label>
+              <input type="text" formControlName="designName" placeholder="e.g. Gear Plate V3">
+            </div>
+            <div class="form-field">
+              <label>Style Number <span class="req">*</span></label>
+              <input type="text" formControlName="styleNumber" placeholder="e.g. S-902-A">
+            </div>
+            <div class="form-field">
+              <label>Expected Daily Production <span class="req">*</span></label>
+              <div class="input-with-unit">
+                <input type="number" formControlName="dailyTarget">
+                <span class="unit">Units</span>
+              </div>
+            </div>
+            <div class="form-field">
+              <label>Shift <span class="req">*</span></label>
+              <select formControlName="shift">
+                <option value="A">Shift A (Morning)</option>
+                <option value="B">Shift B (Evening)</option>
+                <option value="C">Shift C (Night)</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <footer class="modal-footer">
+        <div class="footer-left">
+          <button class="btn-text" (click)="targetForm.reset()">Reset</button>
+        </div>
+        <div class="footer-right">
+          <button class="btn-outline" (click)="closeModal()">Cancel</button>
+          <button class="btn-primary" (click)="onSubmit()" [disabled]="targetForm.invalid">
+            <span class="material-icons">{{ editingIndex() !== null ? 'update' : 'save' }}</span>
+            {{ editingIndex() !== null ? 'Update Target' : 'Save Target' }}
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modern Floating Quick Action -->
+  <div class="floating-action-menu">
+    <button class="main-fab">
+      <span class="material-icons">bolt</span>
+    </button>
+    <div class="fab-options">
+      <button class="fab-opt" title="Export Plans"><span class="material-icons">file_download</span></button>
+      <button class="fab-opt" title="Bulk Import"><span class="material-icons">file_upload</span></button>
+    </div>
+  </div>
+</div>

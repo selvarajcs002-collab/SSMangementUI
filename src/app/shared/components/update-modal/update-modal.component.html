@@ -1,0 +1,80 @@
+<div class="modal-overlay animate-fade-in" (click)="close()">
+  <div class="modal-container animate-scale-up" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <h2 class="modal-title">Update Entry Selection</h2>
+        <p class="modal-subtitle">Choose details to quickly pre-fill your inward entry.</p>
+      </div>
+      <button class="btn-close" (click)="close()">
+        <span [innerHTML]="icons.x | safeHtml"></span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <form [formGroup]="updateForm">
+        <div class="form-grid">
+          <!-- Company -->
+          <div class="input-group">
+            <label>Company Name <span class="required">*</span></label>
+            <app-custom-select
+              formControlName="companyId"
+              [options]="companies$ | async"
+              [icon]="icons.company"
+              [loading]="isCompaniesLoading"
+              placeholder="Select Company..."
+              (change)="onCompanyChange($event)">
+            </app-custom-select>
+          </div>
+
+          <!-- Style No -->
+          <div class="input-group">
+            <label>Style No <span class="required">*</span></label>
+            <app-custom-select
+              formControlName="styleNo"
+              [options]="styleOptions"
+              [loading]="isLoadingData"
+              placeholder="Select Style..."
+              (change)="onFieldChange()">
+            </app-custom-select>
+          </div>
+
+          <!-- Design Name -->
+          <div class="input-group">
+            <label>Design Name <span class="required">*</span></label>
+            <app-custom-select
+              formControlName="designName"
+              [options]="designOptions"
+              [loading]="isLoadingData"
+              placeholder="Select Design..."
+              (change)="onFieldChange()">
+            </app-custom-select>
+          </div>
+
+          <!-- Colour -->
+          <div class="input-group">
+            <label>Colour <span class="required">*</span></label>
+            <app-custom-select
+              formControlName="colour"
+              [options]="colourOptions"
+              [loading]="isLoadingData"
+              placeholder="Select Colour..."
+              (change)="onFieldChange()">
+            </app-custom-select>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="close()">Cancel</button>
+      <button class="btn-primary" [disabled]="updateForm.invalid || isLoadingData" (click)="onContinue()">
+        <span class="btn-icon" [innerHTML]="icons.check | safeHtml" *ngIf="!isLoadingData"></span>
+        <span class="loading-spinner small" *ngIf="isLoadingData"></span>
+        Continue to Inward
+      </button>
+    </div>
+  </div>
+</div>

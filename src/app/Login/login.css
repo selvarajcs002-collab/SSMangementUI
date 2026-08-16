@@ -1,0 +1,107 @@
+.auth-card {
+  @apply bg-white p-6 md:p-8 w-full max-w-[400px] relative transition-all duration-300;
+  border-radius: theme('borderRadius.card');
+  box-shadow: theme('boxShadow.card');
+  border-top: 4px solid theme('colors.brand.lightBlue');
+}
+
+.auth-header {
+  @apply flex flex-col items-center mb-8;
+}
+
+.auth-icon {
+  @apply w-12 h-12 rounded-full bg-brand-lightBlue text-brand-blue flex items-center justify-center mb-4;
+}
+
+.auth-icon svg {
+  @apply w-6 h-6;
+}
+
+.auth-title {
+  @apply text-2xl font-bold text-brand-textDark;
+}
+
+.auth-subtitle {
+  @apply text-sm text-brand-grayText mt-1 text-center;
+}
+
+.auth-form {
+  @apply flex flex-col gap-5;
+}
+
+.input-group {
+  @apply flex flex-col gap-1.5;
+}
+
+.input-group label {
+  @apply text-sm font-medium text-brand-textDark;
+}
+
+.password-wrapper {
+  @apply relative;
+}
+
+.auth-input {
+  @apply w-full border border-brand-border px-4 py-2.5 text-brand-textDark text-sm outline-none transition-colors duration-200;
+  border-radius: theme('borderRadius.input');
+}
+
+.auth-input:focus {
+  @apply border-brand-blue ring-2 ring-brand-blue/20 shadow-sm;
+}
+
+.password-toggle {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 text-brand-grayText hover:text-brand-textDark transition-colors;
+}
+
+.password-toggle svg {
+  @apply w-5 h-5;
+}
+
+.auth-actions {
+  @apply flex justify-end;
+}
+
+.forgot-password {
+  @apply text-xs flex justify-end text-brand-blue hover:underline font-medium;
+}
+
+.auth-btn-primary {
+  @apply w-full bg-gradient-to-r from-[#4DA6FF] to-[#3B82F6] text-white py-3 font-medium hover:opacity-90 transition-opacity duration-200;
+  border-radius: 10px;
+}
+
+.auth-divider {
+  @apply flex items-center gap-4 my-6;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  @apply content-[''] flex-1 h-[1px] bg-brand-border;
+}
+
+.auth-divider span {
+  @apply text-xs font-semibold text-brand-grayText tracking-wide;
+}
+
+.auth-btn-google {
+  @apply w-full flex items-center justify-center gap-3 border border-brand-border bg-white text-brand-textDark font-medium hover:bg-gray-50 transition-colors duration-200 py-3;
+  border-radius: 10px;
+}
+
+.auth-footer {
+  @apply text-center mt-6 text-sm text-brand-grayText;
+}
+
+.auth-footer a {
+  @apply text-brand-blue font-medium hover:underline;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

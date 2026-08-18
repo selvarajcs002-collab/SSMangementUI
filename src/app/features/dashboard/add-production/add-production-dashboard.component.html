@@ -1,0 +1,315 @@
+<div class="add-production-container">
+  <!-- Header Section -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Add Production Dashboard</h2>
+      <p class="page-subtitle">Monitor day and night shift machine outputs, targets, costs, and log production records.</p>
+    </div>
+  </div>
+
+  <!-- Summary Cards Section -->
+  <div class="kpi-cards-grid">
+    <!-- Day Total Production Card -->
+    <div class="kpi-card day-card">
+      <div class="kpi-icon-wrapper day-icon">
+        <span class="icon">☀️</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Day Total Production</span>
+        <h3 class="kpi-value">{{ dayTotalProduction() | number }} <span class="unit">Units</span></h3>
+        <span class="kpi-badge day-badge">Active Day Shift</span>
+      </div>
+    </div>
+
+    <!-- Night Total Production Card -->
+    <div class="kpi-card night-card">
+      <div class="kpi-icon-wrapper night-icon">
+        <span class="icon">🌙</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Night Total Production</span>
+        <h3 class="kpi-value">{{ nightTotalProduction() | number }} <span class="unit">Units</span></h3>
+        <span class="kpi-badge night-badge">Active Night Shift</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid Section -->
+  <div class="grid-card">
+    <!-- Grid Toolbar Header -->
+    <div class="grid-toolbar">
+      <div class="toolbar-title">
+        <h3>
+          Production Log Grid
+          <span class="shift-tag" [class.day-tag]="activeShift() === 'Day'" [class.night-tag]="activeShift() === 'Night'">
+            {{ activeShift() === 'Day' ? '☀️ Day Shift View' : '🌙 Night Shift View' }}
+          </span>
+        </h3>
+      </div>
+
+      <div class="toolbar-actions">
+        <!-- Sun & Moon Shift Toggle -->
+        <div class="shift-toggle-group">
+          <button 
+            type="button" 
+            class="shift-btn sun-btn" 
+            [class.active]="activeShift() === 'Day'" 
+            (click)="setShift('Day')" 
+            title="View Day Shift Data">
+            <span class="shift-icon">☀️</span>
+            <span class="shift-text">Day Shift</span>
+          </button>
+          <button 
+            type="button" 
+            class="shift-btn moon-btn" 
+            [class.active]="activeShift() === 'Night'" 
+            (click)="setShift('Night')" 
+            title="View Night Shift Data">
+            <span class="shift-icon">🌙</span>
+            <span class="shift-text">Night Shift</span>
+          </button>
+        </div>
+
+        <!-- Column Customization Dropdown -->
+        <div class="column-select-wrapper">
+          <button type="button" class="btn btn-outline" (click)="toggleColumnDropdown()">
+            <span class="icon">⚙️</span> Columns ▾
+          </button>
+          <div class="column-dropdown-menu" *ngIf="showColumnDropdown()">
+            <div class="column-dropdown-header">Select Visible Columns</div>
+            <label *ngFor="let col of columns()" class="column-checkbox-item">
+              <input 
+                type="checkbox" 
+                [checked]="col.visible" 
+                (change)="toggleColumnVisibility(col.key)" />
+              <span>{{ col.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Add Production Button -->
+        <button type="button" class="btn btn-primary btn-add" (click)="openAddModal()">
+          <span class="plus-icon">+</span> Add Production
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabular Grid Table -->
+    <div class="table-responsive">
+      <table class="production-table">
+        <thead>
+          <tr>
+            <ng-container *ngFor="let col of columns()">
+              <th 
+                *ngIf="col.visible" 
+                (click)="sortBy($any(col.key))" 
+                class="sortable-th">
+                <div class="th-content">
+                  <span>{{ col.label }}</span>
+                  <span class="sort-icon" *ngIf="sortColumn() === col.key">
+                    {{ sortDirection() === 'asc' ? '▲' : '▼' }}
+                  </span>
+                </div>
+              </th>
+            </ng-container>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of paginatedRecords()">
+            <!-- S.No -->
+            <td *ngIf="columns()[0].visible" class="fw-bold text-secondary">{{ row.sNo }}</td>
+            <!-- Employee Name -->
+            <td *ngIf="columns()[1].visible">
+              <div class="emp-name-cell">
+                <span class="avatar-sm">{{ row.employeeName.charAt(0) }}</span>
+                <span>{{ row.employeeName }}</span>
+              </div>
+            </td>
+            <!-- Machine Name -->
+            <td *ngIf="columns()[2].visible">
+              <span class="machine-badge">{{ row.machineName }}</span>
+            </td>
+            <!-- Total Production -->
+            <td *ngIf="columns()[3].visible" class="fw-bold text-primary">
+              {{ row.totalProduction | number }}
+            </td>
+            <!-- Style Name -->
+            <td *ngIf="columns()[4].visible">{{ row.styleName }}</td>
+            <!-- Design Name -->
+            <td *ngIf="columns()[5].visible">{{ row.designName }}</td>
+            <!-- Target Production -->
+            <td *ngIf="columns()[6].visible">{{ row.targetProduction | number }}</td>
+            <!-- Cost per Piece -->
+            <td *ngIf="columns()[7].visible" class="fw-bold">
+              ₹{{ row.costPerPiece | number:'1.2-2' }}
+            </td>
+            <!-- Production Cost -->
+            <td *ngIf="columns()[8].visible" class="text-success fw-bold">
+              ₹{{ row.productionCost | number }}
+            </td>
+            <!-- Shift -->
+            <td *ngIf="columns()[9].visible">
+              <span class="shift-chip" [class.day-chip]="row.shift === 'Day'" [class.night-chip]="row.shift === 'Night'">
+                {{ row.shift === 'Day' ? '☀️ Day' : '🌙 Night' }}
+              </span>
+            </td>
+            <!-- Status -->
+            <td *ngIf="columns()[10].visible">
+              <span class="status-chip" [class.status-accept]="row.status === 'Accept'" [class.status-pending]="row.status === 'Pending'">
+                {{ row.status === 'Accept' ? '✓ Accept' : '⏳ Pending' }}
+              </span>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="paginatedRecords().length === 0">
+            <td [attr.colspan]="columns().length" class="empty-state-td">
+              <div class="empty-box">
+                <span class="empty-icon">📂</span>
+                <p>No production records found for {{ activeShift() }} Shift.</p>
+                <button class="btn btn-sm btn-outline" (click)="openAddModal()">+ Log First Entry</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-bar" *ngIf="filteredRecords().length > 0">
+      <div class="pagination-info">
+        Showing {{ (currentPage() - 1) * pageSize() + 1 }} to 
+        {{ (currentPage() * pageSize()) > filteredRecords().length ? filteredRecords().length : (currentPage() * pageSize()) }} 
+        of {{ filteredRecords().length }} entries
+      </div>
+      <div class="pagination-controls">
+        <button 
+          type="button" 
+          class="page-btn" 
+          [disabled]="currentPage() === 1" 
+          (click)="goToPage(currentPage() - 1)">
+          ‹ Prev
+        </button>
+        <span class="page-indicator">Page {{ currentPage() }} of {{ totalPages() }}</span>
+        <button 
+          type="button" 
+          class="page-btn" 
+          [disabled]="currentPage() === totalPages()" 
+          (click)="goToPage(currentPage() + 1)">
+          Next ›
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Production Popup Modal -->
+  <div class="modal-backdrop" *ngIf="showAddModal()">
+    <div class="modal-dialog">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <span class="modal-icon">🏭</span>
+          <div>
+            <h3>Add Production Entry</h3>
+            <p>Input new machine production metrics and target records</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="closeAddModal()">×</button>
+      </div>
+
+      <!-- Modal Form Body -->
+      <form [formGroup]="productionForm" (ngSubmit)="saveProduction()">
+        <div class="modal-body">
+
+          <div class="form-grid">
+            <!-- Employee Name -->
+            <div class="form-group">
+              <label class="field-label">Employee Name <span class="req">*</span></label>
+              <input 
+                type="text" 
+                class="form-control" 
+                formControlName="employeeName" 
+                placeholder="Enter employee name..." />
+              <div class="field-error" *ngIf="productionForm.get('employeeName')?.touched && productionForm.get('employeeName')?.invalid">
+                Employee Name is required (min 2 chars).
+              </div>
+            </div>
+
+            <!-- Machine Name -->
+            <div class="form-group">
+              <label class="field-label">Machine Name <span class="req">*</span></label>
+              <select class="form-control" formControlName="machineName">
+                <option value="" disabled>Select Machine...</option>
+                <option *ngFor="let m of machineOptions()" [value]="m">{{ m }}</option>
+              </select>
+            </div>
+
+            <!-- Shift Dropdown -->
+            <div class="form-group">
+              <label class="field-label">Shift <span class="req">*</span></label>
+              <select class="form-control" formControlName="shift">
+                <option value="Day">☀️ Day Shift</option>
+                <option value="Night">🌙 Night Shift</option>
+              </select>
+            </div>
+
+            <!-- Style Name Dropdown -->
+            <div class="form-group">
+              <label class="field-label">Style Name <span class="req">*</span></label>
+              <select class="form-control" formControlName="styleName">
+                <option value="" disabled>Select Style...</option>
+                <option *ngFor="let s of styleOptions()" [value]="s">{{ s }}</option>
+              </select>
+            </div>
+
+            <!-- Design Name Dropdown -->
+            <div class="form-group">
+              <label class="field-label">Design Name <span class="req">*</span></label>
+              <select class="form-control" formControlName="designName">
+                <option value="" disabled>Select Design...</option>
+                <option *ngFor="let d of availableDesigns()" [value]="d">{{ d }}</option>
+              </select>
+            </div>
+
+            <!-- Total of Production -->
+            <div class="form-group">
+              <label class="field-label">Total Production (Units) <span class="req">*</span></label>
+              <input 
+                type="number" 
+                class="form-control" 
+                formControlName="totalProduction" 
+                placeholder="Enter total units..." />
+            </div>
+
+            <!-- Target Production -->
+            <div class="form-group">
+              <label class="field-label">Target Production <span class="req">*</span></label>
+              <input 
+                type="number" 
+                class="form-control" 
+                formControlName="targetProduction" 
+                placeholder="Enter target units..." />
+            </div>
+
+            <!-- Cost per Piece -->
+            <div class="form-group">
+              <label class="field-label">Cost per Piece (₹) <span class="req">*</span></label>
+              <input 
+                type="number" 
+                step="0.01"
+                class="form-control" 
+                formControlName="costPerPiece" 
+                placeholder="Enter cost per piece..." />
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="closeAddModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Production Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

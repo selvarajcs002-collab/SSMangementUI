@@ -65,6 +65,12 @@ export class DashboardHomeComponent {
       title: 'Stock Management',
       description: 'View stock balances and track last transactions',
       route: '/dashboard/stock-management'
+    },
+    {
+      icon: '🏭',
+      title: 'Add Production',
+      description: 'Track day and night shift machine production, targets, costs, and approvals',
+      route: '/dashboard/add-production'
     }
   ];
 }

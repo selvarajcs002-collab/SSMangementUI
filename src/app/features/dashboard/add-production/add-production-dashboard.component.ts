@@ -4,7 +4,9 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { HttpClient } from '@angular/common/http';
 import { InwardService } from '../../../core/services/inward.service';
 import { EmployeeService } from '../../../core/services/employee.service';
+import { CompanyService, CompanySummary } from '../../../core/services/company.service';
 import { AppConfigService } from '../../../core/services/app-config.service';
+import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 
 export interface ProductionRecord {
   sNo: number;
@@ -30,7 +32,7 @@ export interface ColumnDefinition {
 @Component({
   selector: 'app-add-production-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, CustomSelectComponent],
   templateUrl: './add-production-dashboard.component.html',
   styleUrls: ['./add-production-dashboard.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -43,11 +45,15 @@ export class AddProductionDashboardComponent implements OnInit {
   showAddModal = signal<boolean>(false);
 
   // Configured Data
+  companies = signal<CompanySummary[]>([]);
   machineOptions = signal<string[]>([]);
 
   styleOptions = signal<string[]>([]);
   rawDesignStyleMap = signal<{ styleNo: string; designName: string }[]>([]);
   availableDesigns = signal<string[]>([]);
+
+  styleSelectOptions = computed(() => this.styleOptions().map(s => ({ key: s, value: s })));
+  designSelectOptions = computed(() => this.availableDesigns().map(d => ({ key: d, value: d })));
 
   // Production Form
   productionForm: FormGroup;
@@ -132,9 +138,11 @@ export class AddProductionDashboardComponent implements OnInit {
     private http: HttpClient,
     private inwardService: InwardService,
     private employeeService: EmployeeService,
+    private companyService: CompanyService,
     private configService: AppConfigService
   ) {
     this.productionForm = this.fb.group({
+      companyId: [null, Validators.required],
       employeeName: ['', [Validators.required, Validators.minLength(2)]],
       machineName: ['', Validators.required],
       totalProduction: [0, [Validators.required, Validators.min(1)]],
@@ -147,13 +155,35 @@ export class AddProductionDashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadCompanies();
     this.loadAppConfig();
     this.loadGridRecords();
-    this.loadStyleAndDesignData();
+
+    // Listen to companyId changes to fetch styles
+    this.productionForm.get('companyId')?.valueChanges.subscribe((selectedCompany: number) => {
+      if (selectedCompany) {
+        this.loadStyleAndDesignData(selectedCompany);
+      } else {
+        this.styleOptions.set([]);
+        this.availableDesigns.set([]);
+        this.productionForm.patchValue({ styleName: '', designName: '' });
+      }
+    });
 
     // Listen to styleName changes to cascade designName options
     this.productionForm.get('styleName')?.valueChanges.subscribe((selectedStyle: string) => {
       this.onStyleChange(selectedStyle);
+    });
+  }
+
+  loadCompanies(): void {
+    this.companyService.getCompanies().subscribe({
+      next: (res) => {
+        if (res && res.length > 0) {
+          this.companies.set(res);
+        }
+      },
+      error: (err) => console.error('Error fetching companies:', err)
     });
   }
 
@@ -198,8 +228,7 @@ export class AddProductionDashboardComponent implements OnInit {
     });
   }
 
-  loadStyleAndDesignData(): void {
-    const companyId = Number(localStorage.getItem('companyId') || 1);
+  loadStyleAndDesignData(companyId: number): void {
     this.inwardService.getDesignStyleColour(companyId).subscribe({
       next: (res: any) => {
         if (Array.isArray(res)) {
@@ -267,19 +296,21 @@ export class AddProductionDashboardComponent implements OnInit {
   }
 
   openAddModal(): void {
+    const defaultCompanyId = Number(localStorage.getItem('companyId') || 1);
     this.productionForm.reset({
+      companyId: defaultCompanyId,
       employeeName: '',
       machineName: this.machineOptions().length > 0 ? this.machineOptions()[0] : '',
       totalProduction: 0,
-      styleName: this.styleOptions().length > 0 ? this.styleOptions()[0] : '',
+      styleName: '',
       designName: '',
       targetProduction: 1000,
       costPerPiece: 3.0,
       shift: this.activeShift()
     });
 
-    if (this.styleOptions().length > 0) {
-      this.onStyleChange(this.styleOptions()[0]);
+    if (defaultCompanyId) {
+      this.loadStyleAndDesignData(defaultCompanyId);
     }
 
     this.showAddModal.set(true);
@@ -296,7 +327,7 @@ export class AddProductionDashboardComponent implements OnInit {
     }
 
     const formVal = this.productionForm.value;
-    const companyId = Number(localStorage.getItem('companyId') || 1);
+    const companyId = Number(formVal.companyId || localStorage.getItem('companyId') || 1);
     
     // Automatically detect if logged in user is Admin or Employee
     const storedRole = (localStorage.getItem('userRole') || localStorage.getItem('role') || '').toLowerCase();

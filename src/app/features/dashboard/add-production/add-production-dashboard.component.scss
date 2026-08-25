@@ -605,6 +605,16 @@
     border: 1px solid #cbd5e1;
     font-size: 0.875rem;
     color: #0f172a;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+
+    // Ensure options also attempt to truncate if browser supports it
+    option {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
 
     &:focus {
       outline: none;

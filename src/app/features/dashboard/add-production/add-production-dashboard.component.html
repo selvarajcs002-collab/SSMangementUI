@@ -221,6 +221,14 @@
         <div class="modal-body">
 
           <div class="form-grid">
+            <!-- Company Name -->
+            <div class="form-group" style="position: relative; z-index: 50;">
+              <label class="field-label">Company Name <span class="req">*</span></label>
+              <app-custom-select formControlName="companyId" [options]="companies()" 
+                [enableTypeAhead]="true" placeholder="Choose a company...">
+              </app-custom-select>
+            </div>
+
             <!-- Employee Name -->
             <div class="form-group">
               <label class="field-label">Employee Name <span class="req">*</span></label>
@@ -253,21 +261,19 @@
             </div>
 
             <!-- Style Name Dropdown -->
-            <div class="form-group">
+            <div class="form-group" style="position: relative; z-index: 49;">
               <label class="field-label">Style Name <span class="req">*</span></label>
-              <select class="form-control" formControlName="styleName">
-                <option value="" disabled>Select Style...</option>
-                <option *ngFor="let s of styleOptions()" [value]="s">{{ s }}</option>
-              </select>
+              <app-custom-select formControlName="styleName" [options]="styleSelectOptions()" 
+                [enableTypeAhead]="true" placeholder="Select Style...">
+              </app-custom-select>
             </div>
 
             <!-- Design Name Dropdown -->
-            <div class="form-group">
+            <div class="form-group" style="position: relative; z-index: 48;">
               <label class="field-label">Design Name <span class="req">*</span></label>
-              <select class="form-control" formControlName="designName">
-                <option value="" disabled>Select Design...</option>
-                <option *ngFor="let d of availableDesigns()" [value]="d">{{ d }}</option>
-              </select>
+              <app-custom-select formControlName="designName" [options]="designSelectOptions()" 
+                [enableTypeAhead]="true" placeholder="Select Design...">
+              </app-custom-select>
             </div>
 
             <!-- Total of Production -->

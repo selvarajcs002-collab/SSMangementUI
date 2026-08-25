@@ -322,6 +322,8 @@
 
 .production-table {
   width: 100%;
+  min-width: 100%;
+  display: table;
   border-collapse: collapse;
 
   th {

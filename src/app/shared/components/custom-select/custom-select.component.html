@@ -11,7 +11,8 @@
                [(ngModel)]="searchTerm" 
                (ngModelChange)="onSearchTermChange()"
                [placeholder]="placeholder" 
-               (click)="onInputClick($event)">
+               (click)="onInputClick($event)"
+               [disabled]="disabled">
       </ng-container>
       <div class="chips-container" *ngIf="multiple && selectedChips.length > 0">
         <span class="chip" *ngFor="let chip of selectedChips">

@@ -14,5 +14,12 @@ export class OptionCardComponent {
   @Input() icon: string = '';
   @Input() title: string = '';
   @Input() description: string = '';
-  @Input() route: string = '';
+  @Input() route?: string;
+  @Input() externalLink?: string;
+
+  handleClick() {
+    if (this.externalLink) {
+      window.open(this.externalLink, '_blank');
+    }
+  }
 }

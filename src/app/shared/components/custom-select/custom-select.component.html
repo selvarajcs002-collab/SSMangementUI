@@ -11,7 +11,8 @@
                [(ngModel)]="searchTerm" 
                (ngModelChange)="onSearchTermChange()"
                [placeholder]="placeholder" 
-               (click)="onInputClick($event)">
+               (click)="onInputClick($event)"
+               [disabled]="disabled">
       </ng-container>
       <div class="chips-container" *ngIf="multiple && selectedChips.length > 0">
         <span class="chip" *ngFor="let chip of selectedChips">
@@ -38,7 +39,7 @@
     </div>
   </div>
 
-  <div class="options-menu animate-dropdown" *ngIf="isOpen">
+  <div class="options-menu animate-dropdown" *ngIf="isOpen && filteredOptions.length > 0">
     <div class="menu-header" *ngIf="multiple || showSearch">
       <div class="search-box" *ngIf="showSearch || multiple">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"

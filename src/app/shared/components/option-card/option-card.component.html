@@ -1,6 +1,7 @@
 <div 
   class="option-card group animate-fade-in" 
-  [routerLink]="route"
+  [routerLink]="route ? route : null"
+  (click)="handleClick()"
   role="button"
   tabindex="0"
 >

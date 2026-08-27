@@ -34,7 +34,8 @@ export class DashboardHomeComponent {
       icon: '👤',
       title: 'Add Employee',
       description: 'Onboard new staff, manage employee records, and assign roles',
-      route: '/dashboard/employee'
+      externalLink: 'http://200.141.4.172:4300/',
+      route: undefined
     },
     {
       icon: '📁',

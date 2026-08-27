@@ -40,6 +40,7 @@
             labelKey="value"
             placeholder="Select Style" 
             [icon]="icons.style"
+            [enableTypeAhead]="true"
             [loading]="isStyleLoading"
             (ngModelChange)="onStyleChange($event)">
           </app-custom-select>
@@ -55,6 +56,7 @@
             labelKey="value"
             placeholder="Select Design" 
             [icon]="icons.design"
+            [enableTypeAhead]="true"
             [loading]="isDesignLoading"
             (ngModelChange)="onDesignChange($event)">
           </app-custom-select>
@@ -70,6 +72,7 @@
             labelKey="value"
             placeholder="Select Colour" 
             [icon]="icons.colour"
+            [enableTypeAhead]="true"
             [loading]="isColourLoading"
             (ngModelChange)="onColourChange($event)">
           </app-custom-select>

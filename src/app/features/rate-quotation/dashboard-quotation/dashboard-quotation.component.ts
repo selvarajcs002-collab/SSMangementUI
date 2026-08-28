@@ -13,6 +13,7 @@ import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 import { RateQuotationService, RateQuotationModel } from '../../../core/services/rate-quotation.service';
+import { MessageService } from '../../../core/services/message.service';
 
 @Component({
   selector: 'app-dashboard-quotation',
@@ -35,7 +36,7 @@ import { RateQuotationService, RateQuotationModel } from '../../../core/services
   ]
 })
 export class DashboardQuotationComponent implements OnInit, AfterViewInit {
-  displayedColumns: string[] = ['index', 'quoteNo', 'companyName', 'styleNo', 'embDesign', 'rate', 'date', 'actions'];
+  displayedColumns: string[] = ['index', 'quoteNo', 'companyName', 'styleNo', 'embDesign', 'ratePerPiece', 'rate', 'date', 'actions'];
   dataSource = new MatTableDataSource<RateQuotationModel>([]);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -55,7 +56,8 @@ export class DashboardQuotationComponent implements OnInit, AfterViewInit {
   constructor(
     private router: Router, 
     private rateQuotationService: RateQuotationService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private messageService: MessageService
   ) { }
 
   ngOnInit(): void {
@@ -86,5 +88,24 @@ export class DashboardQuotationComponent implements OnInit, AfterViewInit {
 
   editQuotation(id: number) {
     this.router.navigate(['/dashboard/rate-quotation/edit', id]);
+  }
+
+  deleteQuotation(id: number) {
+    if (confirm('Are you sure you want to delete this rate quotation?')) {
+      this.rateQuotationService.deleteRateQuotation(id).subscribe({
+        next: (response) => {
+          if (response && response.success) {
+            this.messageService.success('Rate Quotation deleted successfully.');
+            this.fetchQuotations(); // Refresh the table
+          } else {
+            this.messageService.error(response?.message || 'Failed to delete rate quotation.');
+          }
+        },
+        error: (error) => {
+          console.error('Error deleting rate quotation', error);
+          this.messageService.error('An error occurred while deleting the quotation.');
+        }
+      });
+    }
   }
 }

@@ -57,10 +57,11 @@ export class CreateQuotationComponent {
       noOfStitches: ['', [Validators.required, Validators.min(0)]],
       chenilleColors: ['', Validators.required],
       normalEmbColors: ['', Validators.required],
+      ratePerPiece: ['', [Validators.required, Validators.min(0)]],
       embCost: ['', [Validators.required, Validators.min(0)]],
       paymentTerms: ['', Validators.required]
     });
-    
+
     this.quotationForm.get('companyId')?.disable();
   }
 
@@ -76,14 +77,14 @@ export class CreateQuotationComponent {
     this.companyService.getCompanies().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
         this.isLoadingCompanies = false;
-        
+
         if (response === null) {
           this.messageService.error('No companies found.');
           return;
         }
 
         const data = Array.isArray(response) ? response : response.data || [];
-        
+
         if (!Array.isArray(data) || (data.length > 0 && !('key' in data[0] && 'value' in data[0]))) {
           console.error('Invalid response format', response);
           this.messageService.error('An unexpected error occurred while loading companies.');
@@ -102,7 +103,7 @@ export class CreateQuotationComponent {
       error: (error: HttpErrorResponse) => {
         this.isLoadingCompanies = false;
         console.error('API Failure:', error);
-        
+
         if (error.status === 0) {
           this.messageService.error('Network error occurred.');
         } else if (error.status === 401) {
@@ -158,7 +159,7 @@ export class CreateQuotationComponent {
 
       const formValue = this.quotationForm.value;
       const defaults = this.appConfig.defaultQuotationSettings;
-      
+
       const selectedCompany = this.companyOptions.find(c => c.key === formValue.companyId);
       const companyName = selectedCompany ? selectedCompany.value : "Acme Corp";
 
@@ -176,7 +177,7 @@ export class CreateQuotationComponent {
         "noOfStitches": formValue.noOfStitches ? Number(formValue.noOfStitches) : null,
         "chenilleColors": formValue.chenilleColors ? Number(formValue.chenilleColors) : null,
         "normalEmbColors": formValue.normalEmbColors ? Number(formValue.normalEmbColors) : null,
-        "ratePerPiece": null,
+        "ratePerPiece": formValue.ratePerPiece ? Number(formValue.ratePerPiece) : null,
         "ratePerMeter": formValue.embCost ? Number(formValue.embCost) : null,
         "quantity": defaults.quantity ? Number(defaults.quantity) : null,
         "totalAmount": (formValue.embCost ? Number(formValue.embCost) : 0) * (defaults.quantity ? Number(defaults.quantity) : 0) || null,

@@ -53,7 +53,7 @@
 
       <!-- Company Name Column -->
       <ng-container matColumnDef="companyName">
-        <th mat-header-cell *matHeaderCellDef class="w-20 font-medium"> Company Name </th>
+        <th mat-header-cell *matHeaderCellDef class="w-15 font-medium"> Company Name </th>
         <td mat-cell *matCellDef="let element" class="text-dark"> {{element.companyName}} </td>
       </ng-container>
 
@@ -65,8 +65,15 @@
 
       <!-- EMB Design Column -->
       <ng-container matColumnDef="embDesign">
-        <th mat-header-cell *matHeaderCellDef class="w-20 font-medium"> EMB Design </th>
+        <th mat-header-cell *matHeaderCellDef class="w-15 font-medium"> EMB Design </th>
         <td mat-cell *matCellDef="let element" class="text-dark"> {{element.designName}} </td>
+      </ng-container>
+
+      <!-- Rate Per Piece Column -->
+      <ng-container matColumnDef="ratePerPiece">
+        <th mat-header-cell *matHeaderCellDef class="w-10 font-medium"> Rate / Piece </th>
+        <td mat-cell *matCellDef="let element" class="font-medium text-dark"> {{element.ratePerPiece |
+          currency:'INR':'symbol':'1.2-2'}} </td>
       </ng-container>
 
       <!-- Rate Column -->
@@ -87,7 +94,7 @@
         <th mat-header-cell *matHeaderCellDef class="text-center w-5 font-medium"> Actions </th>
         <td mat-cell *matCellDef="let element">
           <div class="action-cells">
-            <button class="action-btn view-btn" title="View"><mat-icon>visibility</mat-icon></button>
+            <button class="action-btn delete-btn" title="Delete" (click)="deleteQuotation(element.id)"><mat-icon>delete</mat-icon></button>
             <button class="action-btn edit-btn" title="Edit" (click)="editQuotation(element.id)"><mat-icon>edit</mat-icon></button>
             <button class="action-btn copy-btn" title="Duplicate"><mat-icon>content_copy</mat-icon></button>
           </div>

@@ -64,6 +64,7 @@ export class EditQuotationComponent {
       noOfStitches: ['', [Validators.required, Validators.min(0)]],
       chenilleColors: ['', Validators.required],
       normalEmbColors: ['', Validators.required],
+      ratePerPiece: ['', [Validators.required, Validators.min(0)]],
       embCost: ['', [Validators.required, Validators.min(0)]],
       paymentTerms: ['', Validators.required]
     });
@@ -168,7 +169,8 @@ export class EditQuotationComponent {
           // We provide fallback values so the required validation doesn't block the form.
           noOfStitches: data.noOfStitches || '0',
           chenilleColors: data.chenilleColors || '0',
-          normalEmbColors: data.normalEmbColors || '0'
+          normalEmbColors: data.normalEmbColors || '0',
+          ratePerPiece: data.ratePerPiece || ''
         });
 
         this.quotationForm.enable();
@@ -289,7 +291,7 @@ export class EditQuotationComponent {
         "noOfStitches": formValue.noOfStitches ? Number(formValue.noOfStitches) : null,
         "chenilleColors": formValue.chenilleColors ? Number(formValue.chenilleColors) : null,
         "normalEmbColors": formValue.normalEmbColors ? Number(formValue.normalEmbColors) : null,
-        "ratePerPiece": null,
+        "ratePerPiece": formValue.ratePerPiece ? Number(formValue.ratePerPiece) : null,
         "ratePerMeter": formValue.embCost ? Number(formValue.embCost) : null,
         "quantity": (formValue.quantity ? Number(formValue.quantity) : (defaults.quantity ? Number(defaults.quantity) : null)),
         "totalAmount": (formValue.embCost ? Number(formValue.embCost) : 0) * ((formValue.quantity ? Number(formValue.quantity) : (defaults.quantity ? Number(defaults.quantity) : 0))) || null,

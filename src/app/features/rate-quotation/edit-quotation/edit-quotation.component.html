@@ -74,6 +74,15 @@
               </div>
             </div>
 
+            <!-- Rate Per Piece -->
+            <div class="input-group">
+              <label>Rate Per Piece <span class="required">*</span></label>
+              <input type="number" formControlName="ratePerPiece" placeholder="Enter Rate Per Piece">
+              <div *ngIf="quotationForm.get('ratePerPiece')?.touched && quotationForm.get('ratePerPiece')?.invalid" class="error-text">
+                Rate Per Piece is required
+              </div>
+            </div>
+
             <!-- Embroidery Cost / 1000 Sts -->
             <div class="input-group">
               <label>Embroidery Cost / 1000 Sts <span class="required">*</span></label>

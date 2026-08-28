@@ -45,9 +45,13 @@
     box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
 
     mat-icon {
+      font-family: 'Material Icons' !important;
       font-size: 18px;
       width: 18px;
       height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     &:hover {
@@ -159,11 +163,11 @@
     table-layout: fixed;
 
     th.mat-header-cell {
-      background-color: #4489ce;
-      color: #0f172a;
-      font-weight: bolder;
-      font-size: 25px;
-      padding: 20px 14px;
+      background-color: #f8fafc;
+      color: #475569;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 16px 14px;
       border-bottom: 1px solid #e2e8f0;
       border-right: 1px solid #e2e8f0;
       white-space: nowrap;
@@ -175,9 +179,9 @@
     }
 
     td.mat-cell {
-      padding: 20px 14px;
-      color: #475569;
-      font-size: 20px;
+      padding: 16px 14px;
+      color: #1e293b;
+      font-size: 14px;
       border-bottom: 1px solid #e2e8f0;
       border-right: 1px solid #e2e8f0;
       vertical-align: middle;
@@ -290,10 +294,13 @@
   transition: all 0.2s ease;
 
   mat-icon {
+    font-family: 'Material Icons' !important;
     font-size: 18px;
-    /* Slightly bigger icon */
     width: 18px;
     height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   &.view-btn {
@@ -368,9 +375,13 @@
       transition: all 0.2s ease;
 
       mat-icon {
+        font-family: 'Material Icons' !important;
         font-size: 18px;
         width: 18px;
         height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
 
       &:hover:not(.active) {

@@ -61,14 +61,14 @@ export class EditQuotationComponent {
       companyId: [null, [Validators.required, Validators.min(1)]],
       styleNo: ['', Validators.required],
       embDesign: ['', Validators.required],
-      noOfStitches: ['', [Validators.required, Validators.min(0)]],
+      noOfStitches: ['', Validators.required],
       chenilleColors: ['', Validators.required],
       normalEmbColors: ['', Validators.required],
       ratePerPiece: ['', [Validators.required, Validators.min(0)]],
       embCost: ['', [Validators.required, Validators.min(0)]],
       paymentTerms: ['', Validators.required]
     });
-    
+
     this.quotationForm.disable(); // Initially disable everything while loading
   }
 
@@ -91,14 +91,14 @@ export class EditQuotationComponent {
     this.companyService.getCompanies().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response: any) => {
         this.isLoadingCompanies = false;
-        
+
         if (response === null) {
           this.messageService.error('No companies found.');
           return;
         }
 
         const data = Array.isArray(response) ? response : response.data || [];
-        
+
         if (!Array.isArray(data) || (data.length > 0 && !('key' in data[0] && 'value' in data[0]))) {
           console.error('Invalid response format', response);
           this.messageService.error('An unexpected error occurred while loading companies.');
@@ -117,7 +117,7 @@ export class EditQuotationComponent {
       error: (error: HttpErrorResponse) => {
         this.isLoadingCompanies = false;
         console.error('API Failure:', error);
-        
+
         if (error.status === 0) {
           this.messageService.error('Network error occurred.');
         } else if (error.status === 401) {
@@ -167,7 +167,7 @@ export class EditQuotationComponent {
           paymentTerms: data.remarks,
           // These fields exist in the form but are NOT returned by the backend API model.
           // We provide fallback values so the required validation doesn't block the form.
-          noOfStitches: data.noOfStitches || '0',
+          noOfStitches: data.noOfStitches || '',
           chenilleColors: data.chenilleColors || '0',
           normalEmbColors: data.normalEmbColors || '0',
           ratePerPiece: data.ratePerPiece || ''
@@ -182,7 +182,7 @@ export class EditQuotationComponent {
       error: (error: HttpErrorResponse) => {
         this.isLoadingQuotation = false;
         console.error('GetById API Failure:', error);
-        
+
         if (error.status === 0) {
           this.messageService.error('Network connection error');
         } else if (error.status === 401) {
@@ -273,7 +273,7 @@ export class EditQuotationComponent {
       this.isSaving = true;
       const formValue = this.quotationForm.value;
       const defaults = this.appConfig.defaultQuotationSettings;
-      
+
       const selectedCompany = this.companyOptions.find(c => c.key === formValue.companyId);
       const companyName = selectedCompany ? selectedCompany.value : "Acme Corp";
 
@@ -288,7 +288,7 @@ export class EditQuotationComponent {
         "styleNo": formValue.styleNo || "",
         "designName": formValue.embDesign || "",
         "productType": defaults.productType || "",
-        "noOfStitches": formValue.noOfStitches ? Number(formValue.noOfStitches) : null,
+        "noOfStitches": formValue.noOfStitches || null,
         "chenilleColors": formValue.chenilleColors ? Number(formValue.chenilleColors) : null,
         "normalEmbColors": formValue.normalEmbColors ? Number(formValue.normalEmbColors) : null,
         "ratePerPiece": formValue.ratePerPiece ? Number(formValue.ratePerPiece) : null,

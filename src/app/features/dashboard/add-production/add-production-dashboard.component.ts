@@ -7,6 +7,7 @@ import { EmployeeService } from '../../../core/services/employee.service';
 import { CompanyService, CompanySummary } from '../../../core/services/company.service';
 import { AppConfigService } from '../../../core/services/app-config.service';
 import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
+import { DatePipe } from '@angular/common';
 
 export interface ProductionRecord {
   sNo: number;
@@ -21,6 +22,7 @@ export interface ProductionRecord {
   productionCost: number;
   shift: 'Day' | 'Night';
   status: 'Accept' | 'Pending';
+  createdDate?: string;
 }
 
 export interface ColumnDefinition {
@@ -61,6 +63,7 @@ export class AddProductionDashboardComponent implements OnInit {
   // Grid Column Customization
   columns = signal<ColumnDefinition[]>([
     { key: 'sNo', label: 'S.No', visible: true },
+    { key: 'createdDate', label: 'Date', visible: true },
     { key: 'employeeName', label: 'Employee Name', visible: true },
     { key: 'machineName', label: 'Machine Name', visible: true },
     { key: 'totalProduction', label: 'Total Production', visible: true },
@@ -83,54 +86,59 @@ export class AddProductionDashboardComponent implements OnInit {
 
   // Master Data Signal
   records = signal<ProductionRecord[]>([]);
+  totalRecords = signal<number>(0);
+  fullRecords = signal<any[]>([]);
 
   // Computed Summary Totals
   dayTotalProduction = computed(() => {
-    return this.records()
+    return this.fullRecords()
       .filter(r => r.shift === 'Day')
       .reduce((sum, r) => sum + (Number(r.totalProduction) || 0), 0);
   });
 
   nightTotalProduction = computed(() => {
-    return this.records()
+    return this.fullRecords()
       .filter(r => r.shift === 'Night')
       .reduce((sum, r) => sum + (Number(r.totalProduction) || 0), 0);
   });
 
-  // Filtered & Sorted Grid Data
-  filteredRecords = computed(() => {
-    const shiftFilter = this.activeShift();
-    let data = this.records().filter(r => r.shift === shiftFilter);
-
-    const col = this.sortColumn();
-    const dir = this.sortDirection();
-
-    data = [...data].sort((a, b) => {
-      const valA = a[col];
-      const valB = b[col];
-
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return dir === 'asc' ? valA - valB : valB - valA;
-      }
-      const strA = String(valA || '').toLowerCase();
-      const strB = String(valB || '').toLowerCase();
-      return dir === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
-    });
-
-    return data;
+  yesterdayDateLabel = computed(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dp = new DatePipe('en-US');
+    return dp.transform(yesterday, 'dd-MMM') || '';
   });
 
-  // Paginated View
+  yesterdayTotalCost = computed(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().split('T')[0];
+
+    return this.fullRecords()
+      .filter(r => {
+        if (!r.createdDate) return false;
+        try {
+          const dStr = new Date(r.createdDate).toISOString().split('T')[0];
+          return dStr === yStr;
+        } catch(e) {
+          return false;
+        }
+      })
+      .reduce((sum, r) => sum + (Number(r.productionCost) || 0), 0);
+  });
+
+  // Filtered & Sorted Grid Data
+  filteredRecords = computed(() => {
+    return this.records();
+  });
+
+  // Paginated View (Server handles pagination, so just return records)
   paginatedRecords = computed(() => {
-    const data = this.filteredRecords();
-    const page = this.currentPage();
-    const size = this.pageSize();
-    const start = (page - 1) * size;
-    return data.slice(start, start + size);
+    return this.records();
   });
 
   totalPages = computed(() => {
-    return Math.ceil(this.filteredRecords().length / this.pageSize()) || 1;
+    return Math.ceil(this.totalRecords() / this.pageSize()) || 1;
   });
 
   constructor(
@@ -158,6 +166,7 @@ export class AddProductionDashboardComponent implements OnInit {
     this.loadCompanies();
     this.loadAppConfig();
     this.loadGridRecords();
+    this.loadFullRecordsForKPIs();
 
     // Listen to companyId changes to fetch styles
     this.productionForm.get('companyId')?.valueChanges.subscribe((selectedCompany: number) => {
@@ -201,12 +210,15 @@ export class AddProductionDashboardComponent implements OnInit {
   }
 
   loadGridRecords(): void {
-    const companyId = Number(localStorage.getItem('companyId') || 1);
-    this.http.get<any[]>(`${this.configService.apiBaseUrl}/MachineProduction/list/${companyId}`).subscribe({
+    const page = this.currentPage();
+    const pageSize = this.pageSize();
+    const shift = this.activeShift();
+
+    this.http.get<any>(`${this.configService.apiBaseUrl}/MachineProduction/paginated-list?page=${page}&pageSize=${pageSize}&shift=${shift}`).subscribe({
       next: (res) => {
-        if (Array.isArray(res)) {
-          const mapped = res.map((r, index) => ({
-            sNo: index + 1,
+        if (res && Array.isArray(res.data)) {
+          const mapped = res.data.map((r: any, index: number) => ({
+            sNo: (page - 1) * pageSize + index + 1,
             id: r.id || `REC-${r.id}`,
             employeeName: r.employeeName,
             machineName: r.machineName,
@@ -217,13 +229,29 @@ export class AddProductionDashboardComponent implements OnInit {
             costPerPiece: r.costPerPiece,
             productionCost: r.productionCost,
             shift: r.shift as 'Day' | 'Night',
-            status: r.status as 'Accept' | 'Pending'
+            status: r.status as 'Accept' | 'Pending',
+            createdDate: r.createdDate
           }));
           this.records.set(mapped);
+          this.totalRecords.set(res.totalRecords || 0);
         }
       },
       error: (err) => {
         console.error('Error loading production records from DB:', err);
+      }
+    });
+  }
+
+  loadFullRecordsForKPIs(): void {
+    const companyId = Number(localStorage.getItem('companyId') || 1);
+    this.http.get<any[]>(`${this.configService.apiBaseUrl}/MachineProduction/list/${companyId}`).subscribe({
+      next: (res) => {
+        if (Array.isArray(res)) {
+          this.fullRecords.set(res);
+        }
+      },
+      error: (err) => {
+        console.error('Error loading full production records for KPIs:', err);
       }
     });
   }
@@ -274,6 +302,7 @@ export class AddProductionDashboardComponent implements OnInit {
   setShift(shift: 'Day' | 'Night'): void {
     this.activeShift.set(shift);
     this.currentPage.set(1);
+    this.loadGridRecords();
   }
 
   toggleColumnDropdown(): void {
@@ -328,7 +357,7 @@ export class AddProductionDashboardComponent implements OnInit {
 
     const formVal = this.productionForm.value;
     const companyId = Number(formVal.companyId || localStorage.getItem('companyId') || 1);
-    
+
     // Automatically detect if logged in user is Admin or Employee
     const storedRole = (localStorage.getItem('userRole') || localStorage.getItem('role') || '').toLowerCase();
     const storedEmail = (localStorage.getItem('userEmail') || '').toLowerCase();
@@ -368,6 +397,7 @@ export class AddProductionDashboardComponent implements OnInit {
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages()) {
       this.currentPage.set(page);
+      this.loadGridRecords();
     }
   }
 }

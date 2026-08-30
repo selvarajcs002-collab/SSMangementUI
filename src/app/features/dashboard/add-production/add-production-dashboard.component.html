@@ -31,6 +31,18 @@
         <span class="kpi-badge night-badge">Active Night Shift</span>
       </div>
     </div>
+
+    <!-- Yesterday Total Cost Card -->
+    <div class="kpi-card cost-card" style="border-left: 4px solid #10b981; background: #f0fdf4;">
+      <div class="kpi-icon-wrapper" style="background: #d1fae5; color: #10b981;">
+        <span class="icon">💰</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Running Cost ({{ yesterdayDateLabel() }})</span>
+        <h3 class="kpi-value">₹{{ yesterdayTotalCost() | number:'1.2-2' }}</h3>
+        <span class="kpi-badge" style="background: #d1fae5; color: #047857;">Yesterday Day + Night</span>
+      </div>
+    </div>
   </div>
 
   <!-- Main Grid Section -->
@@ -40,7 +52,8 @@
       <div class="toolbar-title">
         <h3>
           Production Log Grid
-          <span class="shift-tag" [class.day-tag]="activeShift() === 'Day'" [class.night-tag]="activeShift() === 'Night'">
+          <span class="shift-tag" [class.day-tag]="activeShift() === 'Day'"
+            [class.night-tag]="activeShift() === 'Night'">
             {{ activeShift() === 'Day' ? '☀️ Day Shift View' : '🌙 Night Shift View' }}
           </span>
         </h3>
@@ -49,21 +62,13 @@
       <div class="toolbar-actions">
         <!-- Sun & Moon Shift Toggle -->
         <div class="shift-toggle-group">
-          <button 
-            type="button" 
-            class="shift-btn sun-btn" 
-            [class.active]="activeShift() === 'Day'" 
-            (click)="setShift('Day')" 
-            title="View Day Shift Data">
+          <button type="button" class="shift-btn sun-btn" [class.active]="activeShift() === 'Day'"
+            (click)="setShift('Day')" title="View Day Shift Data">
             <span class="shift-icon">☀️</span>
             <span class="shift-text">Day Shift</span>
           </button>
-          <button 
-            type="button" 
-            class="shift-btn moon-btn" 
-            [class.active]="activeShift() === 'Night'" 
-            (click)="setShift('Night')" 
-            title="View Night Shift Data">
+          <button type="button" class="shift-btn moon-btn" [class.active]="activeShift() === 'Night'"
+            (click)="setShift('Night')" title="View Night Shift Data">
             <span class="shift-icon">🌙</span>
             <span class="shift-text">Night Shift</span>
           </button>
@@ -77,10 +82,7 @@
           <div class="column-dropdown-menu" *ngIf="showColumnDropdown()">
             <div class="column-dropdown-header">Select Visible Columns</div>
             <label *ngFor="let col of columns()" class="column-checkbox-item">
-              <input 
-                type="checkbox" 
-                [checked]="col.visible" 
-                (change)="toggleColumnVisibility(col.key)" />
+              <input type="checkbox" [checked]="col.visible" (change)="toggleColumnVisibility(col.key)" />
               <span>{{ col.label }}</span>
             </label>
           </div>
@@ -99,10 +101,7 @@
         <thead>
           <tr>
             <ng-container *ngFor="let col of columns()">
-              <th 
-                *ngIf="col.visible" 
-                (click)="sortBy($any(col.key))" 
-                class="sortable-th">
+              <th *ngIf="col.visible" (click)="sortBy($any(col.key))" class="sortable-th">
                 <div class="th-content">
                   <span>{{ col.label }}</span>
                   <span class="sort-icon" *ngIf="sortColumn() === col.key">
@@ -117,44 +116,50 @@
           <tr *ngFor="let row of paginatedRecords()">
             <!-- S.No -->
             <td *ngIf="columns()[0].visible" class="fw-bold text-secondary">{{ row.sNo }}</td>
+            <!-- Date -->
+            <td *ngIf="columns()[1].visible" class="text-secondary fw-bold">
+              {{ row.createdDate | date:'dd-MMM-yyyy' }}
+            </td>
             <!-- Employee Name -->
-            <td *ngIf="columns()[1].visible">
+            <td *ngIf="columns()[2].visible">
               <div class="emp-name-cell">
                 <span class="avatar-sm">{{ row.employeeName.charAt(0) }}</span>
                 <span>{{ row.employeeName }}</span>
               </div>
             </td>
             <!-- Machine Name -->
-            <td *ngIf="columns()[2].visible">
+            <td *ngIf="columns()[3].visible">
               <span class="machine-badge">{{ row.machineName }}</span>
             </td>
             <!-- Total Production -->
-            <td *ngIf="columns()[3].visible" class="fw-bold text-primary">
+            <td *ngIf="columns()[4].visible" class="fw-bold text-primary">
               {{ row.totalProduction | number }}
             </td>
             <!-- Style Name -->
-            <td *ngIf="columns()[4].visible">{{ row.styleName }}</td>
+            <td *ngIf="columns()[5].visible">{{ row.styleName }}</td>
             <!-- Design Name -->
-            <td *ngIf="columns()[5].visible">{{ row.designName }}</td>
+            <td *ngIf="columns()[6].visible">{{ row.designName }}</td>
             <!-- Target Production -->
-            <td *ngIf="columns()[6].visible">{{ row.targetProduction | number }}</td>
+            <td *ngIf="columns()[7].visible">{{ row.targetProduction | number }}</td>
             <!-- Cost per Piece -->
-            <td *ngIf="columns()[7].visible" class="fw-bold">
+            <td *ngIf="columns()[8].visible" class="fw-bold">
               ₹{{ row.costPerPiece | number:'1.2-2' }}
             </td>
             <!-- Production Cost -->
-            <td *ngIf="columns()[8].visible" class="text-success fw-bold">
+            <td *ngIf="columns()[9].visible" class="text-success fw-bold">
               ₹{{ row.productionCost | number }}
             </td>
             <!-- Shift -->
-            <td *ngIf="columns()[9].visible">
-              <span class="shift-chip" [class.day-chip]="row.shift === 'Day'" [class.night-chip]="row.shift === 'Night'">
+            <td *ngIf="columns()[10].visible">
+              <span class="shift-chip" [class.day-chip]="row.shift === 'Day'"
+                [class.night-chip]="row.shift === 'Night'">
                 {{ row.shift === 'Day' ? '☀️ Day' : '🌙 Night' }}
               </span>
             </td>
             <!-- Status -->
-            <td *ngIf="columns()[10].visible">
-              <span class="status-chip" [class.status-accept]="row.status === 'Accept'" [class.status-pending]="row.status === 'Pending'">
+            <td *ngIf="columns()[11].visible">
+              <span class="status-chip" [class.status-accept]="row.status === 'Accept'"
+                [class.status-pending]="row.status === 'Pending'">
                 {{ row.status === 'Accept' ? '✓ Accept' : '⏳ Pending' }}
               </span>
             </td>
@@ -177,23 +182,17 @@
     <!-- Pagination Controls -->
     <div class="pagination-bar" *ngIf="filteredRecords().length > 0">
       <div class="pagination-info">
-        Showing {{ (currentPage() - 1) * pageSize() + 1 }} to 
-        {{ (currentPage() * pageSize()) > filteredRecords().length ? filteredRecords().length : (currentPage() * pageSize()) }} 
+        Showing {{ (currentPage() - 1) * pageSize() + 1 }} to
+        {{ (currentPage() * pageSize()) > filteredRecords().length ? filteredRecords().length : (currentPage() *
+        pageSize()) }}
         of {{ filteredRecords().length }} entries
       </div>
       <div class="pagination-controls">
-        <button 
-          type="button" 
-          class="page-btn" 
-          [disabled]="currentPage() === 1" 
-          (click)="goToPage(currentPage() - 1)">
+        <button type="button" class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
           ‹ Prev
         </button>
         <span class="page-indicator">Page {{ currentPage() }} of {{ totalPages() }}</span>
-        <button 
-          type="button" 
-          class="page-btn" 
-          [disabled]="currentPage() === totalPages()" 
+        <button type="button" class="page-btn" [disabled]="currentPage() === totalPages()"
           (click)="goToPage(currentPage() + 1)">
           Next ›
         </button>
@@ -224,20 +223,18 @@
             <!-- Company Name -->
             <div class="form-group" style="position: relative; z-index: 50;">
               <label class="field-label">Company Name <span class="req">*</span></label>
-              <app-custom-select formControlName="companyId" [options]="companies()" 
-                [enableTypeAhead]="true" placeholder="Choose a company...">
+              <app-custom-select formControlName="companyId" [options]="companies()" [enableTypeAhead]="true"
+                placeholder="Choose a company...">
               </app-custom-select>
             </div>
 
             <!-- Employee Name -->
             <div class="form-group">
               <label class="field-label">Employee Name <span class="req">*</span></label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="employeeName" 
+              <input type="text" class="form-control" formControlName="employeeName"
                 placeholder="Enter employee name..." />
-              <div class="field-error" *ngIf="productionForm.get('employeeName')?.touched && productionForm.get('employeeName')?.invalid">
+              <div class="field-error"
+                *ngIf="productionForm.get('employeeName')?.touched && productionForm.get('employeeName')?.invalid">
                 Employee Name is required (min 2 chars).
               </div>
             </div>
@@ -263,47 +260,37 @@
             <!-- Style Name Dropdown -->
             <div class="form-group" style="position: relative; z-index: 49;">
               <label class="field-label">Style Name <span class="req">*</span></label>
-              <app-custom-select formControlName="styleName" [options]="styleSelectOptions()" 
-                [enableTypeAhead]="true" placeholder="Select Style...">
+              <app-custom-select formControlName="styleName" [options]="styleSelectOptions()" [enableTypeAhead]="true"
+                placeholder="Select Style...">
               </app-custom-select>
             </div>
 
             <!-- Design Name Dropdown -->
             <div class="form-group" style="position: relative; z-index: 48;">
               <label class="field-label">Design Name <span class="req">*</span></label>
-              <app-custom-select formControlName="designName" [options]="designSelectOptions()" 
-                [enableTypeAhead]="true" placeholder="Select Design...">
+              <app-custom-select formControlName="designName" [options]="designSelectOptions()" [enableTypeAhead]="true"
+                placeholder="Select Design...">
               </app-custom-select>
             </div>
 
             <!-- Total of Production -->
             <div class="form-group">
               <label class="field-label">Total Production (Units) <span class="req">*</span></label>
-              <input 
-                type="number" 
-                class="form-control" 
-                formControlName="totalProduction" 
+              <input type="number" class="form-control" formControlName="totalProduction"
                 placeholder="Enter total units..." />
             </div>
 
             <!-- Target Production -->
             <div class="form-group">
               <label class="field-label">Target Production <span class="req">*</span></label>
-              <input 
-                type="number" 
-                class="form-control" 
-                formControlName="targetProduction" 
+              <input type="number" class="form-control" formControlName="targetProduction"
                 placeholder="Enter target units..." />
             </div>
 
             <!-- Cost per Piece -->
             <div class="form-group">
               <label class="field-label">Cost per Piece (₹) <span class="req">*</span></label>
-              <input 
-                type="number" 
-                step="0.01"
-                class="form-control" 
-                formControlName="costPerPiece" 
+              <input type="number" step="0.01" class="form-control" formControlName="costPerPiece"
                 placeholder="Enter cost per piece..." />
             </div>
           </div>

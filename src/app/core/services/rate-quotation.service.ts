@@ -15,7 +15,7 @@ export interface RateQuotationModel {
   styleNo: string;
   designName: string;
   productType: string;
-  noOfStitches: number | null;
+  noOfStitches: string | null;
   chenilleColors: number | null;
   normalEmbColors: number | null;
   ratePerPiece: number | null;

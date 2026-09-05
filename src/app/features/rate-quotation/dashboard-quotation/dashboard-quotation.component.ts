@@ -36,7 +36,7 @@ import { MessageService } from '../../../core/services/message.service';
   ]
 })
 export class DashboardQuotationComponent implements OnInit, AfterViewInit {
-  displayedColumns: string[] = ['index', 'quoteNo', 'companyName', 'styleNo', 'embDesign', 'ratePerPiece', 'rate', 'date', 'actions'];
+  displayedColumns: string[] = ['index', 'quoteNo', 'companyName', 'styleNo', 'embDesign', 'date', 'actions'];
   dataSource = new MatTableDataSource<RateQuotationModel>([]);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;

@@ -57,8 +57,8 @@ export class CreateQuotationComponent {
       noOfStitches: ['', Validators.required],
       chenilleColors: ['', Validators.required],
       normalEmbColors: ['', Validators.required],
-      ratePerPiece: ['', [Validators.required, Validators.min(0)]],
-      embCost: ['', [Validators.required, Validators.min(0)]],
+      ratePerPiece: ['', [Validators.required]],
+      embCost: ['', [Validators.required]],
       paymentTerms: ['', Validators.required]
     });
 
@@ -177,8 +177,8 @@ export class CreateQuotationComponent {
         "noOfStitches": formValue.noOfStitches || null,
         "chenilleColors": formValue.chenilleColors ? Number(formValue.chenilleColors) : null,
         "normalEmbColors": formValue.normalEmbColors ? Number(formValue.normalEmbColors) : null,
-        "ratePerPiece": formValue.ratePerPiece ? Number(formValue.ratePerPiece) : null,
-        "ratePerMeter": formValue.embCost ? Number(formValue.embCost) : null,
+        "ratePerPiece": formValue.ratePerPiece ? String(formValue.ratePerPiece) : null,
+        "ratePerMeter": formValue.embCost ? String(formValue.embCost) : null,
         "quantity": defaults.quantity ? Number(defaults.quantity) : null,
         "totalAmount": (formValue.embCost ? Number(formValue.embCost) : 0) * (defaults.quantity ? Number(defaults.quantity) : 0) || null,
         "remarks": formValue.paymentTerms || "",

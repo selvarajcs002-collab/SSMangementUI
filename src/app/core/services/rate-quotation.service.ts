@@ -18,8 +18,8 @@ export interface RateQuotationModel {
   noOfStitches: string | null;
   chenilleColors: number | null;
   normalEmbColors: number | null;
-  ratePerPiece: number | null;
-  ratePerMeter: number | null;
+  ratePerPiece: string | null;
+  ratePerMeter: string | null;
   quantity: number;
   totalAmount: number;
   remarks: string;

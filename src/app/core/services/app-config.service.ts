@@ -9,7 +9,7 @@ import { AppConfig } from '../models/app-config.model';
 export class AppConfigService {
   private config: AppConfig | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   public async loadConfig(): Promise<void> {
     try {

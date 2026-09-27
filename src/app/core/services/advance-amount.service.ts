@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment.dev';
+import { AppConfigService } from './app-config.service';
 
 export interface GenerateAdvanceChallanRequest {
   advanceId: number;
@@ -24,9 +24,11 @@ export interface AdvanceAmount {
 })
 export class AdvanceAmountService {
 
-  private apiUrl = `${environment.apiBaseUrl}/AdvanceAmount`;
+  private apiUrl: string;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private appConfigService: AppConfigService) {
+    this.apiUrl = `${this.appConfigService.apiBaseUrl}/AdvanceAmount`;
+  }
 
   getAdvances(): Observable<AdvanceAmount[]> {
     return this.http.get<AdvanceAmount[]>(this.apiUrl);

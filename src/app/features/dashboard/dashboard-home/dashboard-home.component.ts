@@ -2,6 +2,14 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OptionCardComponent } from '../../../shared/components/option-card/option-card.component';
 
+interface DashboardOption {
+  icon: string;
+  title: string;
+  description: string;
+  route?: string;
+  externalLink?: string;
+}
+
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
@@ -11,7 +19,7 @@ import { OptionCardComponent } from '../../../shared/components/option-card/opti
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardHomeComponent {
-  options = [
+  options: DashboardOption[] = [
     {
       icon: '🏢',
       title: 'Add Company Details',
@@ -34,8 +42,7 @@ export class DashboardHomeComponent {
       icon: '👤',
       title: 'Add Employee',
       description: 'Onboard new staff, manage employee records, and assign roles',
-      externalLink: 'http://200.141.4.172:4300/',
-      route: undefined
+      route: '/dashboard/add-employee'
     },
     {
       icon: '📁',

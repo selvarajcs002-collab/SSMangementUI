@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+﻿import { Component, OnInit, ChangeDetectionStrategy, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -8,6 +8,8 @@ import { CompanyService, CompanySummary } from '../../../core/services/company.s
 import { AppConfigService } from '../../../core/services/app-config.service';
 import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 import { DatePipe } from '@angular/common';
+import { AppDatePickerComponent } from '../../../shared/components/app-date-picker/app-date-picker.component';
+import { ProductionExcelService } from '../../../excel/production-excel.service';
 
 export interface ProductionRecord {
   sNo: number;
@@ -34,9 +36,10 @@ export interface ColumnDefinition {
 @Component({
   selector: 'app-add-production-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, CustomSelectComponent, AppDatePickerComponent],
   templateUrl: './add-production-dashboard.component.html',
   styleUrls: ['./add-production-dashboard.component.scss'],
+  providers: [DatePipe, ProductionExcelService],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddProductionDashboardComponent implements OnInit {
@@ -45,6 +48,13 @@ export class AddProductionDashboardComponent implements OnInit {
 
   // Modal State
   showAddModal = signal<boolean>(false);
+
+  // Export State
+  isExportCardOpen = signal<boolean>(false);
+  exportFromDate = signal<string>('2026-05-01');
+  exportToDate = signal<string>(''); // Will be set in ngOnInit
+  isExporting = signal<boolean>(false);
+  exportValidationError = signal<string | null>(null);
 
   // Configured Data
   companies = signal<CompanySummary[]>([]);
@@ -147,22 +157,26 @@ export class AddProductionDashboardComponent implements OnInit {
     private inwardService: InwardService,
     private employeeService: EmployeeService,
     private companyService: CompanyService,
-    private configService: AppConfigService
+    private configService: AppConfigService,
+    private productionExcelService: ProductionExcelService,
+    private datePipe: DatePipe
   ) {
     this.productionForm = this.fb.group({
-      companyId: [null, Validators.required],
-      employeeName: ['', [Validators.required, Validators.minLength(2)]],
-      machineName: ['', Validators.required],
-      totalProduction: [0, [Validators.required, Validators.min(1)]],
-      styleName: ['', Validators.required],
-      designName: ['', Validators.required],
-      targetProduction: [0, [Validators.required, Validators.min(1)]],
-      costPerPiece: [0, [Validators.required, Validators.min(0)]],
-      shift: ['Day', Validators.required]
+      companyId: [null],
+      employeeName: [null],
+      machineName: [null],
+      totalProduction: [null],
+      styleName: [null],
+      designName: [null],
+      targetProduction: [null],
+      costPerPiece: [null],
+      shift: ['Day']
     });
   }
 
   ngOnInit(): void {
+    const today = new Date();
+    this.exportToDate.set(this.datePipe.transform(today, 'yyyy-MM-dd') || '');
     this.loadCompanies();
     this.loadAppConfig();
     this.loadGridRecords();
@@ -364,18 +378,18 @@ export class AddProductionDashboardComponent implements OnInit {
     const isAdmin = storedRole.includes('admin') || storedEmail.includes('admin') || !storedRole.includes('emp');
     const status: 'Accept' | 'Pending' = isAdmin ? 'Accept' : 'Pending';
 
-    const totalProd = Number(formVal.totalProduction) || 0;
-    const costPerPiece = Number(formVal.costPerPiece) || 0;
-    const calculatedProductionCost = totalProd * costPerPiece;
+    const totalProd = formVal.totalProduction != null && formVal.totalProduction !== '' ? Number(formVal.totalProduction) : null;
+    const costPerPiece = formVal.costPerPiece != null && formVal.costPerPiece !== '' ? Number(formVal.costPerPiece) : null;
+    const calculatedProductionCost = (totalProd != null && costPerPiece != null) ? (totalProd * costPerPiece) : null;
 
     const payload = {
-      employeeName: formVal.employeeName,
-      machineName: formVal.machineName,
-      shift: formVal.shift,
-      styleName: formVal.styleName,
-      designName: formVal.designName,
+      employeeName: formVal.employeeName || null,
+      machineName: formVal.machineName || null,
+      shift: formVal.shift || null,
+      styleName: formVal.styleName || null,
+      designName: formVal.designName || null,
       totalProduction: totalProd,
-      targetProduction: Number(formVal.targetProduction),
+      targetProduction: formVal.targetProduction != null && formVal.targetProduction !== '' ? Number(formVal.targetProduction) : null,
       costPerPiece: costPerPiece,
       productionCost: calculatedProductionCost,
       status: status,
@@ -399,5 +413,103 @@ export class AddProductionDashboardComponent implements OnInit {
       this.currentPage.set(page);
       this.loadGridRecords();
     }
+  }
+
+  // --- Export Excel Methods ---
+
+  toggleExportCard(event: Event): void {
+    event.stopPropagation();
+    this.isExportCardOpen.update(v => !v);
+    if (this.isExportCardOpen()) {
+      this.exportValidationError.set(null);
+    }
+  }
+
+  closeExportCard(): void {
+    this.isExportCardOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    // Do not close if clicking inside the date picker or export popover itself
+    if (this.isExportCardOpen() && !target.closest('.export-dropdown-menu') && !target.closest('.date-picker-popup') && !target.closest('.date-picker-container')) {
+      this.isExportCardOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onKeydownHandler(event: any) {
+    if (this.isExportCardOpen()) {
+      this.isExportCardOpen.set(false);
+    }
+  }
+
+  validateDates(): boolean {
+    const from = this.exportFromDate();
+    const to = this.exportToDate();
+
+    if (!from) {
+      this.exportValidationError.set("Please select From Date.");
+      return false;
+    }
+    if (!to) {
+      this.exportValidationError.set("Please select To Date.");
+      return false;
+    }
+
+    const dFrom = new Date(from);
+    const dTo = new Date(to);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // end of today
+
+    if (isNaN(dFrom.getTime()) || isNaN(dTo.getTime())) {
+      this.exportValidationError.set("Please select a valid date.");
+      return false;
+    }
+
+    if (dFrom > today) {
+      this.exportValidationError.set("From Date cannot be later than today.");
+      return false;
+    }
+
+    if (dTo > today) {
+      this.exportValidationError.set("To Date cannot be a future date.");
+      return false;
+    }
+
+    if (dFrom > dTo) {
+      this.exportValidationError.set("From Date cannot be later than To Date.");
+      return false;
+    }
+
+    this.exportValidationError.set(null);
+    return true;
+  }
+
+  exportExcel(): void {
+    if (!this.validateDates()) {
+      return;
+    }
+
+    this.isExporting.set(true);
+    
+    this.productionExcelService.generateAndDownload(this.exportFromDate(), this.exportToDate()).then(() => {
+      this.isExporting.set(false);
+      this.closeExportCard();
+      this.exportValidationError.set(null);
+    }).catch(e => {
+      console.error('Error generating excel:', e);
+      if (e.status === 401 || e.status === 403) {
+         this.exportValidationError.set("You do not have permission to export.");
+      } else if (e.status === 0 || e.status === 504) {
+         this.exportValidationError.set("Unable to connect to the server. Please check your connection and try again.");
+      } else if (e.status === 400 || e.status === 404) {
+         this.exportValidationError.set("No production records found or invalid request.");
+      } else {
+         this.exportValidationError.set("Unable to export production data. Please try again.");
+      }
+      this.isExporting.set(false);
+    });
   }
 }

@@ -63,6 +63,10 @@ export class OutwardService {
     return this.api.post<any>('outward/save-outward', payload);
   }
 
+  generateDcNo(payload: { companyId: number }): Observable<any> {
+    return this.api.post<any>('outward/generate-dc-no', payload);
+  }
+
   // NEW: Save Meter Based Outward - does not affect existing saveOutward
   saveMeterOutward(payload: MeterOutwardSavePayload): Observable<any> {
     return this.api.post<any>('outward/save-meter-outward', payload);

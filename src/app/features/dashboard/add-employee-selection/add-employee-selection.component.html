@@ -1,0 +1,46 @@
+<div class="selection-page-container">
+  <!-- Back to Dashboard -->
+  <div class="back-navigation" (click)="navigateBack()">
+    <span class="back-icon">←</span> Back to Dashboard
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-icon-container">
+      <span class="header-icon">👤+</span>
+    </div>
+    <h2 class="page-title">Add Employee</h2>
+    <p class="page-subtitle">Choose an option to continue</p>
+  </div>
+
+  <!-- Option Cards Grid -->
+  <div class="options-grid">
+    <!-- Advance Management Card -->
+    <div class="option-card" (click)="navigateToAdvance()">
+      <div class="card-icon-container blue-accent">
+        <span class="card-icon">💼+</span>
+      </div>
+      <h3 class="card-title">Advance Management</h3>
+      <p class="card-description">Manage employee advance payments, view history and track settlements.</p>
+      <div class="card-action">
+        <button class="action-btn blue-btn">
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Employee Management Card -->
+    <div class="option-card" (click)="navigateToEmployee()">
+      <div class="card-icon-container purple-accent">
+        <span class="card-icon">👥</span>
+      </div>
+      <h3 class="card-title">Employee Management</h3>
+      <p class="card-description">Add new employees, manage profiles, assign roles and maintain records.</p>
+      <div class="card-action">
+        <button class="action-btn purple-btn">
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

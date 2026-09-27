@@ -129,6 +129,7 @@ export class OutwardComponent implements OnInit {
     this.checkEditMode();
   }
 
+
   // Export Delivery Challan Excel report
   exportDeliveryChallanReport(): void {
     const filters = {
@@ -1396,7 +1397,7 @@ export class OutwardComponent implements OnInit {
       });
 
     } else {
-      // â”€â”€ INSERT FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── INSERT FLOW ───────────────────────────────────────
       const insertPayload = {
         outward: {
           outwardId: 0,
@@ -1413,7 +1414,8 @@ export class OutwardComponent implements OnInit {
           poNo: formVal.poNo || '',
           weight: formVal.weight || '',
           noOfBundles: formVal.noOfBundles || '',
-          selectedDcNos: formVal.isDeliveryChallan ? formVal.selectedDcNos : []
+          selectedDcNos: formVal.isDeliveryChallan ? formVal.selectedDcNos : [],
+          dcNo: ''
         },
         colourBreakdowns: this.colourBreakdowns.getRawValue().map((c: any) => ({
           colourId: c.colourId,
@@ -1434,32 +1436,52 @@ export class OutwardComponent implements OnInit {
           })));
         }, [])
       };
-
-      this.outwardService.saveOutward(insertPayload).subscribe({
-        next: (res) => {
-          const isSuccess = res.success || res.Success || (res.outwardId > 0) || (res.OutwardId > 0);
-          if (isSuccess) {
-            this.handleSubmissionSuccess(res, 'Entry saved successfully!');
+      // 1. Generate the DC Number first
+      this.outwardService.generateDcNo({ companyId: this.selectedCompanyId! }).subscribe({
+        next: (dcRes) => {
+          if (dcRes && dcRes.success && dcRes.dcNo) {
+            
+            // 2. Assign the generated DC Number to the payload
+            insertPayload.outward.dcNo = dcRes.dcNo;
+            // 3. Save the Outward entry
+            this.outwardService.saveOutward(insertPayload).subscribe({
+              next: (res) => {
+                const isSuccess = res.success || res.Success || (res.outwardId > 0) || (res.OutwardId > 0);
+                if (isSuccess) {
+                  this.handleSubmissionSuccess(res, 'Entry saved successfully!');
+                } else {
+                  this.isSubmitting = false;
+                  const msg = res.message || res.Message;
+                  if (msg && (msg.includes('|') || msg.includes('Available'))) {
+                    this.validationService.show(msg);
+                  } else {
+                    this.messageService.error(msg || 'Failed to save entry');
+                  }
+                }
+                this.cdr.markForCheck();
+              },
+              error: (err) => {
+                this.isSubmitting = false;
+                const errMsg = err.error?.message || 'Failed to save outward entry. Please try again.';
+                if (errMsg.includes('|') || errMsg.includes('Available')) {
+                  this.validationService.show(errMsg);
+                } else {
+                  this.messageService.error(errMsg);
+                }
+                console.error('Error saving outward:', err);
+                this.cdr.markForCheck();
+              }
+            });
           } else {
             this.isSubmitting = false;
-            const msg = res.message || res.Message;
-            if (msg && (msg.includes('|') || msg.includes('Available'))) {
-              this.validationService.show(msg);
-            } else {
-              this.messageService.error(msg || 'Failed to save entry');
-            }
+            this.messageService.error(dcRes?.message || 'Failed to generate DC number');
+            this.cdr.markForCheck();
           }
-          this.cdr.markForCheck();
         },
         error: (err) => {
           this.isSubmitting = false;
-          const errMsg = err.error?.message || 'Failed to save outward entry. Please try again.';
-          if (errMsg.includes('|') || errMsg.includes('Available')) {
-            this.validationService.show(errMsg);
-          } else {
-            this.messageService.error(errMsg);
-          }
-          console.error('Error saving outward:', err);
+          this.messageService.error('Error occurred while generating DC Number');
+          console.error('Error generating DC Number:', err);
           this.cdr.markForCheck();
         }
       });

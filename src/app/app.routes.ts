@@ -38,6 +38,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/company/update-company/update-company.component').then(m => m.UpdateCompanyComponent)
       },
       {
+        path: 'add-employee',
+        loadComponent: () => import('./features/dashboard/add-employee-selection/add-employee-selection.component').then(m => m.AddEmployeeSelectionComponent)
+      },
+      {
+        path: 'advance-amount',
+        loadComponent: () => import('./features/dashboard/advance-amount/advance-amount.component').then(m => m.AdvanceAmountComponent)
+      },
+      {
         path: 'employee',
         loadComponent: () => import('./employee/AddEmployee/add-employee.component').then(m => m.AddEmployeeComponent)
       },

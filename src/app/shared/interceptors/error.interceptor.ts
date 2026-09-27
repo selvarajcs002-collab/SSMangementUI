@@ -12,7 +12,9 @@ export class ErrorInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(
       catchError(error => {
         console.error(error);
-        this.messageService.error(error?.error?.message || 'Something went wrong');
+        if (req.responseType !== 'blob') {
+          this.messageService.error(error?.error?.message || 'Something went wrong');
+        }
         return throwError(() => error);
       })
     );

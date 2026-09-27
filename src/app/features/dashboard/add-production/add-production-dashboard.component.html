@@ -141,7 +141,8 @@
         <thead>
           <tr>
             <ng-container *ngFor="let col of columns()">
-              <th *ngIf="col.visible" (click)="sortBy($any(col.key))" class="sortable-th">
+              <th *ngIf="col.visible" (click)="col.key !== 'actions' && sortBy($any(col.key))"
+                [class.sortable-th]="col.key !== 'actions'">
                 <div class="th-content">
                   <span>{{ col.label }}</span>
                   <span class="sort-icon" *ngIf="sortColumn() === col.key">
@@ -154,60 +155,57 @@
         </thead>
         <tbody>
           <tr *ngFor="let row of paginatedRecords()">
-            <!-- S.No -->
-            <td *ngIf="columns()[0].visible" class="fw-bold text-secondary">{{ row.sNo }}</td>
-            <!-- Date -->
-            <td *ngIf="columns()[1].visible" class="text-secondary fw-bold">
+            <td *ngIf="isColumnVisible('sNo')" class="fw-bold text-secondary">{{ row.sNo }}</td>
+            <td *ngIf="isColumnVisible('createdDate')" class="text-secondary fw-bold">
               {{ row.createdDate | date:'dd-MMM-yyyy' }}
             </td>
-            <!-- Employee Name -->
-            <td *ngIf="columns()[2].visible">
+            <td *ngIf="isColumnVisible('employeeName')">
               <div class="emp-name-cell">
-                <span class="avatar-sm">{{ row.employeeName.charAt(0) }}</span>
-                <span>{{ row.employeeName }}</span>
+                <span class="avatar-sm">{{ (row.employeeName || '?').charAt(0) }}</span>
+                <span>{{ row.employeeName || '-' }}</span>
               </div>
             </td>
-            <!-- Machine Name -->
-            <td *ngIf="columns()[3].visible">
-              <span class="machine-badge">{{ row.machineName }}</span>
+            <td *ngIf="isColumnVisible('machineName')">
+              <span class="machine-badge">{{ row.machineName || '-' }}</span>
             </td>
-            <!-- Total Production -->
-            <td *ngIf="columns()[4].visible" class="fw-bold text-primary">
+            <td *ngIf="isColumnVisible('totalProduction')" class="fw-bold text-primary">
               {{ row.totalProduction | number }}
             </td>
-            <!-- Style Name -->
-            <td *ngIf="columns()[5].visible">{{ row.styleName }}</td>
-            <!-- Design Name -->
-            <td *ngIf="columns()[6].visible">{{ row.designName }}</td>
-            <!-- Target Production -->
-            <td *ngIf="columns()[7].visible">{{ row.targetProduction | number }}</td>
-            <!-- Cost per Piece -->
-            <td *ngIf="columns()[8].visible" class="fw-bold">
+            <td *ngIf="isColumnVisible('styleName')">{{ row.styleName || '-' }}</td>
+            <td *ngIf="isColumnVisible('designName')">{{ row.designName || '-' }}</td>
+            <td *ngIf="isColumnVisible('targetProduction')">{{ row.targetProduction | number }}</td>
+            <td *ngIf="isColumnVisible('costPerPiece')" class="fw-bold">
               ₹{{ row.costPerPiece | number:'1.2-2' }}
             </td>
-            <!-- Production Cost -->
-            <td *ngIf="columns()[9].visible" class="text-success fw-bold">
-              ₹{{ row.productionCost | number }}
+            <td *ngIf="isColumnVisible('productionCost')" class="text-success fw-bold">
+              ₹{{ row.productionCost | number:'1.2-2' }}
             </td>
-            <!-- Shift -->
-            <td *ngIf="columns()[10].visible">
-              <span class="shift-chip" [class.day-chip]="row.shift === 'Day'"
-                [class.night-chip]="row.shift === 'Night'">
-                {{ row.shift === 'Day' ? '☀️ Day' : '🌙 Night' }}
+            <td *ngIf="isColumnVisible('shift')">
+              <span class="shift-chip" [class.day-chip]="(row.shift || '').toLowerCase().startsWith('day')"
+                [class.night-chip]="(row.shift || '').toLowerCase().startsWith('night')">
+                {{ row.shift || '-' }}
               </span>
             </td>
-            <!-- Status -->
-            <td *ngIf="columns()[11].visible">
+            <td *ngIf="isColumnVisible('status')">
               <span class="status-chip" [class.status-accept]="row.status === 'Accept'"
                 [class.status-pending]="row.status === 'Pending'">
-                {{ row.status === 'Accept' ? '✓ Accept' : '⏳ Pending' }}
+                {{ row.status || '-' }}
               </span>
+            </td>
+            <td *ngIf="isColumnVisible('actions')">
+              <div class="action-buttons">
+                <button type="button" class="action-btn btn-edit" title="Edit" (click)="openEditModal(row)">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button type="button" class="action-btn btn-delete" title="Delete" (click)="deleteProduction(row)">
+                  <span class="material-icons">delete</span>
+                </button>
+              </div>
             </td>
           </tr>
 
-          <!-- Empty State -->
           <tr *ngIf="paginatedRecords().length === 0">
-            <td [attr.colspan]="columns().length" class="empty-state-td">
+            <td [attr.colspan]="visibleColumnCount()" class="empty-state-td">
               <div class="empty-box">
                 <span class="empty-icon">📂</span>
                 <p>No production records found for {{ activeShift() }} Shift.</p>
@@ -220,12 +218,9 @@
     </div>
 
     <!-- Pagination Controls -->
-    <div class="pagination-bar" *ngIf="filteredRecords().length > 0">
+    <div class="pagination-bar" *ngIf="totalRecords() > 0">
       <div class="pagination-info">
-        Showing {{ (currentPage() - 1) * pageSize() + 1 }} to
-        {{ (currentPage() * pageSize()) > filteredRecords().length ? filteredRecords().length : (currentPage() *
-        pageSize()) }}
-        of {{ filteredRecords().length }} entries
+        Showing {{ pageStart() }} to {{ pageEnd() }} of {{ totalRecords() }} entries
       </div>
       <div class="pagination-controls">
         <button type="button" class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
@@ -248,8 +243,8 @@
         <div class="modal-title-box">
           <span class="modal-icon">🏭</span>
           <div>
-            <h3>Add Production Entry</h3>
-            <p>Input new machine production metrics and target records</p>
+            <h3>{{ editingId() ? 'Edit Production Entry' : 'Add Production Entry' }}</h3>
+            <p>{{ editingId() ? 'Update the production record' : 'Input new machine production metrics and target records' }}</p>
           </div>
         </div>
         <button type="button" class="close-btn" (click)="closeAddModal()">×</button>
@@ -279,35 +274,25 @@
             <!-- Machine Name -->
             <div class="form-group">
               <label class="field-label">Machine Name</label>
-              <select class="form-control" formControlName="machineName">
-                <option value="" disabled>Select Machine...</option>
-                <option *ngFor="let m of machineOptions()" [value]="m">{{ m }}</option>
-              </select>
+              <input type="text" class="form-control" formControlName="machineName" placeholder="Enter machine name..." />
             </div>
 
-            <!-- Shift Dropdown -->
+            <!-- Shift -->
             <div class="form-group">
               <label class="field-label">Shift</label>
-              <select class="form-control" formControlName="shift">
-                <option value="Day">☀️ Day Shift</option>
-                <option value="Night">🌙 Night Shift</option>
-              </select>
+              <input type="text" class="form-control" formControlName="shift" placeholder="Enter shift, for example Day or Night" />
             </div>
 
-            <!-- Style Name Dropdown -->
-            <div class="form-group" style="position: relative; z-index: 49;">
+            <!-- Style Name -->
+            <div class="form-group">
               <label class="field-label">Style Name</label>
-              <app-custom-select formControlName="styleName" [options]="styleSelectOptions()" [enableTypeAhead]="true"
-                placeholder="Select Style...">
-              </app-custom-select>
+              <input type="text" class="form-control" formControlName="styleName" placeholder="Enter style name..." />
             </div>
 
-            <!-- Design Name Dropdown -->
-            <div class="form-group" style="position: relative; z-index: 48;">
+            <!-- Design Name -->
+            <div class="form-group">
               <label class="field-label">Design Name</label>
-              <app-custom-select formControlName="designName" [options]="designSelectOptions()" [enableTypeAhead]="true"
-                placeholder="Select Design...">
-              </app-custom-select>
+              <input type="text" class="form-control" formControlName="designName" placeholder="Enter design name..." />
             </div>
 
             <!-- Total of Production -->
@@ -336,7 +321,9 @@
         <!-- Modal Footer -->
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" (click)="closeAddModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Production Entry</button>
+          <button type="submit" class="btn btn-primary">
+            {{ editingId() ? 'Update Production Entry' : 'Save Production Entry' }}
+          </button>
         </div>
       </form>
     </div>

@@ -1,11 +1,9 @@
 ﻿import { Component, OnInit, ChangeDetectionStrategy, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { InwardService } from '../../../core/services/inward.service';
-import { EmployeeService } from '../../../core/services/employee.service';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { CompanyService, CompanySummary } from '../../../core/services/company.service';
-import { AppConfigService } from '../../../core/services/app-config.service';
+import { MachineProductionService } from '../../../core/services/machine-production.service';
 import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 import { DatePipe } from '@angular/common';
 import { AppDatePickerComponent } from '../../../shared/components/app-date-picker/app-date-picker.component';
@@ -13,17 +11,18 @@ import { ProductionExcelService } from '../../../excel/production-excel.service'
 
 export interface ProductionRecord {
   sNo: number;
-  id: string;
+  id: string | number;
+  companyId: number | null;
   employeeName: string;
   machineName: string;
-  totalProduction: number;
+  totalProduction: number | null;
   styleName: string;
   designName: string;
-  targetProduction: number;
-  costPerPiece: number;
-  productionCost: number;
-  shift: 'Day' | 'Night';
-  status: 'Accept' | 'Pending';
+  targetProduction: number | null;
+  costPerPiece: number | null;
+  productionCost: number | null;
+  shift: string;
+  status: string;
   createdDate?: string;
 }
 
@@ -48,6 +47,7 @@ export class AddProductionDashboardComponent implements OnInit {
 
   // Modal State
   showAddModal = signal<boolean>(false);
+  editingId = signal<string | number | null>(null);
 
   // Export State
   isExportCardOpen = signal<boolean>(false);
@@ -58,14 +58,6 @@ export class AddProductionDashboardComponent implements OnInit {
 
   // Configured Data
   companies = signal<CompanySummary[]>([]);
-  machineOptions = signal<string[]>([]);
-
-  styleOptions = signal<string[]>([]);
-  rawDesignStyleMap = signal<{ styleNo: string; designName: string }[]>([]);
-  availableDesigns = signal<string[]>([]);
-
-  styleSelectOptions = computed(() => this.styleOptions().map(s => ({ key: s, value: s })));
-  designSelectOptions = computed(() => this.availableDesigns().map(d => ({ key: d, value: d })));
 
   // Production Form
   productionForm: FormGroup;
@@ -83,7 +75,8 @@ export class AddProductionDashboardComponent implements OnInit {
     { key: 'costPerPiece', label: 'Cost per Piece', visible: true },
     { key: 'productionCost', label: 'Production Cost', visible: true },
     { key: 'shift', label: 'Shift', visible: true },
-    { key: 'status', label: 'Status', visible: true }
+    { key: 'status', label: 'Status', visible: true },
+    { key: 'actions', label: 'Action', visible: true }
   ]);
 
   showColumnDropdown = signal<boolean>(false);
@@ -100,15 +93,17 @@ export class AddProductionDashboardComponent implements OnInit {
   fullRecords = signal<any[]>([]);
 
   // Computed Summary Totals
+  visibleColumnCount = computed(() => this.columns().filter(col => col.visible).length);
+
   dayTotalProduction = computed(() => {
     return this.fullRecords()
-      .filter(r => r.shift === 'Day')
+      .filter(r => this.isDayShift(r.shift))
       .reduce((sum, r) => sum + (Number(r.totalProduction) || 0), 0);
   });
 
   nightTotalProduction = computed(() => {
     return this.fullRecords()
-      .filter(r => r.shift === 'Night')
+      .filter(r => this.isNightShift(r.shift))
       .reduce((sum, r) => sum + (Number(r.totalProduction) || 0), 0);
   });
 
@@ -122,18 +117,10 @@ export class AddProductionDashboardComponent implements OnInit {
   yesterdayTotalCost = computed(() => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = yesterday.toISOString().split('T')[0];
+    const yStr = this.toLocalDateKey(yesterday);
 
     return this.fullRecords()
-      .filter(r => {
-        if (!r.createdDate) return false;
-        try {
-          const dStr = new Date(r.createdDate).toISOString().split('T')[0];
-          return dStr === yStr;
-        } catch(e) {
-          return false;
-        }
-      })
+      .filter(r => this.toLocalDateKey(r.createdDate) === yStr)
       .reduce((sum, r) => sum + (Number(r.productionCost) || 0), 0);
   });
 
@@ -153,11 +140,8 @@ export class AddProductionDashboardComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient,
-    private inwardService: InwardService,
-    private employeeService: EmployeeService,
     private companyService: CompanyService,
-    private configService: AppConfigService,
+    private machineProductionService: MachineProductionService,
     private productionExcelService: ProductionExcelService,
     private datePipe: DatePipe
   ) {
@@ -178,25 +162,8 @@ export class AddProductionDashboardComponent implements OnInit {
     const today = new Date();
     this.exportToDate.set(this.datePipe.transform(today, 'yyyy-MM-dd') || '');
     this.loadCompanies();
-    this.loadAppConfig();
     this.loadGridRecords();
     this.loadFullRecordsForKPIs();
-
-    // Listen to companyId changes to fetch styles
-    this.productionForm.get('companyId')?.valueChanges.subscribe((selectedCompany: number) => {
-      if (selectedCompany) {
-        this.loadStyleAndDesignData(selectedCompany);
-      } else {
-        this.styleOptions.set([]);
-        this.availableDesigns.set([]);
-        this.productionForm.patchValue({ styleName: '', designName: '' });
-      }
-    });
-
-    // Listen to styleName changes to cascade designName options
-    this.productionForm.get('styleName')?.valueChanges.subscribe((selectedStyle: string) => {
-      this.onStyleChange(selectedStyle);
-    });
   }
 
   loadCompanies(): void {
@@ -210,45 +177,18 @@ export class AddProductionDashboardComponent implements OnInit {
     });
   }
 
-  loadAppConfig(): void {
-    this.http.get<any>('/assets/appsettings.json').subscribe({
-      next: (config) => {
-        if (config && Array.isArray(config.machineNames) && config.machineNames.length > 0) {
-          this.machineOptions.set(config.machineNames);
-        }
-      },
-      error: (err) => {
-        console.warn('Could not load appsettings.json', err);
-      }
-    });
-  }
-
   loadGridRecords(): void {
     const page = this.currentPage();
     const pageSize = this.pageSize();
     const shift = this.activeShift();
 
-    this.http.get<any>(`${this.configService.apiBaseUrl}/MachineProduction/paginated-list?page=${page}&pageSize=${pageSize}&shift=${shift}`).subscribe({
+    this.machineProductionService.getPaginated(page, pageSize, shift).subscribe({
       next: (res) => {
-        if (res && Array.isArray(res.data)) {
-          const mapped = res.data.map((r: any, index: number) => ({
-            sNo: (page - 1) * pageSize + index + 1,
-            id: r.id || `REC-${r.id}`,
-            employeeName: r.employeeName,
-            machineName: r.machineName,
-            totalProduction: r.totalProduction,
-            styleName: r.styleName,
-            designName: r.designName,
-            targetProduction: r.targetProduction,
-            costPerPiece: r.costPerPiece,
-            productionCost: r.productionCost,
-            shift: r.shift as 'Day' | 'Night',
-            status: r.status as 'Accept' | 'Pending',
-            createdDate: r.createdDate
-          }));
-          this.records.set(mapped);
-          this.totalRecords.set(res.totalRecords || 0);
-        }
+        const rows = this.unwrapRows(res);
+        const mapped = rows.map((r: any, index: number) => this.toRecord(r, (page - 1) * pageSize + index + 1));
+        this.records.set(mapped);
+        const total = this.field(res, 'totalRecords');
+        this.totalRecords.set(total != null ? Number(total) : mapped.length);
       },
       error: (err) => {
         console.error('Error loading production records from DB:', err);
@@ -258,59 +198,33 @@ export class AddProductionDashboardComponent implements OnInit {
 
   loadFullRecordsForKPIs(): void {
     const companyId = Number(localStorage.getItem('companyId') || 1);
-    this.http.get<any[]>(`${this.configService.apiBaseUrl}/MachineProduction/list/${companyId}`).subscribe({
+    this.machineProductionService.getByCompany(companyId).subscribe({
       next: (res) => {
-        if (Array.isArray(res)) {
-          this.fullRecords.set(res);
+        const rows = this.unwrapRows(res).map((r: any, index: number) => this.toRecord(r, index + 1));
+        if (rows.length > 0) {
+          this.fullRecords.set(rows);
+          return;
         }
+        this.loadKpisFromShiftLists();
+      },
+      error: () => this.loadKpisFromShiftLists()
+    });
+  }
+
+  private loadKpisFromShiftLists(): void {
+    forkJoin([
+      this.machineProductionService.getPaginated(1, 5000, 'Day'),
+      this.machineProductionService.getPaginated(1, 5000, 'Night')
+    ]).subscribe({
+      next: ([dayRes, nightRes]) => {
+        const rows = [...this.unwrapRows(dayRes), ...this.unwrapRows(nightRes)]
+          .map((r: any, index: number) => this.toRecord(r, index + 1));
+        this.fullRecords.set(rows);
       },
       error: (err) => {
         console.error('Error loading full production records for KPIs:', err);
       }
     });
-  }
-
-  loadStyleAndDesignData(companyId: number): void {
-    this.inwardService.getDesignStyleColour(companyId).subscribe({
-      next: (res: any) => {
-        if (Array.isArray(res)) {
-          this.rawDesignStyleMap.set(res.map((item: any) => ({
-            styleNo: item.styleNo || item.StyleNo,
-            designName: item.designName || item.DesignName
-          })));
-
-          const styles = [...new Set(res.map((item: any) => item.styleNo || item.StyleNo).filter(Boolean))];
-          if (styles.length > 0) {
-            this.styleOptions.set(styles as string[]);
-          }
-        }
-      },
-      error: (err) => {
-        console.error('Error fetching style and design data:', err);
-      }
-    });
-  }
-
-  onStyleChange(selectedStyle: string): void {
-    if (!selectedStyle) {
-      this.availableDesigns.set([]);
-      this.productionForm.patchValue({ designName: '' });
-      return;
-    }
-
-    const filtered = this.rawDesignStyleMap()
-      .filter(item => item.styleNo === selectedStyle)
-      .map(item => item.designName);
-
-    const uniqueDesigns = [...new Set(filtered)];
-
-    if (uniqueDesigns.length > 0) {
-      this.availableDesigns.set(uniqueDesigns);
-      this.productionForm.patchValue({ designName: uniqueDesigns[0] });
-    } else {
-      this.availableDesigns.set(['Standard Pattern']);
-      this.productionForm.patchValue({ designName: 'Standard Pattern' });
-    }
   }
 
   setShift(shift: 'Day' | 'Night'): void {
@@ -338,74 +252,196 @@ export class AddProductionDashboardComponent implements OnInit {
     }
   }
 
+  isColumnVisible(key: string): boolean {
+    return this.columns().some(col => col.key === key && col.visible);
+  }
+
+  pageStart(): number {
+    if (this.totalRecords() === 0) return 0;
+    return (this.currentPage() - 1) * this.pageSize() + 1;
+  }
+
+  pageEnd(): number {
+    return Math.min(this.currentPage() * this.pageSize(), this.totalRecords());
+  }
+
   openAddModal(): void {
-    const defaultCompanyId = Number(localStorage.getItem('companyId') || 1);
+    this.editingId.set(null);
+    const storedCompany = localStorage.getItem('companyId');
     this.productionForm.reset({
-      companyId: defaultCompanyId,
+      companyId: storedCompany ? Number(storedCompany) : null,
       employeeName: '',
-      machineName: this.machineOptions().length > 0 ? this.machineOptions()[0] : '',
-      totalProduction: 0,
+      machineName: '',
+      totalProduction: null,
       styleName: '',
       designName: '',
-      targetProduction: 1000,
-      costPerPiece: 3.0,
-      shift: this.activeShift()
+      targetProduction: null,
+      costPerPiece: null,
+      shift: ''
     });
+    this.showAddModal.set(true);
+  }
 
-    if (defaultCompanyId) {
-      this.loadStyleAndDesignData(defaultCompanyId);
-    }
-
+  openEditModal(row: ProductionRecord): void {
+    this.editingId.set(row.id);
+    this.productionForm.reset({
+      companyId: row.companyId,
+      employeeName: row.employeeName || '',
+      machineName: row.machineName || '',
+      totalProduction: row.totalProduction,
+      styleName: row.styleName || '',
+      designName: row.designName || '',
+      targetProduction: row.targetProduction,
+      costPerPiece: row.costPerPiece,
+      shift: row.shift || ''
+    });
     this.showAddModal.set(true);
   }
 
   closeAddModal(): void {
+    this.editingId.set(null);
     this.showAddModal.set(false);
   }
 
-  saveProduction(): void {
-    if (this.productionForm.invalid) {
-      this.productionForm.markAllAsTouched();
+  deleteProduction(row: ProductionRecord): void {
+    const label = row.employeeName || row.machineName || 'this record';
+    if (!confirm(`Delete production entry for ${label}?`)) {
       return;
     }
 
-    const formVal = this.productionForm.value;
-    const companyId = Number(formVal.companyId || localStorage.getItem('companyId') || 1);
+    this.machineProductionService.delete(row.id).subscribe({
+      next: () => {
+        this.loadGridRecords();
+        this.loadFullRecordsForKPIs();
+      },
+      error: (err) => {
+        console.error('Error deleting production entry:', err);
+        alert('Failed to delete production entry.');
+      }
+    });
+  }
 
-    // Automatically detect if logged in user is Admin or Employee
+  saveProduction(): void {
+    const formVal = this.productionForm.getRawValue();
+    const companyId = this.asNumber(formVal.companyId);
+
     const storedRole = (localStorage.getItem('userRole') || localStorage.getItem('role') || '').toLowerCase();
     const storedEmail = (localStorage.getItem('userEmail') || '').toLowerCase();
     const isAdmin = storedRole.includes('admin') || storedEmail.includes('admin') || !storedRole.includes('emp');
-    const status: 'Accept' | 'Pending' = isAdmin ? 'Accept' : 'Pending';
+    const status = isAdmin ? 'Accept' : 'Pending';
 
-    const totalProd = formVal.totalProduction != null && formVal.totalProduction !== '' ? Number(formVal.totalProduction) : null;
-    const costPerPiece = formVal.costPerPiece != null && formVal.costPerPiece !== '' ? Number(formVal.costPerPiece) : null;
+    const totalProd = this.asNumber(formVal.totalProduction);
+    const costPerPiece = this.asNumber(formVal.costPerPiece);
     const calculatedProductionCost = (totalProd != null && costPerPiece != null) ? (totalProd * costPerPiece) : null;
 
     const payload = {
-      employeeName: formVal.employeeName || null,
-      machineName: formVal.machineName || null,
-      shift: formVal.shift || null,
-      styleName: formVal.styleName || null,
-      designName: formVal.designName || null,
+      employeeName: this.asText(formVal.employeeName),
+      machineName: this.asText(formVal.machineName),
+      shift: this.asText(formVal.shift),
+      styleName: this.asText(formVal.styleName),
+      designName: this.asText(formVal.designName),
       totalProduction: totalProd,
-      targetProduction: formVal.targetProduction != null && formVal.targetProduction !== '' ? Number(formVal.targetProduction) : null,
+      targetProduction: this.asNumber(formVal.targetProduction),
       costPerPiece: costPerPiece,
       productionCost: calculatedProductionCost,
       status: status,
       companyId: companyId
     };
 
-    this.http.post(`${this.configService.apiBaseUrl}/MachineProduction/add`, payload).subscribe({
+    const editingId = this.editingId();
+    const request = editingId != null
+      ? this.machineProductionService.update(editingId, payload)
+      : this.machineProductionService.add(payload);
+
+    request.subscribe({
       next: () => {
         this.loadGridRecords();
+        this.loadFullRecordsForKPIs();
         this.closeAddModal();
       },
       error: (err) => {
         console.error('Error saving production entry:', err);
-        alert('Failed to save production entry to the database.');
+        alert(editingId != null
+          ? 'Failed to update production entry.'
+          : 'Failed to save production entry to the database.');
       }
     });
+  }
+
+  private toRecord(row: any, sNo: number): ProductionRecord {
+    const totalProduction = this.asNumber(this.field(row, 'totalProduction'));
+    const costPerPiece = this.asNumber(this.field(row, 'costPerPiece'));
+    const rawCost = this.field(row, 'productionCost');
+    const productionCost = rawCost === null || rawCost === undefined || rawCost === ''
+      ? (totalProduction != null && costPerPiece != null ? totalProduction * costPerPiece : null)
+      : this.asNumber(rawCost);
+    const id = this.field(row, 'id');
+
+    return {
+      sNo,
+      id: id ?? sNo,
+      companyId: this.asNumber(this.field(row, 'companyId')),
+      employeeName: this.asText(this.field(row, 'employeeName')) || '',
+      machineName: this.asText(this.field(row, 'machineName')) || '',
+      totalProduction,
+      styleName: this.asText(this.field(row, 'styleName')) || '',
+      designName: this.asText(this.field(row, 'designName')) || '',
+      targetProduction: this.asNumber(this.field(row, 'targetProduction')),
+      costPerPiece,
+      productionCost,
+      shift: this.asText(this.field(row, 'shift')) || '',
+      status: this.asText(this.field(row, 'status')) || '',
+      createdDate: this.asText(this.field(row, 'createdDate')) || undefined
+    };
+  }
+
+  private unwrapRows(res: any): any[] {
+    if (Array.isArray(res)) return res;
+    const candidates = [res?.data, res?.Data, res?.result, res?.Result, res?.items, res?.Items, res?.records, res?.Records];
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) return candidate;
+      if (Array.isArray(candidate?.data)) return candidate.data;
+      if (Array.isArray(candidate?.records)) return candidate.records;
+      if (Array.isArray(candidate?.items)) return candidate.items;
+    }
+    return [];
+  }
+
+  private field(row: any, name: string): any {
+    if (!row || typeof row !== 'object') return null;
+    if (row[name] !== undefined) return row[name];
+    const pascal = name.charAt(0).toUpperCase() + name.slice(1);
+    if (row[pascal] !== undefined) return row[pascal];
+    const match = Object.keys(row).find(key => key.toLowerCase() === name.toLowerCase());
+    return match ? row[match] : null;
+  }
+
+  private asText(value: unknown): string | null {
+    if (value === null || value === undefined || value === '') return null;
+    return String(value);
+  }
+
+  private asNumber(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return Number.isNaN(n) ? null : n;
+  }
+
+  private isDayShift(shift: unknown): boolean {
+    return String(shift ?? '').trim().toLowerCase().startsWith('day');
+  }
+
+  private isNightShift(shift: unknown): boolean {
+    return String(shift ?? '').trim().toLowerCase().startsWith('night');
+  }
+
+  private toLocalDateKey(value: unknown): string {
+    if (!value) return '';
+    const date = value instanceof Date ? value : new Date(String(value));
+    if (Number.isNaN(date.getTime())) return '';
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${month}-${day}`;
   }
 
   goToPage(page: number): void {

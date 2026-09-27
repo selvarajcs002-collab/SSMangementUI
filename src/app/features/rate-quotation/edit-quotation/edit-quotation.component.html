@@ -16,97 +16,60 @@
             <!-- Company Name -->
             <div class="input-group">
               <label>
-                Company Name <span class="required">*</span>
+                Company Name
                 <mat-icon *ngIf="isLoadingCompanies" class="loading-spinner rotating">autorenew</mat-icon>
               </label>
               <app-custom-select formControlName="companyId" [options]="companyOptions"
                 [placeholder]="isLoadingCompanies ? 'Loading companies...' : 'Select Company'">
               </app-custom-select>
-              <div *ngIf="quotationForm.get('companyId')?.touched && quotationForm.get('companyId')?.invalid"
-                class="error-text">
-                Company Name is required
-              </div>
             </div>
 
             <!-- Style No -->
             <div class="input-group">
-              <label>Style No <span class="required">*</span></label>
+              <label>Style No</label>
               <input type="text" formControlName="styleNo" placeholder="Enter Style No">
-              <div *ngIf="quotationForm.get('styleNo')?.touched && quotationForm.get('styleNo')?.invalid"
-                class="error-text">
-                Style No is required
-              </div>
             </div>
 
             <!-- EMB Design -->
             <div class="input-group">
-              <label>EMB Design <span class="required">*</span></label>
+              <label>EMB Design</label>
               <input type="text" formControlName="embDesign" placeholder="Enter EMB Design">
-              <div *ngIf="quotationForm.get('embDesign')?.touched && quotationForm.get('embDesign')?.invalid"
-                class="error-text">
-                EMB Design is required
-              </div>
             </div>
 
             <!-- No Of Stitches -->
             <div class="input-group">
-              <label>No Of Stitches <span class="required">*</span></label>
+              <label>No Of Stitches</label>
               <input type="text" formControlName="noOfStitches" placeholder="Enter No Of Stitches">
-              <div *ngIf="quotationForm.get('noOfStitches')?.touched && quotationForm.get('noOfStitches')?.invalid"
-                class="error-text">
-                No Of Stitches is required
-              </div>
             </div>
 
             <!-- Chenille Colors -->
             <div class="input-group">
-              <label>Chenille Colors <span class="required">*</span></label>
+              <label>Chenille Colors</label>
               <input type="text" formControlName="chenilleColors" placeholder="Enter No Of Colors in Chenille">
-              <div *ngIf="quotationForm.get('chenilleColors')?.touched && quotationForm.get('chenilleColors')?.invalid"
-                class="error-text">
-                Chenille Colors is required
-              </div>
             </div>
 
             <!-- Normal EMB Colors -->
             <div class="input-group">
-              <label>Normal EMB Colors <span class="required">*</span></label>
+              <label>Normal EMB Colors</label>
               <input type="text" formControlName="normalEmbColors" placeholder="Enter No Of Colors in Normal Emb">
-              <div
-                *ngIf="quotationForm.get('normalEmbColors')?.touched && quotationForm.get('normalEmbColors')?.invalid"
-                class="error-text">
-                Normal EMB Colors is required
-              </div>
             </div>
 
             <!-- Rate Per Piece -->
             <div class="input-group">
-              <label>Rate Per Piece <span class="required">*</span></label>
+              <label>Rate Per Piece</label>
               <input type="text" formControlName="ratePerPiece" placeholder="Enter Rate Per Piece">
-              <div *ngIf="quotationForm.get('ratePerPiece')?.touched && quotationForm.get('ratePerPiece')?.invalid"
-                class="error-text">
-                Rate Per Piece is required
-              </div>
             </div>
 
             <!-- Embroidery Cost / 1000 Sts -->
             <div class="input-group">
-              <label>Embroidery Cost / 1000 Sts <span class="required">*</span></label>
+              <label>Embroidery Cost / 1000 Sts</label>
               <input type="text" formControlName="embCost" placeholder="Enter Cost per 1000 Stitches">
-              <div *ngIf="quotationForm.get('embCost')?.touched && quotationForm.get('embCost')?.invalid"
-                class="error-text">
-                Embroidery Cost is required
-              </div>
             </div>
 
             <!-- Payment Terms -->
             <div class="input-group">
-              <label>Payment Terms <span class="required">*</span></label>
+              <label>Payment Terms</label>
               <textarea formControlName="paymentTerms" placeholder="Enter Payment Terms" rows="2"></textarea>
-              <div *ngIf="quotationForm.get('paymentTerms')?.touched && quotationForm.get('paymentTerms')?.invalid"
-                class="error-text">
-                Payment Terms are required
-              </div>
             </div>
           </div>
         </div>
@@ -170,7 +133,7 @@
         <mat-icon *ngIf="isGeneratingPdf" class="loading-spinner rotating">autorenew</mat-icon>
         {{ isGeneratingPdf ? 'GENERATING PDF...' : 'GENERATE PDF' }}
       </button>
-      <button class="btn-submit" type="submit" [disabled]="quotationForm.invalid || isSaving">
+      <button class="btn-submit" type="submit" [disabled]="isSaving">
         <mat-icon>send</mat-icon> {{ isSaving ? 'UPDATING...' : 'UPDATE QUOTATION' }}
       </button>
     </div>

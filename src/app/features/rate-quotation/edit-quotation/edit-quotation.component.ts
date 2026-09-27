@@ -1,6 +1,6 @@
 // edit-quotation component
 import { Component, DestroyRef } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -58,15 +58,15 @@ export class EditQuotationComponent {
     private destroyRef: DestroyRef
   ) {
     this.quotationForm = this.fb.group({
-      companyId: [null, [Validators.required, Validators.min(1)]],
-      styleNo: ['', Validators.required],
-      embDesign: ['', Validators.required],
-      noOfStitches: ['', Validators.required],
-      chenilleColors: ['', Validators.required],
-      normalEmbColors: ['', Validators.required],
-      ratePerPiece: ['', [Validators.required]],
-      embCost: ['', [Validators.required]],
-      paymentTerms: ['', Validators.required]
+      companyId: [null],
+      styleNo: [''],
+      embDesign: [''],
+      noOfStitches: [''],
+      chenilleColors: [''],
+      normalEmbColors: [''],
+      ratePerPiece: [''],
+      embCost: [''],
+      paymentTerms: ['']
     });
 
     this.quotationForm.disable(); // Initially disable everything while loading
@@ -165,12 +165,10 @@ export class EditQuotationComponent {
           quantity: data.quantity,
           embCost: data.ratePerMeter,
           paymentTerms: data.remarks,
-          // These fields exist in the form but are NOT returned by the backend API model.
-          // We provide fallback values so the required validation doesn't block the form.
-          noOfStitches: data.noOfStitches || '',
-          chenilleColors: data.chenilleColors || '0',
-          normalEmbColors: data.normalEmbColors || '0',
-          ratePerPiece: data.ratePerPiece || ''
+          noOfStitches: data.noOfStitches ?? '',
+          chenilleColors: data.chenilleColors ?? '',
+          normalEmbColors: data.normalEmbColors ?? '',
+          ratePerPiece: data.ratePerPiece ?? ''
         });
 
         this.quotationForm.enable();
@@ -268,37 +266,57 @@ export class EditQuotationComponent {
     });
   }
 
+  private asText(value: unknown): string | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    return String(value);
+  }
+
+  private asNumber(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const n = Number(value);
+    return Number.isNaN(n) ? null : n;
+  }
+
   submitQuotation() {
-    if (this.quotationForm.valid && this.quotationId) {
-      this.isSaving = true;
-      const formValue = this.quotationForm.value;
-      const defaults = this.appConfig.defaultQuotationSettings;
+    if (!this.quotationId) {
+      return;
+    }
 
-      const selectedCompany = this.companyOptions.find(c => c.key === formValue.companyId);
-      const companyName = selectedCompany ? selectedCompany.value : "Acme Corp";
+    this.isSaving = true;
+    const formValue = this.quotationForm.getRawValue();
+    const defaults = this.appConfig.defaultQuotationSettings;
 
-      const payload = {
-        "quotationDate": new Date().toISOString().split('T')[0],
-        "companyId": formValue.companyId,
-        "companyName": companyName,
-        "contactPerson": defaults.contactPerson,
-        "mobileNo": defaults.mobileNo,
-        "emailId": defaults.emailId,
-        "address": defaults.address,
-        "styleNo": formValue.styleNo || "",
-        "designName": formValue.embDesign || "",
-        "productType": defaults.productType || "",
-        "noOfStitches": formValue.noOfStitches || null,
-        "chenilleColors": formValue.chenilleColors ? Number(formValue.chenilleColors) : null,
-        "normalEmbColors": formValue.normalEmbColors ? Number(formValue.normalEmbColors) : null,
-        "ratePerPiece": formValue.ratePerPiece ? String(formValue.ratePerPiece) : null,
-        "ratePerMeter": formValue.embCost ? String(formValue.embCost) : null,
-        "quantity": (formValue.quantity ? Number(formValue.quantity) : (defaults.quantity ? Number(defaults.quantity) : null)),
-        "totalAmount": (formValue.embCost ? Number(formValue.embCost) : 0) * ((formValue.quantity ? Number(formValue.quantity) : (defaults.quantity ? Number(defaults.quantity) : 0))) || null,
-        "remarks": formValue.paymentTerms || "",
-        "status": defaults.status || "",
-        "modifiedBy": defaults.createdBy || null
-      };
+    const selectedCompany = this.companyOptions.find(c => c.key === formValue.companyId);
+    const companyName = selectedCompany ? selectedCompany.value : '';
+    const embCost = this.asNumber(formValue.embCost);
+    const quantity = this.asNumber(formValue.quantity ?? defaults.quantity);
+
+    const payload = {
+      "quotationDate": new Date().toISOString().split('T')[0],
+      "companyId": formValue.companyId ?? null,
+      "companyName": companyName,
+      "contactPerson": defaults.contactPerson,
+      "mobileNo": defaults.mobileNo,
+      "emailId": defaults.emailId,
+      "address": defaults.address,
+      "styleNo": formValue.styleNo ?? '',
+      "designName": formValue.embDesign ?? '',
+      "productType": defaults.productType || "",
+      "noOfStitches": this.asText(formValue.noOfStitches),
+      "chenilleColors": this.asNumber(formValue.chenilleColors),
+      "normalEmbColors": this.asNumber(formValue.normalEmbColors),
+      "ratePerPiece": this.asText(formValue.ratePerPiece),
+      "ratePerMeter": this.asText(formValue.embCost),
+      "quantity": quantity,
+      "totalAmount": embCost === null ? null : embCost * (quantity ?? 0),
+      "remarks": formValue.paymentTerms ?? '',
+      "status": defaults.status || "",
+      "modifiedBy": defaults.createdBy || null
+    };
 
       console.log('Update Payload:', payload);
 
@@ -358,10 +376,6 @@ export class EditQuotationComponent {
           }
         }
       });
-    } else {
-      console.log('Validation Errors');
-      this.quotationForm.markAllAsTouched();
-    }
   }
 }
 

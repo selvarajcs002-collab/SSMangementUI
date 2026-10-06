@@ -5,7 +5,7 @@ import { OutwardPreviewService, ChallanData } from '../../../../core/services/ou
 import { ApiService } from '../../../../core/services/api.service';
 import { MessageService } from '../../../../core/services/message.service';
 import { DeliveryChallanPrintService, DcPrintRequest } from '../../../../core/services/delivery-challan-print.service';
-import { CompanyService } from '../../../../core/services/company.service';
+import { CompanyService, readCompanyGst, readCompanyId } from '../../../../core/services/company.service';
 import { MeterDeliveryChallanPreviewComponent } from './meter/meter-delivery-challan-preview.component';
 
 @Component({
@@ -114,6 +114,7 @@ export class OutwardPreviewComponent implements OnInit {
 
     const payload: any = {
       dcNo: this.data!.dcNo,
+      companyId: this.data!.companyId,
       companyName: this.data!.receiverName,
       address: this.data!.receiverAddress,
       gstNo: gstNo,
@@ -145,14 +146,33 @@ export class OutwardPreviewComponent implements OnInit {
     return payload;
   }
 
+  private gstForChallan(company: any): string {
+    const requestedId = Number(this.data?.companyId || 0);
+    const loadedId = readCompanyId(company);
+    if (requestedId > 0 && loadedId === requestedId) {
+      return readCompanyGst(company);
+    }
+    return (this.data?.receiverGst || '').trim();
+  }
+
+  private withCompanyGst(onReady: (gstNo: string) => void, onFailed: () => void): void {
+    const companyId = Number(this.data?.companyId || 0);
+    if (companyId <= 0) {
+      onReady((this.data?.receiverGst || '').trim());
+      return;
+    }
+
+    this.companyService.getCompanyById(companyId).subscribe({
+      next: (company) => onReady(this.gstForChallan(company)),
+      error: () => onFailed()
+    });
+  }
+
   printPage(): void {
     if (!this.data) return;
     this.isSaving = true;
 
-    // Fetch GST number for company ID 2 (static for now)
-    this.companyService.getCompanyById(2).subscribe({
-      next: (company) => {
-        const gstNo = company?.gst_No ?? company?.gstNo ?? '';
+    this.withCompanyGst((gstNo) => {
         const payload = this.buildPrintPayload(gstNo);
 
         this.deliveryChallanPrintService.generateAndPrint(payload).subscribe({
@@ -172,13 +192,10 @@ export class OutwardPreviewComponent implements OnInit {
             this.cdr.detectChanges();
           }
         });
-      },
-      error: (err) => {
-        this.isSaving = false;
-        console.error('Company fetch error:', err);
-        this.messageService.error('Failed to fetch GST number');
-        this.cdr.detectChanges();
-      }
+    }, () => {
+      this.isSaving = false;
+      this.messageService.error('Failed to fetch GST number');
+      this.cdr.detectChanges();
     });
   }
 
@@ -190,10 +207,7 @@ export class OutwardPreviewComponent implements OnInit {
     if (!this.data) return;
     this.isDownloading = true;
 
-    // Fetch GST number for company ID 2 (static for now)
-    this.companyService.getCompanyById(2).subscribe({
-      next: (company) => {
-        const gstNo = company?.gst_No ?? company?.gstNo ?? '';
+    this.withCompanyGst((gstNo) => {
         const payload = this.buildPrintPayload(gstNo);
 
         this.deliveryChallanPrintService.generateAndDownload(payload).subscribe({
@@ -230,13 +244,10 @@ export class OutwardPreviewComponent implements OnInit {
             this.cdr.detectChanges();
           }
         });
-      },
-      error: (err) => {
-        this.isDownloading = false;
-        console.error('Company fetch error:', err);
-        this.messageService.error('Failed to fetch GST number');
-        this.cdr.detectChanges();
-      }
+    }, () => {
+      this.isDownloading = false;
+      this.messageService.error('Failed to fetch GST number');
+      this.cdr.detectChanges();
     });
   }
 

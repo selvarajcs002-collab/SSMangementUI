@@ -9,7 +9,7 @@ import { AlertComponent } from '../../../shared/components/alert/alert.component
 import { GridLayoutComponent } from '../../../shared/components/grid-layout/grid-layout.component';
 import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
-import { CompanyService, CompanySummary } from '../../../core/services/company.service';
+import { CompanyService, CompanySummary, readCompanyGst, readCompanyId } from '../../../core/services/company.service';
 import { ModalService } from '../../../core/services/modal.service';
 import { CompanyRequest } from '../../../core/models/request/company-request.model';
 import { CommonResponse } from '../../../core/models/response/common-response.model';
@@ -440,18 +440,19 @@ export class CompanyFormComponent implements OnInit {
     this.isLoading = true;
     this.companyService.getCompanyById(id).subscribe(details => {
       this.isLoading = false;
-      if (details) {
-        this.editId = details.companyId;
+      const loadedId = readCompanyId(details);
+      if (details && loadedId === id) {
+        this.editId = loadedId;
         this.companyForm.patchValue({
-          companyId: details.companyId,
-          companyName: details.companyName,
-          phoneNumber: details.phoneNumber,
-          gst_No: details.gst_No,
-          door_No: details.door_No,
-          street_Name: details.street_Name,
-          landmark: details.landmark,
-          city: details.city,
-          pincode: details.pincode
+          companyId: loadedId,
+          companyName: details.companyName ?? details.CompanyName,
+          phoneNumber: details.phoneNumber ?? details.PhoneNumber,
+          gst_No: readCompanyGst(details),
+          door_No: details.door_No ?? details.Door_No,
+          street_Name: details.street_Name ?? details.Street_Name,
+          landmark: details.landmark ?? details.Landmark,
+          city: details.city ?? details.City,
+          pincode: details.pincode ?? details.Pincode
         });
 
         // Patch delivery to array

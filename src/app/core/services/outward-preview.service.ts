@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
 
+/** GST printed for the issuing firm on the From side of a delivery challan. */
+export const ISSUER_COMPANY_GST = '33ABNFS9123JIZT';
+
 export interface ChallanSize {
   label: string;
   qty: number;
@@ -23,6 +26,7 @@ export interface ChallanCompany {
 
 export interface ChallanData {
   company: ChallanCompany;
+  companyId?: number;
   date: string;
   dcNo: string;
   receiverName: string;

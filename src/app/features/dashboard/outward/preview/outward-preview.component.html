@@ -74,6 +74,8 @@
         <div class="detail-heading">COMPANY DETAILS</div>
         <div class="detail-content">
           <div class="detail-row"><span class="lbl">Company Name</span> <span class="val">{{ data.receiverName || '-' }}</span></div>
+          <div class="detail-row"><span class="lbl">Address</span> <span class="val" style="white-space: pre-wrap;">{{ data.receiverAddress || '-' }}</span></div>
+          <div class="detail-row"><span class="lbl">GST Number</span> <span class="val">{{ data.receiverGst || '-' }}</span></div>
           <div class="detail-row" *ngIf="data.items && data.items.length > 0"><span class="lbl">Style Number</span> <span class="val">{{ data.items[0].styleNo || '-' }}</span></div>
           <div class="detail-row" *ngIf="data.items && data.items.length > 0"><span class="lbl">Design Reference</span> <span class="val">{{ data.items[0].designName || '-' }}</span></div>
         </div>

@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { CompanyService, CompanySummary } from '../../../core/services/company.service';
+import { CompanyService, CompanySummary, readCompanyGst, readCompanyId } from '../../../core/services/company.service';
 import { InwardService } from '../../../core/services/inward.service';
 import { OutwardPreviewService, ChallanData, ChallanItem, ChallanSize } from '../../../core/services/outward-preview.service';
 import { OutwardService, MeterOutwardSavePayload } from '../../../core/services/outward.service';
@@ -462,7 +462,13 @@ export class OutwardComponent implements OnInit {
       company: this.companyService.getCompanyById(companyId)
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (res) => {
-        console.log('Data Loaded for Company:', companyId);
+        const loadedGst = readCompanyGst(res.company);
+        const maskedGst = loadedGst.length <= 4 ? '****' : `${loadedGst.slice(0, 2)}***${loadedGst.slice(-2)}`;
+        console.log('Company loaded for outward', {
+          requestedCompanyId: companyId,
+          loadedCompanyId: readCompanyId(res.company),
+          gst: loadedGst ? maskedGst : '(empty)'
+        });
         // Data is now sorted by newest first directly from the Stored Procedure (CreatedDate DESC)
         this.fullData = res.options;
         this.selectedCompany = res.company;
@@ -1271,17 +1277,13 @@ export class OutwardComponent implements OnInit {
           this.isSubmitting = false;
           // Construct full preview data for Meter-based flow
           const previewData: ChallanData = {
-            company: {
-              name: 'S.S.EMBROIDERY',
-              address: 'No:12, Discovery Nagar\n2nd Street, Kangarainagaram\nTIRUPUR - 641 666, Tamil Nadu India\nGST: 33AEMFS9121J1ZF',
-              gst: '33AEMFS9121J1ZF',
-              logo: null
-            },
+            company: this.buildIssuerCompany('S.S.EMBROIDERY', 'No:12, Discovery Nagar\n2nd Street, Kangarainagaram\nTIRUPUR - 641 666, Tamil Nadu India'),
+            companyId: this.selectedCompanyId!,
             date: formVal.outwardDate || new Date().toISOString().split('T')[0],
             dcNo: res.outwardDcNo || res.OutwardDcNo || `DC-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
             receiverName: this.selectedCompany?.companyName || 'Company Name',
-            receiverAddress: `${this.selectedCompany?.door_No || this.selectedCompany?.Door_No || ''} ${this.selectedCompany?.street_Name || this.selectedCompany?.Street_Name || ''}\n${this.selectedCompany?.city || this.selectedCompany?.City || ''} - ${this.selectedCompany?.pincode || this.selectedCompany?.Pincode || ''}`,
-            receiverGst: this.selectedCompany?.gst_No || this.selectedCompany?.Gst_No || '',
+            receiverAddress: this.buildSelectedCompanyAddress(),
+            receiverGst: this.selectedCompanyGst(),
             items: [{
               designName: formVal.designRef || '',
               styleNo: formVal.styleNo,
@@ -1488,6 +1490,37 @@ export class OutwardComponent implements OnInit {
     }
   }
 
+  private selectedCompanyGst(): string {
+    const loadedId = readCompanyId(this.selectedCompany);
+    if (!this.selectedCompanyId || loadedId !== Number(this.selectedCompanyId)) {
+      return '';
+    }
+    return readCompanyGst(this.selectedCompany);
+  }
+
+  private buildSelectedCompanyAddress(): string {
+    const company = this.selectedCompany;
+    const loadedId = readCompanyId(company);
+    if (!this.selectedCompanyId || loadedId !== Number(this.selectedCompanyId)) {
+      return '';
+    }
+
+    const door = company?.door_No || company?.Door_No || '';
+    const street = company?.street_Name || company?.Street_Name || '';
+    const city = company?.city || company?.City || '';
+    const pincode = company?.pincode || company?.Pincode || '';
+    return `${door} ${street}\n${city} - ${pincode}`.trim();
+  }
+
+  private buildIssuerCompany(name: string, address: string) {
+    return {
+      name,
+      address,
+      gst: this.selectedCompanyGst(),
+      logo: null as string | null
+    };
+  }
+
   private handleSubmissionSuccess(res: any, successMessage: string): void {
     this.isSubmitting = false;
     this.messageService.success(successMessage);
@@ -1497,17 +1530,13 @@ export class OutwardComponent implements OnInit {
 
     // Construct full preview data with defensive checks
     const previewData: ChallanData = {
-      company: {
-        name: 'SS Embroidery',
-        address: 'H.No: 1-2-3/A, Street Name, Area Name,\nCity, State - PIN',
-        gst: '33AABCS1234F1Z1',
-        logo: null
-      },
+      company: this.buildIssuerCompany('SS Embroidery', 'H.No: 1-2-3/A, Street Name, Area Name,\nCity, State - PIN'),
+      companyId: this.selectedCompanyId!,
       date: formVal.outwardDate || new Date().toISOString().split('T')[0],
       dcNo: res.outwardDcNo || res.OutwardDcNo || `DC-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
       receiverName: this.selectedCompany?.companyName || 'Company Name',
-      receiverAddress: `${this.selectedCompany?.door_No || this.selectedCompany?.Door_No || ''} ${this.selectedCompany?.street_Name || this.selectedCompany?.Street_Name || ''}\n${this.selectedCompany?.city || this.selectedCompany?.City || ''} - ${this.selectedCompany?.pincode || this.selectedCompany?.Pincode || ''}`,
-      receiverGst: this.selectedCompany?.gst_No || this.selectedCompany?.Gst_No || '',
+      receiverAddress: this.buildSelectedCompanyAddress(),
+      receiverGst: this.selectedCompanyGst(),
       items: this.colourBreakdowns.controls.map((c: any) => ({
         designName: formVal.designRef || '',
         styleNo: formVal.styleNo,

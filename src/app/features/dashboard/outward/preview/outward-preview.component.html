@@ -40,7 +40,7 @@
           <div class="company-name">{{ data.company.name || 'S.S.EMBROIDERY' }}</div>
           <div class="company-address">{{ data.company.address || 'No-12, Deiveega Nagar\n2nd Street, Ranganathapuram\nTIRUPUR-123456, Tamil Nadu India' }}</div>
           <div class="company-phone" *ngIf="data.company.gst || data.company.phone">
-            <span *ngIf="data.company.gst"><b>GST:</b> {{ data.company.gst }}</span>
+            <span *ngIf="data.receiverGst || data.company.gst"><b>GST:</b> {{ data.receiverGst || data.company.gst }}</span>
             <span *ngIf="data.company.gst && data.company.phone"> &nbsp; </span>
             <span *ngIf="data.company.phone"><b>Phone:</b> {{ data.company.phone }}</span>
           </div>
@@ -74,6 +74,8 @@
         <div class="detail-heading">COMPANY DETAILS</div>
         <div class="detail-content">
           <div class="detail-row"><span class="lbl">Company Name</span> <span class="val">{{ data.receiverName || '-' }}</span></div>
+          <div class="detail-row"><span class="lbl">Address</span> <span class="val" style="white-space: pre-wrap;">{{ data.receiverAddress || '-' }}</span></div>
+          <div class="detail-row"><span class="lbl">GST Number</span> <span class="val">{{ data.receiverGst || data.company.gst || '-' }}</span></div>
           <div class="detail-row" *ngIf="data.items && data.items.length > 0"><span class="lbl">Style Number</span> <span class="val">{{ data.items[0].styleNo || '-' }}</span></div>
           <div class="detail-row" *ngIf="data.items && data.items.length > 0"><span class="lbl">Design Reference</span> <span class="val">{{ data.items[0].designName || '-' }}</span></div>
         </div>

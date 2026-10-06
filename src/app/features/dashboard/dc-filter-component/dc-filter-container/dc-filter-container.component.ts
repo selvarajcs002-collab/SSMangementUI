@@ -13,7 +13,7 @@ import { HttpResponse, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { OutwardService } from '../../../../core/services/outward.service';
 import { InwardService } from '../../../../core/services/inward.service';
-import { CompanyService } from '../../../../core/services/company.service';
+import { CompanyService, readCompanyGst, readCompanyId } from '../../../../core/services/company.service';
 import { OutwardPreviewService, ChallanData } from '../../../../core/services/outward-preview.service';
 import { StatusFilterService, StatusFilterRequest } from '../../../../core/services/status-filter.service';
 import { DashboardFilterStateService } from '../../../../core/services/dashboard-filter-state.service';
@@ -387,19 +387,23 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
     }
 
     const entryType = data?.entryType || rawData?.entryType || 'S';
+    const companyId = Number(data?.companyId || data?.CompanyId || rawData?.companyId || rawData?.CompanyId || 0);
+    const loadedCompanyId = readCompanyId(company);
+    const companyGst = companyId > 0 && loadedCompanyId === companyId ? readCompanyGst(company) : '';
 
     const previewData: ChallanData = {
       company: {
         name: 'SS Embroidery',
         address: 'H.No: 1-2-3/A, Street Name, Area Name,\nCity, State - PIN',
-        gst: '33AABCS1234F1Z1',
+        gst: companyGst,
         logo: null
       },
+      companyId: companyId || loadedCompanyId || undefined,
       date: data?.createdDate || data?.outwardDate || new Date().toISOString(),
       dcNo: data?.dcNo || data?.outwardDcNo || data?.OutwardDcNo || '-',
       receiverName: company?.companyName || company?.CompanyName || data?.companyName || data?.receiverName || 'Company Name',
       receiverAddress: this.buildReceiverAddress(company, data),
-      receiverGst: company?.gst_No || company?.Gst_No || '',
+      receiverGst: companyGst,
       items: items,
       totalQty,
       entryType: entryType,

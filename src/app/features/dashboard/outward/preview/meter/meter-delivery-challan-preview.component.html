@@ -5,7 +5,7 @@
       <img *ngIf="data.company.logo" [src]="data.company.logo" alt="Logo" />
       <div class="company-details">
         <div class="company-name">{{ data.company.name || 'S.S.EMBROIDERY' }}</div>
-        <div class="company-address">No:12, Discovery Nagar<br/>2nd Street, Kangarainagaram<br/>TIRUPUR - 641 666, Tamil Nadu India<br/><b>GST:</b> {{ data.company.gst || '33AEMFS9121J1ZF' }} &nbsp; <b>Phone:</b> -</div>
+        <div class="company-address">No:12, Discovery Nagar<br/>2nd Street, Kangarainagaram<br/>TIRUPUR - 641 666, Tamil Nadu India<br/><span *ngIf="data.receiverGst || data.company.gst"><b>GST:</b> {{ data.receiverGst || data.company.gst }} &nbsp; </span><b>Phone:</b> -</div>
       </div>
     </div>
     <div class="header-right">
@@ -22,6 +22,7 @@
       <div class="info-label">Party Name</div>
       <div class="name">{{ data.receiverName }}</div>
       <div class="address" style="white-space: pre-wrap;">{{ data.receiverAddress }}</div>
+      <div class="address" *ngIf="data.receiverGst || data.company.gst"><b>GST:</b> {{ data.receiverGst || data.company.gst }}</div>
     </div>
     
     <!-- Top Right Job Details Section -->

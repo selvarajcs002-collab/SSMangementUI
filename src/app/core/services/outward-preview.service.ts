@@ -23,6 +23,7 @@ export interface ChallanCompany {
 
 export interface ChallanData {
   company: ChallanCompany;
+  companyId?: number;
   date: string;
   dcNo: string;
   receiverName: string;

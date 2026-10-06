@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, FormArray, Va
 import { Router, ActivatedRoute } from '@angular/router';
 import { CompanyService, CompanySummary, readCompanyGst, readCompanyId } from '../../../core/services/company.service';
 import { InwardService } from '../../../core/services/inward.service';
-import { OutwardPreviewService, ChallanData, ChallanItem, ChallanSize } from '../../../core/services/outward-preview.service';
+import { OutwardPreviewService, ChallanData, ChallanItem, ChallanSize, ISSUER_COMPANY_GST } from '../../../core/services/outward-preview.service';
 import { OutwardService, MeterOutwardSavePayload } from '../../../core/services/outward.service';
 import { Observable, forkJoin, Subject, takeUntil, take, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
@@ -1516,7 +1516,7 @@ export class OutwardComponent implements OnInit {
     return {
       name,
       address,
-      gst: this.selectedCompanyGst(),
+      gst: ISSUER_COMPANY_GST,
       logo: null as string | null
     };
   }

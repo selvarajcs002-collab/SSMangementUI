@@ -14,7 +14,7 @@ import { Router } from '@angular/router';
 import { OutwardService } from '../../../../core/services/outward.service';
 import { InwardService } from '../../../../core/services/inward.service';
 import { CompanyService, readCompanyGst, readCompanyId } from '../../../../core/services/company.service';
-import { OutwardPreviewService, ChallanData } from '../../../../core/services/outward-preview.service';
+import { OutwardPreviewService, ChallanData, ISSUER_COMPANY_GST } from '../../../../core/services/outward-preview.service';
 import { StatusFilterService, StatusFilterRequest } from '../../../../core/services/status-filter.service';
 import { DashboardFilterStateService } from '../../../../core/services/dashboard-filter-state.service';
 import { Subscription } from 'rxjs';
@@ -395,7 +395,7 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
       company: {
         name: 'SS Embroidery',
         address: 'H.No: 1-2-3/A, Street Name, Area Name,\nCity, State - PIN',
-        gst: companyGst,
+        gst: ISSUER_COMPANY_GST,
         logo: null
       },
       companyId: companyId || loadedCompanyId || undefined,

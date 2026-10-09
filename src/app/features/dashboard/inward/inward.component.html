@@ -6,6 +6,10 @@
       (actionClick)="!isEditMode && updateModalService.open()">
     </app-section-header>
 
+    <button *ngIf="fromDeliveryChallan" type="button" class="dc-return" (click)="backToDeliveryChallan()">
+      <span aria-hidden="true">←</span> Back to Delivery Challan
+    </button>
+
     <app-alert *ngIf="alertMessage" [message]="alertMessage" [type]="alertType" (close)="alertMessage = null">
     </app-alert>
 
@@ -21,7 +25,7 @@
             <div class="input-group">
               <label>Select Company <span class="required">*</span></label>
               <app-custom-select formControlName="companyId" [options]="companies$ | async" [icon]="icons.company"
-                placeholder="Choose a company..." (change)="onCompanyChange($event)">
+                [enableTypeAhead]="true" placeholder="Type to search company..." (change)="onCompanyChange($event)">
               </app-custom-select>
               <div class="error-text"
                 *ngIf="inwardForm.get('companyId')?.touched && inwardForm.get('companyId')?.invalid">

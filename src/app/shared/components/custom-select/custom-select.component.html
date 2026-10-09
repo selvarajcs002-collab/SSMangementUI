@@ -12,7 +12,11 @@
                (ngModelChange)="onSearchTermChange()"
                [placeholder]="placeholder" 
                (click)="onInputClick($event)"
-               [disabled]="disabled">
+               (keydown)="onKeydown($event)"
+               [disabled]="disabled"
+               autocomplete="off"
+               role="combobox"
+               [attr.aria-expanded]="isOpen">
       </ng-container>
       <div class="chips-container" *ngIf="multiple && selectedChips.length > 0">
         <span class="chip" *ngFor="let chip of selectedChips">
@@ -39,7 +43,7 @@
     </div>
   </div>
 
-  <div class="options-menu animate-dropdown" *ngIf="isOpen && filteredOptions.length > 0">
+  <div class="options-menu animate-dropdown" *ngIf="isOpen">
     <div class="menu-header" *ngIf="multiple || showSearch">
       <div class="search-box" *ngIf="showSearch || multiple">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -55,9 +59,13 @@
       </div>
     </div>
     <div class="options-scroll">
-      <div *ngFor="let option of filteredOptions" class="option-item" [class.is-selected]="isSelected(option)"
+      <div *ngFor="let option of filteredOptions; let i = index" class="option-item" [class.is-selected]="isSelected(option)"
+        [class.is-highlighted]="i === highlightedIndex"
         (click)="selectOption(option)">
-        <span class="option-text">{{ option.value }}</span>
+        <span class="option-text">
+          {{ option.value }}
+          <small *ngIf="option.description" class="option-description">{{ option.description }}</small>
+        </span>
         <span class="check-icon" *ngIf="isSelected(option)">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
@@ -67,8 +75,8 @@
         </span>
       </div>
 
-      <div class="no-options" *ngIf="!options || options.length === 0">
-        {{ emptyMessage }}
+      <div class="no-options" *ngIf="!filteredOptions || filteredOptions.length === 0">
+        {{ options && options.length > 0 ? 'No matching companies' : emptyMessage }}
       </div>
     </div>
   </div>

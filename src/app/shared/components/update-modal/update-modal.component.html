@@ -23,7 +23,8 @@
               [options]="companies$ | async"
               [icon]="icons.company"
               [loading]="isCompaniesLoading"
-              placeholder="Select Company..."
+              [enableTypeAhead]="true"
+              placeholder="Type to search company..."
               (change)="onCompanyChange($event)">
             </app-custom-select>
           </div>

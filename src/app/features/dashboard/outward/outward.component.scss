@@ -59,10 +59,71 @@
   }
 }
 
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.form-section {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 20px 22px 22px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.form-section-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #2563EB;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.form-section-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1E3A8A;
+}
+
+.form-section-icon {
+  display: inline-flex;
+  color: #2563EB;
+}
+
+.dc-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
 @media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .dc-details-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -151,6 +212,27 @@ select.form-control {
   color: var(--error);
   font-weight: 500;
   margin-top: 4px;
+}
+
+.char-count {
+  font-size: 11px;
+  color: #94A3B8;
+  text-align: right;
+  margin-top: -2px;
+}
+
+.remarks-wrapper {
+  align-items: flex-start;
+
+  .input-icon {
+    top: 14px;
+    transform: none;
+  }
+
+  textarea.form-control.with-icon {
+    padding-left: 44px;
+    min-height: 88px;
+  }
 }
 
 /* Upload Image Section */
@@ -263,6 +345,36 @@ select.form-control {
         font-size: 13px;
         color: var(--text-muted);
         margin: 4px 0 0 0;
+      }
+
+      .add-all-sizes-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        user-select: none;
+
+        input[type='checkbox'] {
+          width: 16px;
+          height: 16px;
+          accent-color: var(--primary);
+          cursor: pointer;
+        }
+
+        &:has(input:disabled) {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+
+      .add-all-sizes-hint {
+        margin: 6px 0 0;
+        font-size: 12px;
+        color: #64748B;
       }
     }
   }
@@ -385,19 +497,61 @@ select.form-control {
 }
 
 .dc-allocation {
+  .reuse-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .reuse-toggle-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .reuse-info,
+  .reuse-hint-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid #94A3B8;
+    color: #64748B;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .reuse-info {
+    cursor: help;
+  }
+
   .reuse-panel {
-    margin-top: 4px;
+    margin-top: 14px;
     padding: 16px;
-    background: #F8FAFC;
-    border: 1px solid #E2E8F0;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
     border-radius: 12px;
   }
 
   .reuse-hint {
     margin: 0 0 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     font-size: 13px;
     line-height: 1.45;
     color: #64748B;
+  }
+
+  .reuse-hint-icon {
+    margin-top: 1px;
+    border-color: #60A5FA;
+    color: #2563EB;
   }
 
   .reuse-fields {
@@ -406,8 +560,11 @@ select.form-control {
     gap: 16px 20px;
   }
 
-  textarea.reuse-reason {
-    min-height: 96px;
+  .char-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: #94A3B8;
+    text-align: right;
   }
 
   .reuse-history {

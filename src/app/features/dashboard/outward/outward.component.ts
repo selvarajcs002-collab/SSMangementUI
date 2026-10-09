@@ -7,7 +7,7 @@ import { InwardService } from '../../../core/services/inward.service';
 import { OutwardPreviewService, ChallanData, ChallanItem, ChallanSize, ISSUER_COMPANY_GST } from '../../../core/services/outward-preview.service';
 import { OutwardService, MeterOutwardSavePayload } from '../../../core/services/outward.service';
 import { Observable, forkJoin, Subject, takeUntil, take, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, map } from 'rxjs/operators';
 import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 import { SizePickerModalComponent } from '../../../shared/components/size-picker-modal/size-picker-modal.component';
@@ -50,6 +50,8 @@ export class OutwardComponent implements OnInit {
 
   imagePreview: string | null = null;
   isSizePickerOpen: boolean = false;
+  addAllSizesEnabled: boolean = false;
+  isAddAllSizesLoading: boolean = false;
   isEditMode: boolean = false;
   fromDeliveryChallan: boolean = false;
   canReuseDc: boolean = false;
@@ -110,15 +112,23 @@ export class OutwardComponent implements OnInit {
     x: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`,
     update: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
     chevronUp: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>`,
-    hash: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>`
+    hash: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>`,
+    message: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    edit: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`
   };
 
-  get dcAllocationOptions() {
-    const options = [{ key: 'NEW', value: 'Generate New DC Number' }];
-    if (this.canReuseDc) {
-      options.push({ key: 'REUSE', value: 'Reuse Previously Deleted DC Number' });
-    }
-    return options;
+  readonly reuseInfoText = 'Off generates a new DC number. On reuses a deleted DC number and keeps the original history.';
+
+  get isReuseMode(): boolean {
+    return this.outwardForm?.get('dcAllocationMode')?.value === 'REUSE';
+  }
+
+  get reuseReasonLength(): number {
+    return String(this.outwardForm?.get('reuseReason')?.value || '').length;
+  }
+
+  get remarksLength(): number {
+    return String(this.outwardForm?.get('remarks')?.value || '').length;
   }
 
   constructor(
@@ -144,6 +154,13 @@ export class OutwardComponent implements OnInit {
     this.initForm();
     this.trackChanges();
     this.checkEditMode();
+  }
+
+  onReuseToggle(event: Event): void {
+    const on = (event.target as HTMLInputElement).checked;
+    this.outwardForm.patchValue({ dcAllocationMode: on ? 'REUSE' : 'NEW' });
+    this.onAllocationModeChange();
+    this.cdr.markForCheck();
   }
 
   onAllocationModeChange(): void {
@@ -554,7 +571,15 @@ export class OutwardComponent implements OnInit {
   get designSelectOptions() { return this.designOptions.map(d => ({ key: d, value: d })); }
   get dcNoSelectOptions() { return this.dcNoOptions.map(d => ({ key: d, value: d })); }
 
-  onCompanyChange(companyId: number, isEditMode: boolean = false) {
+  onCompanyChange(companyId: any, isEditMode: boolean = false) {
+    if (companyId instanceof Event || (typeof companyId === 'object' && companyId !== null)) {
+      return;
+    }
+    const id = Number(companyId);
+    if (!id) {
+      return;
+    }
+    companyId = id;
     if (!isEditMode) {
       this.resetForm();
     }
@@ -738,6 +763,7 @@ export class OutwardComponent implements OnInit {
   confirmAddColour() {
     if (!this.selectedColoursForModal || this.selectedColoursForModal.length === 0) return;
 
+    const startIndex = this.colourBreakdowns.length;
     this.selectedColoursForModal.forEach(colourName => {
       const colourGroup = this.fb.group({
         colourId: [colourName],
@@ -750,6 +776,14 @@ export class OutwardComponent implements OnInit {
 
     this.isAddColourModalOpen = false;
     this.calculateTotal();
+
+    if (this.addAllSizesEnabled) {
+      const indices = Array.from(
+        { length: this.colourBreakdowns.length - startIndex },
+        (_, offset) => startIndex + offset
+      );
+      this.applyAllSizesForColourIndices(indices);
+    }
   }
 
   cancelAddColour() {
@@ -858,32 +892,178 @@ export class OutwardComponent implements OnInit {
 
   onSizesSelected(selected: string[]): void {
     if (this.activeColourIndexForSize === null) return;
-    const sizeArray = this.getSizeBreakdowns(this.activeColourIndexForSize);
+    const isDcFlow = !!this.outwardForm.get('selectedDcNos')?.value?.length;
+    const entries = selected.map(sizeName => {
+      const sizeInfoFromData = this.sizeData.find(x => (x.size || '').toUpperCase() === sizeName);
+      const sizeInfoFromSizes = this.sizes.find(x => (x.size || '').toUpperCase() === sizeName);
+      return {
+        size: sizeName,
+        availableQty: this.resolveAvailableQty(sizeInfoFromData, sizeInfoFromSizes, isDcFlow)
+      };
+    });
+    this.appendSizeRows(this.activeColourIndexForSize, entries);
 
-    selected.forEach(sizeName => {
-      // Check sizeData first (static fallback path), then check sizes array (DC-based path)
-      // If no DC selected (DC Enable = false), use availableQty strictly and ignore count
-      const isDcFlow = !!this.outwardForm.get('selectedDcNos')?.value?.length;
+    this.isSizePickerOpen = false;
+    this.activeColourIndexForSize = null;
+    this.calculateTotal();
+  }
+
+  get canUseAddAllSizes(): boolean {
+    if (!this.isDataLoaded || !this.selectedStyle || this.colourBreakdowns.length === 0) {
+      return false;
+    }
+    if (this.outwardForm.get('isDeliveryChallan')?.value) {
+      const dcs = this.outwardForm.get('selectedDcNos')?.value;
+      return Array.isArray(dcs) && dcs.length > 0;
+    }
+    return true;
+  }
+
+  onAddAllSizesToggle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const checked = input.checked;
+    if (!checked) {
+      this.addAllSizesEnabled = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (!this.canUseAddAllSizes) {
+      input.checked = false;
+      this.addAllSizesEnabled = false;
+      if (this.colourBreakdowns.length === 0) {
+        this.showAlert('Add at least one colour first.', 'error');
+      } else {
+        this.showAlert('Please select Delivery Challan Number first.', 'error');
+      }
+      return;
+    }
+
+    this.addAllSizesEnabled = true;
+    this.applyAllSizesForAllColours();
+  }
+
+  private applyAllSizesForAllColours(): void {
+    const indices = this.colourBreakdowns.controls.map((_, index) => index);
+    this.applyAllSizesForColourIndices(indices);
+  }
+
+  private applyAllSizesForColourIndices(indices: number[]): void {
+    if (!indices.length || !this.canUseAddAllSizes) {
+      return;
+    }
+
+    this.isAddAllSizesLoading = true;
+    this.cdr.markForCheck();
+
+    const requests = indices.map(colourIndex => {
+      const colourName = this.colourBreakdowns.at(colourIndex).get('colourName')?.value;
+      return this.fetchAvailableSizeEntries(colourName).pipe(
+        map(entries => ({ colourIndex, entries }))
+      );
+    });
+
+    forkJoin(requests).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (results) => {
+        let addedAny = false;
+        results.forEach(({ colourIndex, entries }) => {
+          if (entries.length > 0) {
+            this.appendSizeRows(colourIndex, entries);
+            addedAny = true;
+          }
+        });
+        this.isAddAllSizesLoading = false;
+        this.calculateTotal();
+        if (!addedAny) {
+          this.showAlert('No available sizes found for the selected colours.', 'error');
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isAddAllSizesLoading = false;
+        this.showAlert('Failed to load sizes for selected colours.', 'error');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private fetchAvailableSizeEntries(colourName: string): Observable<{ size: string; availableQty: number }[]> {
+    const isDeliveryChallan = this.outwardForm.get('isDeliveryChallan')?.value;
+    const selectedDcNos: string[] = this.outwardForm.get('selectedDcNos')?.value || [];
+
+    if (isDeliveryChallan) {
+      if (!selectedDcNos.length) {
+        return of([]);
+      }
+      return this.inwardService.getInwardDetailsByDcs(this.selectedCompanyId!, selectedDcNos, colourName).pipe(
+        map((res: any) => {
+          const collectedSizes: any[] = [];
+          if (res?.success && res.data && Array.isArray(res.data.sizes)) {
+            res.data.sizes.forEach((item: any) => {
+              collectedSizes.push({
+                size: (item.size || item.sizeName || '').toString().toUpperCase(),
+                availableQty: Number(item.availableQty ?? item.count ?? 0)
+              });
+            });
+          }
+          const sizeMap: Record<string, number> = {};
+          collectedSizes.forEach(item => {
+            if (item.size && !(item.size in sizeMap)) {
+              sizeMap[item.size] = item.availableQty;
+            }
+          });
+          return Object.entries(sizeMap).map(([size, availableQty]) => ({ size, availableQty }));
+        })
+      );
+    }
+
+    return this.inwardService.getSizes(this.selectedCompanyId!, colourName, this.selectedStyle!).pipe(
+      map((res: any[]) => (Array.isArray(res) ? res : []).map(x => ({
+        size: (x.size || '').toUpperCase(),
+        availableQty: Number(x.availableQty ?? 0)
+      })))
+    );
+  }
+
+  private resolveAvailableQty(sizeInfoFromData: any, sizeInfoFromSizes: any, isDcFlow: boolean): number {
+    if (!isDcFlow) {
+      if (sizeInfoFromData) {
+        return sizeInfoFromData.availableQty ?? 9999;
+      }
+      if (sizeInfoFromSizes) {
+        return sizeInfoFromSizes.availableQty ?? 9999;
+      }
+      return 9999;
+    }
+    if (sizeInfoFromData) {
+      return sizeInfoFromData.availableQty ?? sizeInfoFromData.count ?? 9999;
+    }
+    if (sizeInfoFromSizes) {
+      return sizeInfoFromSizes.availableQty ?? 9999;
+    }
+    return 9999;
+  }
+
+  private appendSizeRows(colourIndex: number, sizeEntries: { size: string; availableQty: number }[]): void {
+    const sizeArray = this.getSizeBreakdowns(colourIndex);
+    const existingSizes = new Set(
+      sizeArray.controls.map(c => (c.get('sizeName')?.value || '').toString().toUpperCase())
+    );
+    const isDcFlow = !!this.outwardForm.get('selectedDcNos')?.value?.length;
+
+    sizeEntries.forEach(item => {
+      const sizeName = (item.size || '').toString().toUpperCase();
+      if (!sizeName || existingSizes.has(sizeName)) {
+        return;
+      }
 
       const sizeInfoFromData = this.sizeData.find(x => (x.size || '').toUpperCase() === sizeName);
       const sizeInfoFromSizes = this.sizes.find(x => (x.size || '').toUpperCase() === sizeName);
-
-      let availableQty = 9999;
-      if (!isDcFlow) {
-        // DC Enable = false: strict use of availableQty
-        if (sizeInfoFromData) {
-          availableQty = sizeInfoFromData.availableQty ?? 9999;
-        } else if (sizeInfoFromSizes) {
-          availableQty = sizeInfoFromSizes.availableQty ?? 9999;
-        }
-      } else {
-        // DC Enable = true: fallback to count if availableQty is missing
-        if (sizeInfoFromData) {
-          availableQty = sizeInfoFromData.availableQty ?? sizeInfoFromData.count ?? 9999;
-        } else if (sizeInfoFromSizes) {
-          availableQty = sizeInfoFromSizes.availableQty ?? 9999;
-        }
-      }
+      const availableQty = this.resolveAvailableQty(
+        sizeInfoFromData ?? { availableQty: item.availableQty },
+        sizeInfoFromSizes ?? { availableQty: item.availableQty },
+        isDcFlow
+      );
 
       const sizeGroup = this.fb.group({
         sizeId: [sizeName],
@@ -897,11 +1077,8 @@ export class OutwardComponent implements OnInit {
       });
 
       sizeArray.push(sizeGroup);
+      existingSizes.add(sizeName);
     });
-
-    this.isSizePickerOpen = false;
-    this.activeColourIndexForSize = null;
-    this.calculateTotal();
   }
 
   removeSizeRow(colourIndex: number, sizeIndex: number): void {
@@ -1225,6 +1402,8 @@ export class OutwardComponent implements OnInit {
     this.meterBreakdown.clear();
     this.selectedColour = '';
     this.activeColourIndexForSize = null;
+    this.addAllSizesEnabled = false;
+    this.isAddAllSizesLoading = false;
     this.sizes = [];
     this.sizeData = [];
     this.totalQuantity = 0;

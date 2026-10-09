@@ -6,6 +6,7 @@ import { SafeHtmlPipe } from '../../pipes/safe-html.pipe';
 export interface SelectOption {
   key: any;
   value: string;
+  description?: string;
 }
 
 @Component({
@@ -44,6 +45,7 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
   selectedValue: any = null;
   selectedLabel: string = '';
   isOpen: boolean = false;
+  highlightedIndex: number = -1;
 
   onChange = (value: any) => { };
   onTouched = () => { };
@@ -65,7 +67,47 @@ export class CustomSelectComponent implements ControlValueAccessor, OnChanges {
 
   onSearchTermChange() {
     if (this.isOpen) {
+      this.highlightedIndex = 0;
       this.cdr.markForCheck();
+    }
+  }
+
+  onKeydown(event: KeyboardEvent): void {
+    if (this.disabled) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeAndReset();
+      return;
+    }
+
+    if ((event.key === 'ArrowDown' || event.key === 'Enter') && !this.isOpen) {
+      event.preventDefault();
+      this.toggle();
+      return;
+    }
+
+    if (!this.isOpen) {
+      return;
+    }
+
+    const options = this.filteredOptions;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.highlightedIndex = Math.min(this.highlightedIndex + 1, options.length - 1);
+      this.cdr.markForCheck();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.highlightedIndex = Math.max(this.highlightedIndex - 1, 0);
+      this.cdr.markForCheck();
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const option = options[this.highlightedIndex];
+      if (option) {
+        this.selectOption(option);
+      }
     }
   }
 

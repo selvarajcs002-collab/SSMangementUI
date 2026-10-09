@@ -30,6 +30,7 @@ export class InwardComponent implements OnInit {
   loading: boolean = false;
   isCompanySelected: boolean = false;
   isEditMode: boolean = false;
+  fromDeliveryChallan: boolean = false;
   editId: number | null = null;
 
   // Matrix Totals
@@ -111,6 +112,7 @@ export class InwardComponent implements OnInit {
   }
 
   private checkEditMode(): void {
+    this.fromDeliveryChallan = this.route.snapshot.queryParamMap.get('from') === 'delivery-challan';
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
@@ -1036,6 +1038,13 @@ export class InwardComponent implements OnInit {
     this.inwardForm.patchValue({ uploadURL: '' });
     this.imagePreview = null;
     this.fileName = null;
+  }
+
+  backToDeliveryChallan(): void {
+    if (this.inwardForm?.dirty && !confirm('Go back to Delivery Challan? Unsaved changes on this entry will be lost.')) {
+      return;
+    }
+    this.router.navigate(['/dashboard/delivery-challan']);
   }
 
   onCancel(): void {

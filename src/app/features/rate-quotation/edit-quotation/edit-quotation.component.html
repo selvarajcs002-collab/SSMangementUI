@@ -20,7 +20,8 @@
                 <mat-icon *ngIf="isLoadingCompanies" class="loading-spinner rotating">autorenew</mat-icon>
               </label>
               <app-custom-select formControlName="companyId" [options]="companyOptions"
-                [placeholder]="isLoadingCompanies ? 'Loading companies...' : 'Select Company'">
+                [enableTypeAhead]="true"
+                [placeholder]="isLoadingCompanies ? 'Loading companies...' : 'Type to search company'">
               </app-custom-select>
             </div>
 

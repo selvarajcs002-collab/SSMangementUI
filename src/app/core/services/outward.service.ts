@@ -44,6 +44,7 @@ export interface MeterOutwardSavePayload {
   weight?: string;
   noOfBundles?: string;
   selectedDcNos?: string[];
+  outwardDcNo?: string;
   meterDetails: {
     meterPerBit: number;
     bitsCount: number;
@@ -63,8 +64,16 @@ export class OutwardService {
     return this.api.post<any>('outward/save-outward', payload);
   }
 
-  generateDcNo(payload: { companyId: number }): Observable<any> {
+  generateDcNo(payload: { companyId: number; createdBy?: string }): Observable<any> {
     return this.api.post<any>('outward/generate-dc-no', payload);
+  }
+
+  getReusableDcNos(search?: string, companyId?: number): Observable<any> {
+    return this.api.get<any>('outward/reusable-dc-nos', { search: search || '', companyId: companyId || '' });
+  }
+
+  reserveReusedDcNo(payload: any): Observable<any> {
+    return this.api.post<any>('outward/reuse-dc-no', payload);
   }
 
   // NEW: Save Meter Based Outward - does not affect existing saveOutward
@@ -83,6 +92,13 @@ export class OutwardService {
 
   markInwardInactiveByDcNo(payload: any): Observable<any> {
     return this.api.post<any>('outward/mark-inward-inactive-by-dcno', payload);
+  }
+
+  deleteOutward(id: number, deletedBy?: string, deletionReason?: string): Observable<any> {
+    const params: any = {};
+    if (deletedBy) params.deletedBy = deletedBy;
+    if (deletionReason) params.deletionReason = deletionReason;
+    return this.api.delete<any>(`outward/delete/${id}`, params);
   }
 
   updateOutward(payload: any): Observable<any> {

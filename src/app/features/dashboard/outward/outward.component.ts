@@ -51,6 +51,12 @@ export class OutwardComponent implements OnInit {
   imagePreview: string | null = null;
   isSizePickerOpen: boolean = false;
   isEditMode: boolean = false;
+  fromDeliveryChallan: boolean = false;
+  canReuseDc: boolean = false;
+  isReusableDcLoading: boolean = false;
+  reusableDcRows: any[] = [];
+  reusableDcOptions: { key: string; value: string; description?: string }[] = [];
+  selectedReusableDc: any = null;
   editId: number | null = null;
   isLoading: boolean = false;
   isInitializing: boolean = false;
@@ -103,8 +109,17 @@ export class OutwardComponent implements OnInit {
     check: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
     x: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`,
     update: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
-    chevronUp: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>`
+    chevronUp: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>`,
+    hash: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>`
   };
+
+  get dcAllocationOptions() {
+    const options = [{ key: 'NEW', value: 'Generate New DC Number' }];
+    if (this.canReuseDc) {
+      options.push({ key: 'REUSE', value: 'Reuse Previously Deleted DC Number' });
+    }
+    return options;
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -124,9 +139,100 @@ export class OutwardComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const role = (localStorage.getItem('userRole') || 'Administrator').trim();
+    this.canReuseDc = role.toLowerCase() === 'administrator' || role.toLowerCase() === 'admin';
     this.initForm();
     this.trackChanges();
     this.checkEditMode();
+  }
+
+  onAllocationModeChange(): void {
+    this.selectedReusableDc = null;
+    this.outwardForm.patchValue({ reuseDcNo: '', reuseReason: '' });
+    const reuseDc = this.outwardForm.get('reuseDcNo');
+    const reuseReason = this.outwardForm.get('reuseReason');
+    if (this.outwardForm.get('dcAllocationMode')?.value === 'REUSE') {
+      reuseDc?.setValidators([Validators.required]);
+      reuseReason?.setValidators([Validators.required, Validators.minLength(3)]);
+      this.loadReusableDcNos();
+    } else {
+      reuseDc?.clearValidators();
+      reuseReason?.clearValidators();
+    }
+    reuseDc?.updateValueAndValidity({ emitEvent: false });
+    reuseReason?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  loadReusableDcNos(): void {
+    this.isReusableDcLoading = true;
+    this.outwardService.getReusableDcNos('', this.selectedCompanyId || undefined).subscribe({
+      next: (res) => {
+        const rows = res?.data || res || [];
+        this.reusableDcRows = Array.isArray(rows) ? rows : [];
+        this.reusableDcOptions = this.reusableDcRows.map((row: any) => ({
+          key: row.dcNo || row.DcNo,
+          value: row.dcNo || row.DcNo,
+          description: [row.companyName || row.CompanyName, row.deletionReason || row.DeletionReason].filter(Boolean).join(' · ')
+        }));
+        this.isReusableDcLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.reusableDcRows = [];
+        this.reusableDcOptions = [];
+        this.isReusableDcLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  onReusableDcSelected(dcNo: string): void {
+    this.selectedReusableDc = this.reusableDcRows.find((row: any) => (row.dcNo || row.DcNo) === dcNo) || null;
+    if (this.selectedReusableDc) {
+      this.cdr.markForCheck();
+      return;
+    }
+    this.outwardService.getReusableDcNos(dcNo, this.selectedCompanyId || undefined).subscribe({
+      next: (res) => {
+        const rows = res?.data || res || [];
+        this.selectedReusableDc = (Array.isArray(rows) ? rows : []).find((row: any) => (row.dcNo || row.DcNo) === dcNo) || null;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  reuseHistoryValue(camel: string, pascal: string): string {
+    const row = this.selectedReusableDc;
+    if (!row) {
+      return '-';
+    }
+    return row[camel] || row[pascal] || '-';
+  }
+
+  reuseHistoryDate(camel: string, pascal: string): string {
+    const raw = this.reuseHistoryValue(camel, pascal);
+    if (!raw || raw === '-') {
+      return '-';
+    }
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) {
+      return raw;
+    }
+    return parsed.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  private currentUserRole(): string {
+    return (localStorage.getItem('userRole') || 'Administrator').trim();
+  }
+
+  private currentUserName(): string {
+    return localStorage.getItem('userEmail') || localStorage.getItem('userId') || 'User';
   }
 
 
@@ -150,6 +256,7 @@ export class OutwardComponent implements OnInit {
   }
 
   private checkEditMode(): void {
+    this.fromDeliveryChallan = this.route.snapshot.queryParamMap.get('from') === 'delivery-challan';
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
@@ -416,6 +523,9 @@ export class OutwardComponent implements OnInit {
       poNo: [{ value: '', disabled: true }],
       weight: [{ value: '', disabled: true }],
       noOfBundles: [{ value: '', disabled: true }],
+      dcAllocationMode: ['NEW'],
+      reuseDcNo: [''],
+      reuseReason: [''],
       colourBreakdowns: this.fb.array([]),
       // NEW: Isolated FormArray for meter-based rows
       meterBreakdown: this.fb.array([])
@@ -450,6 +560,11 @@ export class OutwardComponent implements OnInit {
     }
     this.selectedCompanyId = companyId;
     this.outwardForm.patchValue({ companyId });
+    if (this.outwardForm.get('dcAllocationMode')?.value === 'REUSE') {
+      this.selectedReusableDc = null;
+      this.outwardForm.patchValue({ reuseDcNo: '' });
+      this.loadReusableDcNos();
+    }
 
     this.isOptionsLoading = true;
 
@@ -1272,6 +1387,17 @@ export class OutwardComponent implements OnInit {
         }))
       };
 
+      if (formVal.dcAllocationMode === 'REUSE') {
+        this.reserveThenRun(formVal, (dcNo) => {
+          meterPayload.outwardDcNo = dcNo;
+          this.outwardService.saveMeterOutward(meterPayload).subscribe({
+            next: (res) => this.handleMeterSaveResponse(res, formVal),
+            error: (err) => this.handleMeterSaveError(err)
+          });
+        });
+        return;
+      }
+
       this.outwardService.saveMeterOutward(meterPayload).subscribe({
         next: (res) => {
           this.isSubmitting = false;
@@ -1438,8 +1564,13 @@ export class OutwardComponent implements OnInit {
           })));
         }, [])
       };
+      if (formVal.dcAllocationMode === 'REUSE') {
+        this.saveWithReusedDc(insertPayload, formVal);
+        return;
+      }
+
       // 1. Generate the DC Number first
-      this.outwardService.generateDcNo({ companyId: this.selectedCompanyId! }).subscribe({
+      this.outwardService.generateDcNo({ companyId: this.selectedCompanyId!, createdBy: this.currentUserName() }).subscribe({
         next: (dcRes) => {
           if (dcRes && dcRes.success && dcRes.dcNo) {
             
@@ -1625,22 +1756,171 @@ export class OutwardComponent implements OnInit {
               if (this.selectedCompanyId) {
                 this.onCompanyChange(this.selectedCompanyId, true);
               }
-              this.router.navigate(['/dashboard/outward/preview']);
+              this.openOutwardPreview();
             },
             error: (err) => {
               this.isSubmitting = false;
               this.messageService.error('Failed to mark lot as completed. ' + (err.error?.message || ''));
               this.cdr.markForCheck();
-              this.router.navigate(['/dashboard/outward/preview']);
+              this.openOutwardPreview();
             }
           });
         } else {
-          this.router.navigate(['/dashboard/outward/preview']);
+          this.openOutwardPreview();
         }
       });
     } else {
-      this.router.navigate(['/dashboard/outward/preview']);
+      this.openOutwardPreview();
     }
+  }
+
+  private reserveThenRun(formVal: any, onReserved: (dcNo: string) => void): void {
+    if (!this.canReuseDc) {
+      this.isSubmitting = false;
+      this.messageService.error('You are not authorized to reuse a deleted DC number.');
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const dcNo = formVal.reuseDcNo;
+    const reason = (formVal.reuseReason || '').trim();
+    if (!dcNo || reason.length < 3) {
+      this.isSubmitting = false;
+      this.messageService.error('Select a deleted DC number and enter a reuse reason.');
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.modalService.showConfirmation({
+      title: 'Reuse deleted DC number?',
+      message: `Create this outward as ${dcNo}? The original deleted record stays in history. A new outward ID is created.`,
+      confirmLabel: 'Reuse Number',
+      cancelLabel: 'Cancel'
+    }).then((confirmed) => {
+      if (!confirmed) {
+        this.isSubmitting = false;
+        this.cdr.markForCheck();
+        return;
+      }
+
+      this.outwardService.reserveReusedDcNo({
+        companyId: this.selectedCompanyId,
+        dcNo,
+        reuseReason: reason,
+        reusedBy: this.currentUserName(),
+        userRole: this.currentUserRole()
+      }).subscribe({
+        next: (res) => {
+          if (res?.success || res?.Success) {
+            onReserved(res.dcNo || res.DcNo || dcNo);
+          } else {
+            this.isSubmitting = false;
+            this.messageService.error(res?.message || res?.Message || 'Could not reserve that DC number.');
+            this.cdr.markForCheck();
+          }
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          this.messageService.error(err.error?.message || err.error?.Message || 'Could not reserve that DC number.');
+          this.cdr.markForCheck();
+        }
+      });
+    });
+  }
+
+  private saveWithReusedDc(insertPayload: any, formVal: any): void {
+    this.reserveThenRun(formVal, (dcNo) => {
+      insertPayload.outward.dcNo = dcNo;
+      this.outwardService.saveOutward(insertPayload).subscribe({
+        next: (res) => {
+          const isSuccess = res.success || res.Success || (res.outwardId > 0) || (res.OutwardId > 0);
+          if (isSuccess) {
+            this.handleSubmissionSuccess(res, `Entry saved using reused DC ${dcNo}.`);
+          } else {
+            this.isSubmitting = false;
+            this.messageService.error(res.message || res.Message || 'Failed to save entry');
+            this.cdr.markForCheck();
+          }
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          this.messageService.error(err.error?.message || 'Failed to save outward entry.');
+          this.cdr.markForCheck();
+        }
+      });
+    });
+  }
+
+  private handleMeterSaveResponse(res: any, formVal: any): void {
+    this.isSubmitting = false;
+    const previewData: ChallanData = {
+      company: this.buildIssuerCompany('S.S.EMBROIDERY', 'No:12, Discovery Nagar\n2nd Street, Kangarainagaram\nTIRUPUR - 641 666, Tamil Nadu India'),
+      companyId: this.selectedCompanyId!,
+      date: formVal.outwardDate || new Date().toISOString().split('T')[0],
+      dcNo: res.outwardDcNo || res.OutwardDcNo || '',
+      receiverName: this.selectedCompany?.companyName || 'Company Name',
+      receiverAddress: this.buildSelectedCompanyAddress(),
+      receiverGst: this.selectedCompanyGst(),
+      items: [{
+        designName: formVal.designRef || '',
+        styleNo: formVal.styleNo,
+        colour: formVal.colour,
+        sizes: [],
+        count: this.totalMeterQuantity
+      }],
+      totalQty: this.totalMeterQuantity,
+      remarks: formVal.remarks || "",
+      entryType: 'M',
+      deliveryTo: formVal.deliveryTo || '',
+      poNo: formVal.poNo || '',
+      weight: formVal.weight || '',
+      noOfBundles: formVal.noOfBundles || '',
+      supplierDcNo: formVal.selectedDcNos ? formVal.selectedDcNos.join(', ') : '',
+      meterDetails: this.meterBreakdown.getRawValue().map((r: any) => ({
+        meterPerBit: Number(r.meterPerBit),
+        bitsCount: Number(r.bitsCount),
+        piecesCount: Number(r.piecesCount),
+        totalMeter: Number(r.totalMeter)
+      })),
+      totalMeterSum: this.totalMeterQuantity,
+      totalPiecesSum: this.totalPiecesQuantity
+    };
+
+    this.outwardPreviewService.setPreviewData(previewData);
+    this.processLotCompletionAndNavigate(formVal);
+    this.cdr.markForCheck();
+  }
+
+  private handleMeterSaveError(err: any): void {
+    this.isSubmitting = false;
+    this.messageService.error(err.error?.message || 'Failed to save meter outward.');
+    this.cdr.markForCheck();
+  }
+
+  backToDeliveryChallan(): void {
+    const leave = () => this.router.navigate(['/dashboard/delivery-challan']);
+
+    if (!this.outwardForm?.dirty) {
+      leave();
+      return;
+    }
+
+    this.modalService.showConfirmation({
+      title: 'Leave this page?',
+      message: 'Go back to Delivery Challan? Unsaved changes on this outward will be lost.',
+      confirmLabel: 'Yes, Go Back',
+      cancelLabel: 'Stay Here'
+    }).then((confirmed) => {
+      if (confirmed) {
+        leave();
+      }
+    });
+  }
+
+  private openOutwardPreview(): void {
+    this.router.navigate(['/dashboard/outward/preview'], {
+      queryParams: this.fromDeliveryChallan ? { from: 'delivery-challan' } : {}
+    });
   }
 
   onCancel(): void {

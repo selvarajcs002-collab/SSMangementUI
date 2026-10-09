@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { OutwardPreviewService, ChallanData } from '../../../../core/services/outward-preview.service';
 import { ApiService } from '../../../../core/services/api.service';
 import { MessageService } from '../../../../core/services/message.service';
@@ -19,6 +19,8 @@ export class OutwardPreviewComponent implements OnInit {
   data: ChallanData | null = null;
   isSaving: boolean = false;
   isDownloading: boolean = false;
+  backLabel = 'Back to Outward';
+  private returnUrl = '/dashboard/outward';
 
   // New properties for matrix
   matrixColumns: string[] = [];
@@ -42,13 +44,19 @@ export class OutwardPreviewComponent implements OnInit {
     private deliveryChallanPrintService: DeliveryChallanPrintService,
     private companyService: CompanyService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.get('from') === 'delivery-challan') {
+      this.returnUrl = '/dashboard/delivery-challan';
+      this.backLabel = 'Back to Delivery Challan';
+    }
+
     this.data = this.outwardPreviewService.getPreviewData();
     if (!this.data) {
-      this.router.navigate(['/dashboard/outward']);
+      this.router.navigate([this.returnUrl]);
     } else {
       this.buildMatrix();
     }
@@ -200,7 +208,7 @@ export class OutwardPreviewComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/dashboard/outward']);
+    this.router.navigate([this.returnUrl]);
   }
 
   downloadDC(): void {

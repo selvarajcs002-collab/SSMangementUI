@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } 
 import { Router } from '@angular/router';
 import { InputFieldComponent } from '../../../shared/components/input-field/input-field.component';
 import { SelectFieldComponent, SelectOption } from '../../../shared/components/select-field/select-field.component';
+import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { AlertComponent } from '../../../shared/components/alert/alert.component';
 import { GridLayoutComponent } from '../../../shared/components/grid-layout/grid-layout.component';
@@ -23,6 +24,7 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
     ReactiveFormsModule,
     InputFieldComponent,
     SelectFieldComponent,
+    CustomSelectComponent,
     ButtonComponent,
     AlertComponent,
     GridLayoutComponent,
@@ -53,16 +55,16 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
           
           <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
             <ng-container *ngIf="mode === 'update'; else addNameTemplate">
-              <app-select-field
-                label="Company Name"
-                placeholder="Select company to update"
+              <label class="label">Company Name <span class="required">*</span></label>
+              <app-custom-select
                 formControlName="companyId"
-                [options]="companyOptions"
-                [required]="true"
+                [options]="companySelectOptions"
+                [enableTypeAhead]="true"
                 [icon]="icons.building"
-                [error]="getErrorMessage('companyId')"
-                (change)="onCompanyChange($event)"
-              ></app-select-field>
+                placeholder="Type to search company"
+                (change)="onCompanyChange($event)">
+              </app-custom-select>
+              <div class="error-message" *ngIf="getErrorMessage('companyId')">{{ getErrorMessage('companyId') }}</div>
             </ng-container>
 
             <ng-template #addNameTemplate>
@@ -331,6 +333,7 @@ export class CompanyFormComponent implements OnInit {
   alertMessage: string | null = null;
   alertType: 'success' | 'error' = 'success';
   companyOptions: SelectOption[] = [];
+  companySelectOptions: { key: any; value: string }[] = [];
 
   icons = {
     building: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M16 18h.01"/></svg>`,
@@ -413,12 +416,16 @@ export class CompanyFormComponent implements OnInit {
         label: c.value,
         value: c.key
       }));
+      this.companySelectOptions = companies.map(c => ({
+        key: c.key,
+        value: c.value
+      }));
       this.cdr.markForCheck();
     });
   }
 
   async onCompanyChange(event: any) {
-    const newId = Number(event.target.value);
+    const newId = Number(event?.target?.value ?? event);
     if (!newId) return;
 
     if (this.companyForm.dirty) {

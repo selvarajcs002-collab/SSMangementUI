@@ -5,6 +5,10 @@
       [actionIcon]="icons.update" (actionClick)="updateModalService.open()">
     </app-section-header>
 
+    <button *ngIf="fromDeliveryChallan" type="button" class="dc-return" (click)="backToDeliveryChallan()">
+      <span aria-hidden="true">←</span> Back to Delivery Challan
+    </button>
+
 
     <div class="form-card-wrapper">
       <div class="card outward-card">
@@ -16,11 +20,76 @@
             <div class="input-group">
               <label>Select Company <span class="required">*</span></label>
               <app-custom-select formControlName="companyId" [options]="companies$ | async" [icon]="icons.company"
-                [loading]="isOptionsLoading" placeholder="Choose a company..." (change)="onCompanyChange($event)">
+                [loading]="isOptionsLoading" [enableTypeAhead]="true" placeholder="Type to search company..."
+                (change)="onCompanyChange($event)">
               </app-custom-select>
               <div class="error-text"
                 *ngIf="outwardForm.get('companyId')?.touched && outwardForm.get('companyId')?.invalid">
                 Company selection is required
+              </div>
+            </div>
+
+            <!-- DC Number Allocation -->
+            <div class="input-group full-width dc-allocation" *ngIf="!isEditMode">
+              <label>DC Number Allocation</label>
+              <app-custom-select formControlName="dcAllocationMode" [options]="dcAllocationOptions"
+                [icon]="icons.hash" placeholder="Select allocation mode..."
+                (change)="onAllocationModeChange()">
+              </app-custom-select>
+
+              <div class="reuse-panel" *ngIf="outwardForm.get('dcAllocationMode')?.value === 'REUSE'">
+                <p class="reuse-hint">
+                  Choose a deleted DC number and enter why it is being reused. History is kept; a new outward ID is created.
+                </p>
+
+                <div class="reuse-fields">
+                  <div class="input-group">
+                    <label>Deleted DC Number <span class="required">*</span></label>
+                    <app-custom-select formControlName="reuseDcNo" [options]="reusableDcOptions"
+                      [icon]="icons.hash" [loading]="isReusableDcLoading" [enableTypeAhead]="true"
+                      [isInvalid]="!!(outwardForm.get('reuseDcNo')?.touched && outwardForm.get('reuseDcNo')?.invalid)"
+                      placeholder="Search a deleted DC number"
+                      emptyMessage="No deleted DC numbers available"
+                      (change)="onReusableDcSelected($event)">
+                    </app-custom-select>
+                    <div class="error-text"
+                      *ngIf="outwardForm.get('reuseDcNo')?.touched && outwardForm.get('reuseDcNo')?.invalid">
+                      Select a deleted DC number
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label>Reuse Reason <span class="required">*</span></label>
+                    <textarea formControlName="reuseReason" class="form-control reuse-reason" rows="3"
+                      maxlength="250" placeholder="Why is this deleted number being reused?"></textarea>
+                    <div class="error-text"
+                      *ngIf="outwardForm.get('reuseReason')?.touched && outwardForm.get('reuseReason')?.invalid">
+                      Enter a reuse reason (at least 3 characters)
+                    </div>
+                  </div>
+                </div>
+
+                <div class="reuse-history" *ngIf="selectedReusableDc">
+                  <div class="reuse-history-title">Previous DC history</div>
+                  <div class="reuse-history-grid">
+                    <div class="reuse-history-item">
+                      <span class="k">Company</span>
+                      <span class="v">{{ reuseHistoryValue('companyName', 'CompanyName') }}</span>
+                    </div>
+                    <div class="reuse-history-item">
+                      <span class="k">Created</span>
+                      <span class="v">{{ reuseHistoryDate('allocatedOn', 'AllocatedOn') }}</span>
+                    </div>
+                    <div class="reuse-history-item">
+                      <span class="k">Deleted</span>
+                      <span class="v">{{ reuseHistoryDate('deletedOn', 'DeletedOn') }}</span>
+                    </div>
+                    <div class="reuse-history-item">
+                      <span class="k">Deletion reason</span>
+                      <span class="v">{{ reuseHistoryValue('deletionReason', 'DeletionReason') }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

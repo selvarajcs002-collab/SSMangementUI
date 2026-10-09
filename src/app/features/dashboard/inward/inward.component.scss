@@ -618,6 +618,25 @@
 }
 
 // ── Form Footer Actions ───────────────────────────────────────────────────────
+.dc-return {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 16px;
+  padding: 8px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #dbeafe;
+  }
+}
+
 .form-footer {
   display: flex;
   justify-content: flex-end;

@@ -428,7 +428,9 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
     this.outwardPreviewService.setPreviewData(previewData);
     this.isLoading = false;
     this.cdr.markForCheck();
-    this.router.navigate(['/dashboard/outward/preview']);
+    this.router.navigate(['/dashboard/outward/preview'], {
+      queryParams: { from: 'delivery-challan' }
+    });
   }
 
   private getSizeRows(data: any): { label: string; qty: number }[] {
@@ -492,7 +494,9 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
             this.outwardService.setEditData(res);
           }
 
-          this.router.navigate([route, id]);
+          this.router.navigate([route, id], {
+            queryParams: { from: 'delivery-challan' }
+          });
         } else {
           this.messageService.error('Record details not found');
         }
@@ -508,29 +512,33 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
   }
 
   onDelete(row: any): void {
-    if (this.activeView !== 'inward') {
-      this.messageService.error('Deletion is only supported for Inward records from this interface.');
-      return;
-    }
-
     const id = row.fullData?.id || row.fullData?.Id;
     if (!id) {
       this.messageService.error('Invalid ID for deletion');
       return;
     }
 
-    if (confirm('Are you sure you want to delete this log?')) {
-      this.inwardService.deleteInward(id).subscribe({
+    const isOutward = this.activeView === 'outward';
+    const confirmMessage = isOutward
+      ? 'Delete this outward? The inward total stays the same. The quantity returns to the available balance for the next entry, including the linked DC numbers.'
+      : 'Are you sure you want to delete this log?';
+
+    if (confirm(confirmMessage)) {
+      const request = isOutward
+        ? this.outwardService.deleteOutward(id, localStorage.getItem('userEmail') || 'User', 'Deleted from Delivery Challan')
+        : this.inwardService.deleteInward(id);
+
+      request.subscribe({
         next: (res) => {
-          if (res && res.status) {
-            this.messageService.success(res.message || 'Deleted successfully');
+          if (res && (res.status || res.Status)) {
+            this.messageService.success(res.message || res.Message || 'Deleted successfully');
             this.loadData();
           } else {
-            this.messageService.error(res?.message || 'Failed to delete record');
+            this.messageService.error(res?.message || res?.Message || 'Failed to delete record');
           }
         },
         error: (err) => {
-          const errMsg = err.error?.message || 'Failed to delete record';
+          const errMsg = err.error?.message || err.error?.Message || 'Failed to delete record';
           this.messageService.error(errMsg);
         }
       });

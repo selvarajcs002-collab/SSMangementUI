@@ -24,8 +24,9 @@
           <app-custom-select 
             formControlName="companyId" 
             [options]="(companies$ | async) || []" 
-            placeholder="Select Company" 
+            placeholder="Type to search company" 
             [icon]="icons.company"
+            [enableTypeAhead]="true"
             (ngModelChange)="onCompanyChange($event)">
           </app-custom-select>
         </div>

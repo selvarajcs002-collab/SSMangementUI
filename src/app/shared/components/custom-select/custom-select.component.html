@@ -13,6 +13,8 @@
                [placeholder]="placeholder" 
                (click)="onInputClick($event)"
                (keydown)="onKeydown($event)"
+               (input)="$event.stopPropagation()"
+               (change)="$event.stopPropagation()"
                [disabled]="disabled"
                autocomplete="off"
                role="combobox"
@@ -51,7 +53,8 @@
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
-        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange()" placeholder="Search..." (click)="$event.stopPropagation()">
+        <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearchTermChange()" placeholder="Search..."
+          (click)="$event.stopPropagation()" (input)="$event.stopPropagation()" (change)="$event.stopPropagation()">
       </div>
       <div class="action-buttons" *ngIf="multiple">
         <button type="button" class="btn-select-all" (click)="selectAll(); $event.stopPropagation()">Select All</button>

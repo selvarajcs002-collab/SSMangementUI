@@ -14,31 +14,51 @@
       <div class="card outward-card">
         <form [formGroup]="outwardForm" (ngSubmit)="onSubmit()">
 
-          <div class="form-grid">
+          <div class="form-sections">
 
-            <!-- Company Selection -->
-            <div class="input-group">
-              <label>Select Company <span class="required">*</span></label>
-              <app-custom-select formControlName="companyId" [options]="companies$ | async" [icon]="icons.company"
-                [loading]="isOptionsLoading" [enableTypeAhead]="true" placeholder="Type to search company..."
-                (change)="onCompanyChange($event)">
-              </app-custom-select>
-              <div class="error-text"
-                *ngIf="outwardForm.get('companyId')?.touched && outwardForm.get('companyId')?.invalid">
-                Company selection is required
+            <section class="form-section">
+              <div class="form-section-header">
+                <span class="form-section-num">1</span>
+                <h3 class="form-section-title">
+                  <span class="form-section-icon" [innerHTML]="icons.company | safeHtml"></span>
+                  Company Details
+                </h3>
               </div>
-            </div>
+              <div class="input-group">
+                <label>Select Company <span class="required">*</span></label>
+                <app-custom-select formControlName="companyId" [options]="companies$ | async" [icon]="icons.company"
+                  [loading]="isOptionsLoading" [enableTypeAhead]="true"
+                  placeholder="Search company by name, code or GST..."
+                  (change)="onCompanyChange($event)">
+                </app-custom-select>
+                <div class="error-text"
+                  *ngIf="outwardForm.get('companyId')?.touched && outwardForm.get('companyId')?.invalid">
+                  Company selection is required
+                </div>
+              </div>
+            </section>
 
-            <!-- DC Number Allocation -->
-            <div class="input-group full-width dc-allocation" *ngIf="!isEditMode">
-              <label>DC Number Allocation</label>
-              <app-custom-select formControlName="dcAllocationMode" [options]="dcAllocationOptions"
-                [icon]="icons.hash" placeholder="Select allocation mode..."
-                (change)="onAllocationModeChange()">
-              </app-custom-select>
+            <section class="form-section dc-allocation" *ngIf="!isEditMode && canReuseDc">
+              <div class="form-section-header">
+                <span class="form-section-num">2</span>
+                <h3 class="form-section-title">
+                  <span class="form-section-icon" [innerHTML]="icons.hash | safeHtml"></span>
+                  DC Number Allocation
+                </h3>
+              </div>
 
-              <div class="reuse-panel" *ngIf="outwardForm.get('dcAllocationMode')?.value === 'REUSE'">
+              <div class="reuse-toggle-row">
+                <label class="switch">
+                  <input type="checkbox" [checked]="isReuseMode" (change)="onReuseToggle($event)">
+                  <span class="slider round"></span>
+                </label>
+                <span class="reuse-toggle-label">Reuse Previously Deleted DC Number</span>
+                <span class="reuse-info" [attr.title]="reuseInfoText" aria-label="Reuse information">i</span>
+              </div>
+
+              <div class="reuse-panel" *ngIf="isReuseMode">
                 <p class="reuse-hint">
+                  <span class="reuse-hint-icon">i</span>
                   Choose a deleted DC number and enter why it is being reused. History is kept; a new outward ID is created.
                 </p>
 
@@ -48,7 +68,7 @@
                     <app-custom-select formControlName="reuseDcNo" [options]="reusableDcOptions"
                       [icon]="icons.hash" [loading]="isReusableDcLoading" [enableTypeAhead]="true"
                       [isInvalid]="!!(outwardForm.get('reuseDcNo')?.touched && outwardForm.get('reuseDcNo')?.invalid)"
-                      placeholder="Search a deleted DC number"
+                      placeholder="Select a deleted DC number..."
                       emptyMessage="No deleted DC numbers available"
                       (change)="onReusableDcSelected($event)">
                     </app-custom-select>
@@ -60,8 +80,12 @@
 
                   <div class="input-group">
                     <label>Reuse Reason <span class="required">*</span></label>
-                    <textarea formControlName="reuseReason" class="form-control reuse-reason" rows="3"
-                      maxlength="250" placeholder="Why is this deleted number being reused?"></textarea>
+                    <div class="input-wrapper">
+                      <span class="input-icon" [innerHTML]="icons.message | safeHtml"></span>
+                      <input type="text" class="form-control with-icon" formControlName="reuseReason"
+                        maxlength="250" placeholder="Enter the reason for reusing this deleted number...">
+                    </div>
+                    <div class="char-count">{{ reuseReasonLength }}/250</div>
                     <div class="error-text"
                       *ngIf="outwardForm.get('reuseReason')?.touched && outwardForm.get('reuseReason')?.invalid">
                       Enter a reuse reason (at least 3 characters)
@@ -91,66 +115,79 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <!-- Outward Date -->
-            <div class="input-group app-date-filter">
-              <app-date-picker label="Outward Date" formControlName="outwardDate" placeholder="Select Outward Date"
-                [required]="true"
-                [error]="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid ? true : false">
-              </app-date-picker>
-              <div class="error-text"
-                *ngIf="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid">
-                Please select a valid date
+            <section class="form-section">
+              <div class="form-section-header">
+                <span class="form-section-num">{{ canReuseDc && !isEditMode ? 3 : 2 }}</span>
+                <h3 class="form-section-title">DC Details</h3>
               </div>
-            </div>
+              <div class="dc-details-grid">
+                <div class="input-group app-date-filter">
+                  <app-date-picker label="Outward Date" formControlName="outwardDate" placeholder="Select Outward Date"
+                    [required]="true"
+                    [error]="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid ? true : false">
+                  </app-date-picker>
+                  <div class="error-text"
+                    *ngIf="outwardForm.get('outwardDate')?.touched && outwardForm.get('outwardDate')?.invalid">
+                    Please select a valid date
+                  </div>
+                </div>
 
+                <div class="input-group">
+                  <label>Style Number <span class="required">*</span></label>
+                  <app-custom-select formControlName="styleNo" [options]="styleSelectOptions"
+                    placeholder="Select Style..." [enableTypeAhead]="true"
+                    (change)="onSelectionChange()">
+                  </app-custom-select>
+                  <div class="error-text"
+                    *ngIf="outwardForm.get('styleNo')?.touched && outwardForm.get('styleNo')?.invalid">Style is required
+                  </div>
+                </div>
 
-            <!-- Style Number (Dropdown) -->
-            <div class="input-group">
-              <label>Style Number <span class="required">*</span></label>
-              <app-custom-select formControlName="styleNo" [options]="styleSelectOptions" placeholder="Select Style..."
-                [enableTypeAhead]="true"
-                (change)="onSelectionChange()">
-              </app-custom-select>
-              <div class="error-text"
-                *ngIf="outwardForm.get('styleNo')?.touched && outwardForm.get('styleNo')?.invalid">Style is required
+                <div class="input-group">
+                  <label>Design Reference</label>
+                  <app-custom-select formControlName="designRef" [options]="designSelectOptions"
+                    [enableTypeAhead]="true"
+                    placeholder="Select Design Reference..." (change)="onSelectionChange()">
+                  </app-custom-select>
+                </div>
+
+                <div class="input-group" *ngIf="entryType === 'meter'">
+                  <label>Colour <span class="required">*</span></label>
+                  <app-custom-select formControlName="colour" [options]="colourSelectOptions"
+                    placeholder="Select Colour..." [enableTypeAhead]="true"
+                    (change)="onSelectionChange()"
+                    [disabled]="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
+                  </app-custom-select>
+                  <div class="error-text" *ngIf="outwardForm.get('colour')?.touched && outwardForm.get('colour')?.invalid">
+                    Colour is required</div>
+                  <div class="error-text"
+                    *ngIf="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
+                    Please select Delivery Challan Number first.
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
 
-            <!-- Colour (Dropdown) - Only for Meter Based -->
-            <div class="input-group" *ngIf="entryType === 'meter'">
-              <label>Colour <span class="required">*</span></label>
-              <app-custom-select formControlName="colour" [options]="colourSelectOptions" placeholder="Select Colour..."
-                [enableTypeAhead]="true"
-                (change)="onSelectionChange()"
-                [disabled]="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
-              </app-custom-select>
-              <div class="error-text" *ngIf="outwardForm.get('colour')?.touched && outwardForm.get('colour')?.invalid">
-                Colour is required</div>
-              <div class="error-text"
-                *ngIf="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
-                Please select Delivery Challan Number first.
+            <section class="form-section">
+              <div class="form-section-header">
+                <span class="form-section-num">{{ canReuseDc && !isEditMode ? 4 : 3 }}</span>
+                <h3 class="form-section-title">
+                  <span class="form-section-icon" [innerHTML]="icons.message | safeHtml"></span>
+                  Additional Information
+                </h3>
               </div>
-            </div>
-
-            <!-- Design Reference (Dropdown) -->
-            <div class="input-group">
-              <label>Design Reference</label>
-              <app-custom-select formControlName="designRef" [options]="designSelectOptions"
-                [enableTypeAhead]="true"
-                placeholder="Select Design Reference..." (change)="onSelectionChange()">
-              </app-custom-select>
-            </div>
-
-
-
-            <!-- Remarks -->
-            <div class="input-group full-width">
-              <label>Remarks</label>
-              <textarea formControlName="remarks" class="form-control" rows="3"
-                placeholder="Add any remarks or notes here..."></textarea>
-            </div>
+              <div class="input-group">
+                <label>Remarks</label>
+                <div class="input-wrapper remarks-wrapper">
+                  <span class="input-icon" [innerHTML]="icons.edit | safeHtml"></span>
+                  <textarea formControlName="remarks" class="form-control with-icon" rows="3" maxlength="500"
+                    placeholder="Add any remarks or notes here..."></textarea>
+                </div>
+                <div class="char-count">{{ remarksLength }}/500</div>
+              </div>
+            </section>
 
           </div>
 
@@ -230,6 +267,15 @@
                   *ngIf="outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0)">
                   Please select Delivery Challan Number first.
                 </div>
+                <label class="add-all-sizes-check" *ngIf="colourBreakdowns.length > 0">
+                  <input type="checkbox" [checked]="addAllSizesEnabled" (change)="onAddAllSizesToggle($event)"
+                    [disabled]="!canUseAddAllSizes || isAddAllSizesLoading">
+                  <span>Add all sizes</span>
+                </label>
+                <p class="add-all-sizes-hint" *ngIf="isAddAllSizesLoading">Loading all sizes for selected colours...</p>
+                <p class="add-all-sizes-hint" *ngIf="addAllSizesEnabled && !isAddAllSizesLoading">
+                  All available sizes are shown for each chosen colour. Enter quantities below.
+                </p>
               </div>
               <button type="button" class="btn-select-sizes" (click)="openAddColourModal()"
                 [disabled]="!isDataLoaded || !selectedStyle || (outwardForm.get('isDeliveryChallan')?.value && (!outwardForm.get('selectedDcNos')?.value || outwardForm.get('selectedDcNos')?.value.length === 0))">

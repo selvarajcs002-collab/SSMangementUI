@@ -663,6 +663,9 @@ export class InwardComponent implements OnInit {
   }
 
   onCompanyChange(companyId: any): void {
+    if (companyId instanceof Event || (typeof companyId === 'object' && companyId !== null)) {
+      return;
+    }
     if (companyId) {
       this.isCompanySelected = true;
       // Enable dependent fields

@@ -67,6 +67,9 @@ export class UpdateModalComponent implements OnInit {
   }
 
   onCompanyChange(companyId: any): void {
+    if (companyId instanceof Event || (typeof companyId === 'object' && companyId !== null)) {
+      return;
+    }
     this.resetSelections();
     
     if (!companyId) return;

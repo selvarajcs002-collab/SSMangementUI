@@ -16,6 +16,8 @@ export interface RateQuotationModel {
   designName: string;
   productType: string;
   noOfStitches: string | null;
+  numberOfTrimmings: string | null;
+  customField: string | null;
   chenilleColors: number | null;
   normalEmbColors: number | null;
   ratePerPiece: string | null;
@@ -46,6 +48,10 @@ export class RateQuotationService {
 
   getAllRateQuotations(): Observable<RateQuotationResponse> {
     return this.api.get<RateQuotationResponse>('RateQuotation/getall');
+  }
+
+  getSettings(): Observable<{ success: boolean; data: { customFieldLabel: string } }> {
+    return this.api.get<{ success: boolean; data: { customFieldLabel: string } }>('RateQuotation/settings');
   }
 
   createRateQuotation(data: any): Observable<any> {

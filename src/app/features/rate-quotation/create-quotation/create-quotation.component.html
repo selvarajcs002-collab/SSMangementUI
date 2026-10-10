@@ -7,7 +7,8 @@
         <!-- Left Side: Form Fields -->
         <div class="form-section">
           <div class="section-title">
-            <h2>QUOTATION DETAILS</h2>
+            <h2>New Quotation</h2>
+            <p class="section-hint">Fill the design details. The extra field name can be changed later in application settings.</p>
             <div class="title-underline"></div>
           </div>
 
@@ -38,8 +39,18 @@
 
             <!-- No Of Stitches -->
             <div class="input-group">
-              <label>No Of Stitches</label>
-              <input type="text" formControlName="noOfStitches" placeholder="Enter No Of Stitches">
+              <label>No. of Stitches</label>
+              <input type="text" formControlName="noOfStitches" placeholder="Enter number of stitches">
+            </div>
+
+            <div class="input-group">
+              <label>Number of Trimmings</label>
+              <input type="text" formControlName="numberOfTrimmings" placeholder="Enter number of trimmings">
+            </div>
+
+            <div class="input-group">
+              <label>{{ customFieldLabel }}</label>
+              <input type="text" formControlName="customField" [placeholder]="'Enter ' + customFieldLabel">
             </div>
 
             <!-- Chenille Colors -->
@@ -67,9 +78,9 @@
             </div>
 
             <!-- Payment Terms -->
-            <div class="input-group">
+            <div class="input-group span-2">
               <label>Payment Terms</label>
-              <textarea formControlName="paymentTerms" placeholder="Enter Payment Terms" rows="2"></textarea>
+              <textarea formControlName="paymentTerms" placeholder="Example: 20 days only" rows="2"></textarea>
             </div>
           </div>
         </div>
@@ -111,13 +122,13 @@
 
       <div class="terms-grid">
         <ul class="terms-list">
-          <li>Rate is calculated based on the design details provided.</li>
-          <li>Any change in stitch count or colors may affect the quoted rate.</li>
-          <li>GST will be charged extra as applicable.</li>
+          <li>Any change in stitch count, colors, or size may affect the quoted rate.</li>
+          <li>GST will be charged extra, as applicable.</li>
+          <li>A rejection allowance of 2% for normal embroidery and 5% for special embroidery must be allowed.</li>
         </ul>
         <ul class="terms-list">
-          <li>Quotation is valid for 30 days from the date of issue.</li>
-          <li>Payment terms as mentioned above must be followed.</li>
+          <li>This quotation is valid for 30 days from the date of issue.</li>
+          <li>Payment terms mentioned above must be followed.</li>
           <li>Sample approval is required before bulk production.</li>
         </ul>
       </div>

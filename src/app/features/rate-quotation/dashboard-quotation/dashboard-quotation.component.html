@@ -2,7 +2,7 @@
   <div class="header-section">
     <div>
       <h1>Rate Quotation History</h1>
-      <p class="subtitle">Manage and track all your rate quotations</p>
+      <p class="subtitle">{{ filteredCount }} quotation{{ filteredCount === 1 ? '' : 's' }} ready to review, edit, or print</p>
     </div>
     <button class="btn-create" (click)="navigateToCreate()">
       <mat-icon>add</mat-icon> Create Rate Quotation
@@ -13,26 +13,32 @@
     <div class="filter-grid">
       <div class="filter-input-group">
         <mat-icon class="search-icon">search</mat-icon>
-        <input type="text" placeholder="Search quotations...">
+        <input type="text" placeholder="Search quote, company, style, or design" [(ngModel)]="searchQuery" (ngModelChange)="applyFilter()">
       </div>
 
-      <div class="filter-select-group" style="width: 240px; z-index: 10;">
-        <app-custom-select [options]="companyOptions" placeholder="All Companies"></app-custom-select>
+      <div class="filter-select-group">
+        <select [(ngModel)]="companyFilter" (ngModelChange)="applyFilter()">
+          <option value="">All companies</option>
+          <option *ngFor="let name of companyNames" [value]="name">{{ name }}</option>
+        </select>
       </div>
 
-      <div class="filter-select-group" style="width: 200px; z-index: 10;">
-        <app-custom-select [options]="statusOptions" placeholder="All Status"></app-custom-select>
+      <div class="filter-select-group">
+        <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()">
+          <option value="">All statuses</option>
+          <option *ngFor="let status of statusNames" [value]="status">{{ status }}</option>
+        </select>
       </div>
 
       <div class="filter-date-group">
-        <input type="date" placeholder="From Date">
+        <input type="date" aria-label="From date" [(ngModel)]="fromDate" (ngModelChange)="applyFilter()">
       </div>
 
       <div class="filter-date-group">
-        <input type="date" placeholder="To Date">
+        <input type="date" aria-label="To date" [(ngModel)]="toDate" (ngModelChange)="applyFilter()">
       </div>
 
-      <button class="btn-reset">Reset</button>
+      <button class="btn-reset" type="button" (click)="resetFilters()">Reset</button>
     </div>
   </div>
 
@@ -48,7 +54,9 @@
       <!-- Quote No Column -->
       <ng-container matColumnDef="quoteNo">
         <th mat-header-cell *matHeaderCellDef class="w-15 font-medium"> Quote No </th>
-        <td mat-cell *matCellDef="let element" class="font-medium text-dark"> {{element.quotationNo}} </td>
+        <td mat-cell *matCellDef="let element">
+          <button type="button" class="quote-link" (click)="editQuotation(element.id)">{{ element.quotationNo }}</button>
+        </td>
       </ng-container>
 
       <!-- Company Name Column -->
@@ -91,6 +99,11 @@
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row-hover"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-row" [attr.colspan]="displayedColumns.length">
+          No quotations match this view. Clear the search or create a new quotation.
+        </td>
+      </tr>
     </table>
 
     <mat-paginator [pageSizeOptions]="[10, 25, 100]" aria-label="Select page of quotations"></mat-paginator>

@@ -1,261 +1,348 @@
 <app-loader *ngIf="loading"></app-loader>
 
 <div class="stock-management-page">
-  <!-- Top Summary Cards -->
-  <div class="summary-cards" *ngIf="summary">
-    <div class="card">
+  <div class="page-toolbar">
+    <div class="page-title-block">
+      <h2>Stock Management</h2>
+      <p>Figures are for <strong>{{ periodLabel }}</strong>. Available stock is inward minus outward in this period.</p>
+    </div>
+    <div class="page-header-actions">
+      <button class="btn btn-icon btn-outline" (click)="openFilterModal()" title="Filter by company, style, design, colour, or DC">
+        <span class="icon" [innerHTML]="icons.filter | safeHtml"></span>
+      </button>
+      <button class="btn btn-icon btn-outline" (click)="onRefresh()" title="Refresh">
+        <span class="icon text-blue" [innerHTML]="icons.refresh | safeHtml"></span>
+      </button>
+      <button class="btn btn-outline" (click)="exportExcel()" [disabled]="isExporting">
+        <span class="icon text-green" *ngIf="!isExporting" [innerHTML]="icons.excel | safeHtml"></span>
+        <span class="icon text-muted" *ngIf="isExporting" [innerHTML]="icons.refresh | safeHtml"></span>
+        <span>{{ isExporting ? 'Exporting...' : 'Excel Report' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="preset-row">
+    <button type="button" class="chip" [class.active]="activePreset === 'today'" (click)="setPreset('today')">Today</button>
+    <button type="button" class="chip" [class.active]="activePreset === '7d'" (click)="setPreset('7d')">Last 7 days</button>
+    <button type="button" class="chip" [class.active]="activePreset === 'month'" (click)="setPreset('month')">This month</button>
+    <button type="button" class="chip" [class.active]="activePreset === 'lastMonth'" (click)="setPreset('lastMonth')">Last month</button>
+    <button type="button" class="chip chip-ghost" (click)="openFilterModal()">Custom range</button>
+  </div>
+
+  <div class="error-banner" *ngIf="loadError">
+    <span>{{ loadError }}</span>
+    <button type="button" class="btn btn-sm btn-outline" (click)="onRefresh()">Retry</button>
+  </div>
+
+  <div class="active-filter-summary">
+    <div class="filter-badge">
+      <span class="filter-label">Period</span>
+      <span class="filter-value">{{ periodLabel }}</span>
+    </div>
+    <div class="filter-badge" *ngIf="currentFilters.companyId">
+      <span class="filter-label">Company</span>
+      <span class="filter-value">{{ getDisplayCompanyName() }}</span>
+      <button type="button" class="chip-x" (click)="clearFilter('company')" title="Clear company">×</button>
+    </div>
+    <div class="filter-badge" *ngIf="currentFilters.styleNo">
+      <span class="filter-label">Style</span>
+      <span class="filter-value">{{ getDisplayValue('styleNo') }}</span>
+      <button type="button" class="chip-x" (click)="clearFilter('style')" title="Clear style">×</button>
+    </div>
+    <div class="filter-badge" *ngIf="currentFilters.designName">
+      <span class="filter-label">Design</span>
+      <span class="filter-value">{{ getDisplayValue('designName') }}</span>
+      <button type="button" class="chip-x" (click)="clearFilter('design')" title="Clear design">×</button>
+    </div>
+    <div class="filter-badge" *ngIf="currentFilters.colour">
+      <span class="filter-label">Colour</span>
+      <span class="filter-value">{{ getDisplayValue('colour') }}</span>
+      <button type="button" class="chip-x" (click)="clearFilter('colour')" title="Clear colour">×</button>
+    </div>
+    <div class="filter-badge" *ngIf="currentFilters.isDcBased && currentFilters.deliveryChallans?.length" [title]="currentFilters.deliveryChallans.join(', ')">
+      <span class="filter-label">DC</span>
+      <span class="filter-value text-blue">{{ dcSummary }}</span>
+      <button type="button" class="chip-x" (click)="clearFilter('dc')" title="Clear delivery challans">×</button>
+    </div>
+    <button type="button" class="link-button" *ngIf="hasNarrowingFilters" (click)="clearAllFilters()">Clear all</button>
+  </div>
+
+  <div class="summary-cards">
+    <div class="card clickable" [class.active]="activeCard === 'inward'" tabindex="0" (click)="onSummaryCard('inward')" (keydown.enter)="onSummaryCard('inward')">
       <div class="card-icon bg-blue">
         <span class="icon" [innerHTML]="icons.download | safeHtml"></span>
       </div>
       <div class="card-content">
-        <h4>TOTAL INWARD QTY</h4>
-        <p>{{ summary.totalInwardQty | number }}</p>
+        <h4>Total Inward Qty</h4>
+        <p>{{ summary ? (summary.totalInwardQty | number) : '—' }}</p>
       </div>
-      <div class="card-footer" [ngClass]="summary.totalInwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small"
-          [innerHTML]="(summary.totalInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
-        <span>{{ summary.totalInwardPercent }}%</span>
-        <span class="footer-text">vs last month</span>
+      <div class="card-footer" *ngIf="summary && !trendsArePlaceholder" [ngClass]="trendClass(summary.totalInwardPercent, true)">
+        <span class="icon-small" [innerHTML]="(summary.totalInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span>{{ formatPercent(summary.totalInwardPercent) }}</span>
+        <span class="footer-text">vs previous period</span>
+      </div>
+      <div class="card-footer" *ngIf="!summary || trendsArePlaceholder">
+        <span class="footer-text">Click to see inward entries</span>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card clickable" [class.active]="activeCard === 'outward'" tabindex="0" (click)="onSummaryCard('outward')" (keydown.enter)="onSummaryCard('outward')">
       <div class="card-icon bg-green">
         <span class="icon" [innerHTML]="icons.upload | safeHtml"></span>
       </div>
       <div class="card-content">
-        <h4>TOTAL OUTWARD QTY</h4>
-        <p>{{ summary.totalOutwardQty | number }}</p>
+        <h4>Total Outward Qty</h4>
+        <p>{{ summary ? (summary.totalOutwardQty | number) : '—' }}</p>
       </div>
-      <div class="card-footer" [ngClass]="summary.totalOutwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small"
-          [innerHTML]="(summary.totalOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
-        <span>{{ summary.totalOutwardPercent }}%</span>
-        <span class="footer-text">vs last month</span>
+      <div class="card-footer" *ngIf="summary && !trendsArePlaceholder" [ngClass]="trendClass(summary.totalOutwardPercent, false)">
+        <span class="icon-small" [innerHTML]="(summary.totalOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span>{{ formatPercent(summary.totalOutwardPercent) }}</span>
+        <span class="footer-text">vs previous period</span>
+      </div>
+      <div class="card-footer" *ngIf="!summary || trendsArePlaceholder">
+        <span class="footer-text">Click to see outward entries</span>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card clickable" [class.active]="activeCard === 'available'" tabindex="0" (click)="onSummaryCard('available')" (keydown.enter)="onSummaryCard('available')">
       <div class="card-icon bg-purple">
         <span class="icon" [innerHTML]="icons.boxes | safeHtml"></span>
       </div>
       <div class="card-content">
-        <h4>AVAILABLE STOCK</h4>
-        <p>{{ summary.availableStock | number }}</p>
+        <h4>Period Net Stock</h4>
+        <p [ngClass]="summary ? amountClass(summary.availableStock) : ''">{{ summary ? formatSigned(summary.availableStock) : '—' }}</p>
       </div>
-      <div class="card-footer" [ngClass]="summary.availableStockPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small"
-          [innerHTML]="(summary.availableStockPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
-        <span>{{ summary.availableStockPercent }}%</span>
-        <span class="footer-text">vs last month</span>
+      <div class="card-footer" *ngIf="summary && !trendsArePlaceholder" [ngClass]="trendClass(summary.availableStockPercent, true)">
+        <span class="icon-small" [innerHTML]="(summary.availableStockPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span>{{ formatPercent(summary.availableStockPercent) }}</span>
+        <span class="footer-text">vs previous period</span>
+      </div>
+      <div class="card-footer" *ngIf="!summary || trendsArePlaceholder">
+        <span class="footer-text">Inward minus outward</span>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card clickable" [class.active]="activeCard === 'todayIn'" tabindex="0" (click)="onSummaryCard('todayIn')" (keydown.enter)="onSummaryCard('todayIn')">
       <div class="card-icon bg-orange">
         <span class="icon" [innerHTML]="icons.calendarOrange | safeHtml"></span>
       </div>
       <div class="card-content">
-        <h4>TODAY'S INWARD</h4>
-        <p>{{ summary.todaysInward | number }}</p>
+        <h4>Today's Inward</h4>
+        <p>{{ summary ? (summary.todaysInward | number) : '—' }}</p>
       </div>
-      <div class="card-footer" [ngClass]="summary.todaysInwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small"
-          [innerHTML]="(summary.todaysInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
-        <span>{{ summary.todaysInwardPercent }}%</span>
+      <div class="card-footer" *ngIf="summary && !trendsArePlaceholder" [ngClass]="trendClass(summary.todaysInwardPercent, true)">
+        <span class="icon-small" [innerHTML]="(summary.todaysInwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span>{{ formatPercent(summary.todaysInwardPercent) }}</span>
         <span class="footer-text">vs yesterday</span>
+      </div>
+      <div class="card-footer" *ngIf="!summary || trendsArePlaceholder">
+        <span class="footer-text">Click to filter today's inward</span>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card clickable" [class.active]="activeCard === 'todayOut'" tabindex="0" (click)="onSummaryCard('todayOut')" (keydown.enter)="onSummaryCard('todayOut')">
       <div class="card-icon bg-teal">
         <span class="icon" [innerHTML]="icons.calendarTeal | safeHtml"></span>
       </div>
       <div class="card-content">
-        <h4>TODAY'S OUTWARD</h4>
-        <p>{{ summary.todaysOutward | number }}</p>
+        <h4>Today's Outward</h4>
+        <p>{{ summary ? (summary.todaysOutward | number) : '—' }}</p>
       </div>
-      <div class="card-footer" [ngClass]="summary.todaysOutwardPercent >= 0 ? 'text-green' : 'text-red'">
-        <span class="icon-small"
-          [innerHTML]="(summary.todaysOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
-        <span>{{ summary.todaysOutwardPercent }}%</span>
+      <div class="card-footer" *ngIf="summary && !trendsArePlaceholder" [ngClass]="trendClass(summary.todaysOutwardPercent, false)">
+        <span class="icon-small" [innerHTML]="(summary.todaysOutwardPercent >= 0 ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+        <span>{{ formatPercent(summary.todaysOutwardPercent) }}</span>
         <span class="footer-text">vs yesterday</span>
+      </div>
+      <div class="card-footer" *ngIf="!summary || trendsArePlaceholder">
+        <span class="footer-text">Click to filter today's outward</span>
       </div>
     </div>
 
-    <div class="card card-alert">
+    <div class="card card-alert clickable" [class.active]="activeCard === 'low'" [class.card-alert-hot]="lowStockCount > 0" tabindex="0" (click)="onSummaryCard('low')" (keydown.enter)="onSummaryCard('low')">
       <div class="card-icon bg-red">
         <span class="icon" [innerHTML]="icons.alertTriangle | safeHtml"></span>
       </div>
       <div class="card-content">
-        <h4>LOW STOCK ITEMS</h4>
-        <p>{{ summary.lowStockItems | number }}</p>
+        <h4>Needs Attention</h4>
+        <p>{{ balanceLoaded ? (lowStockCount | number) : '—' }}</p>
       </div>
       <div class="card-footer view-details">
-        <a href="javascript:void(0)">View Details</a>
+        <span>{{ lowStockThreshold }} pcs or less</span>
         <span class="icon-small" [innerHTML]="icons.arrowRight | safeHtml"></span>
       </div>
     </div>
   </div>
-  <!-- Header Actions -->
-  <div class="page-header-actions">
-    <button class="btn btn-icon btn-outline" (click)="openFilterModal()" title="Filter">
-      <span class="icon" [innerHTML]="icons.filter | safeHtml"></span>
-    </button>
-    <button class="btn btn-icon btn-outline" (click)="onRefresh()" title="Refresh">
-      <span class="icon text-blue" [innerHTML]="icons.refresh | safeHtml"></span>
-    </button>
-    <button class="btn btn-outline" (click)="exportExcel()" [disabled]="isExporting">
-      <span class="icon text-green" *ngIf="!isExporting" [innerHTML]="icons.excel | safeHtml"></span>
-      <span class="icon text-muted" *ngIf="isExporting" [innerHTML]="icons.refresh | safeHtml"></span>
-      <span>{{ isExporting ? 'Exporting...' : 'Excel Report' }}</span>
-    </button>
-  </div>
 
-  <!-- Active Filter Summary -->
-  <div class="active-filter-summary" *ngIf="currentFilters.isDcBased && currentFilters.deliveryChallans?.length">
-    <div class="filter-badge">
-      <span class="filter-label">Delivery Challan Based :</span>
-      <span class="filter-value text-blue">Yes</span>
-    </div>
-    <div class="filter-badge">
-      <span class="filter-label">Selected DCs :</span>
-      <span class="filter-value">{{ currentFilters.deliveryChallans.join(', ') }}</span>
-    </div>
-  </div>
-
-  <!-- Middle Split Section -->
-  <div class="split-section">
-    <!-- Left: Stock Balance -->
+  <div class="split-section" id="stock-balance">
     <div class="table-section stock-balance-section">
       <div class="section-header">
-        <h3>Stock Balance (Size Wise)</h3>
-        <div class="header-actions">
-          <button class="btn btn-outline btn-sm" (click)="toggleStockBalance()">
-            <span class="icon" [innerHTML]="(isStockBalanceVisible ? icons.eyeOff : icons.eye) | safeHtml"></span>
-            {{ isStockBalanceVisible ? 'Hide' : 'View' }}
-          </button>
+        <div>
+          <h3>Stock Balance (Size Wise)</h3>
+          <p class="section-note">{{ stockBalanceData.length | number }} sizes · search, sort, or focus on short stock</p>
         </div>
       </div>
 
-      <div class="stock-balance-content" *ngIf="isStockBalanceVisible">
-        <div class="sub-header">
-          <span><strong>Company:</strong> {{ getDisplayCompanyName() }}</span>
-          <span><strong>Style:</strong> {{ getDisplayValue('styleNo') }}</span>
-          <span><strong>Design:</strong> {{ getDisplayValue('designName') }}</span>
-          <span><strong>Color:</strong> {{ getDisplayValue('colour') }}</span>
+      <div class="table-toolbar">
+        <label class="search-field">
+          <span class="icon" [innerHTML]="icons.search | safeHtml"></span>
+          <input type="search" [ngModel]="sizeSearch" (ngModelChange)="onSizeSearch($event)" placeholder="Search size" />
+        </label>
+        <div class="chip-group">
+          <button type="button" class="chip" [class.active]="sizeStatusFilter === 'all'" (click)="setSizeStatus('all')">All</button>
+          <button type="button" class="chip" [class.active]="sizeStatusFilter === 'attention'" (click)="setSizeStatus('attention')">Needs attention {{ balanceLoaded ? lowStockCount : '' }}</button>
+          <button type="button" class="chip" [class.active]="sizeStatusFilter === 'negative'" (click)="setSizeStatus('negative')">Negative</button>
+          <button type="button" class="chip" [class.active]="sizeStatusFilter === 'out'" (click)="setSizeStatus('out')">Out</button>
+          <button type="button" class="chip" [class.active]="sizeStatusFilter === 'low'" (click)="setSizeStatus('low')">Low</button>
+          <button type="button" class="chip" [class.active]="sizeStatusFilter === 'ok'" (click)="setSizeStatus('ok')">In stock</button>
         </div>
+      </div>
 
-        <div class="table-container">
-          <table class="styled-table">
-            <thead>
-              <tr>
-                <th class="text-left"> Size </th>
-                <th class="text-center">Total Inward </th>
-                <th class="text-center">Total Outward </th>
-                <th class="text-center">Available </th>
-                <th class="text-center">Difference (In - Out)</th>
+      <div class="sub-header">
+        <span><strong>Company:</strong> {{ getDisplayCompanyName() }}</span>
+        <span><strong>Style:</strong> {{ getDisplayValue('styleNo') }}</span>
+        <span><strong>Design:</strong> {{ getDisplayValue('designName') }}</span>
+        <span><strong>Color:</strong> {{ getDisplayValue('colour') }}</span>
+      </div>
+
+      <div class="table-container">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th class="sortable" (click)="toggleSbSort('size')">Size {{ sortMark('size') }}</th>
+              <th class="sortable text-center" (click)="toggleSbSort('totalInward')">Total Inward {{ sortMark('totalInward') }}</th>
+              <th class="sortable text-center" (click)="toggleSbSort('totalOutward')">Total Outward {{ sortMark('totalOutward') }}</th>
+              <th class="sortable text-center" (click)="toggleSbSort('available')">Available {{ sortMark('available') }}</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngIf="sbPaginatedData.length > 0; else noSbData">
+              <tr *ngFor="let item of sbPaginatedData; trackBy: trackBySize" [ngClass]="'row-' + stockStatus(item.available)">
+                <td class="text-left"><strong>{{ item.size || '—' }}</strong></td>
+                <td class="text-green font-medium text-center">{{ item.totalInward | number }}</td>
+                <td class="text-red font-medium text-center">{{ item.totalOutward | number }}</td>
+                <td class="font-medium text-center" [ngClass]="amountClass(item.available)">{{ formatSigned(item.available) }}</td>
+                <td class="text-center">
+                  <span class="status-pill" [ngClass]="stockStatus(item.available)">{{ stockStatusLabel(item.available) }}</span>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <ng-container *ngIf="sbPaginatedData.length > 0; else noSbData">
-                <tr *ngFor="let item of sbPaginatedData">
-                  <td class="text-left"><strong>{{ item.size }}</strong></td>
-                  <td class="text-green font-medium text-center">{{ item.totalInward }}</td>
-                  <td class="text-red font-medium text-center">{{ item.totalOutward }}</td>
-                  <td class="text-blue font-medium text-center">{{ item.available }}</td>
-                  <td class="text-green font-medium text-center">+{{ item.difference }}</td>
-                </tr>
-                <tr class="total-row">
-                  <td class="text-left"><strong>Total</strong></td>
-                  <td class="text-green font-bold text-center">{{ sbTotalInward }}</td>
-                  <td class="text-red font-bold text-center">{{ sbTotalOutward }}</td>
-                  <td class="text-blue font-bold text-center">{{ sbTotalAvailable }}</td>
-                  <td class="text-green font-bold text-center">+{{ sbTotalDifference }}</td>
-                </tr>
-              </ng-container>
-              <ng-template #noSbData>
-                <tr>
-                  <td colspan="5" class="text-center text-muted">No Records Found</td>
-                </tr>
-              </ng-template>
-            </tbody>
-          </table>
+              <tr class="total-row">
+                <td class="text-left"><strong>{{ stockTotalsLabel }}</strong></td>
+                <td class="text-green font-bold text-center">{{ sbTotalInward | number }}</td>
+                <td class="text-red font-bold text-center">{{ sbTotalOutward | number }}</td>
+                <td class="font-bold text-center" [ngClass]="amountClass(sbTotalAvailable)">{{ formatSigned(sbTotalAvailable) }}</td>
+                <td></td>
+              </tr>
+            </ng-container>
+            <ng-template #noSbData>
+              <tr>
+                <td colspan="5" class="empty-cell">
+                  <strong>{{ balanceLoaded ? 'No sizes match this view' : 'Stock balance is not available' }}</strong>
+                  <span *ngIf="sizeSearch || sizeStatusFilter !== 'all'">Clear the size search or status filter to see every size.</span>
+                  <span *ngIf="balanceLoaded && !sizeSearch && sizeStatusFilter === 'all'">Try a wider date range or remove company filters.</span>
+                </td>
+              </tr>
+            </ng-template>
+          </tbody>
+        </table>
 
-          <div class="pagination" *ngIf="stockBalanceData.length > 0">
-            <div class="page-info">Showing {{ (sbPageNumber - 1) * sbPageSize + 1 }} to {{ (sbPageNumber - 1) *
-              sbPageSize + sbPaginatedData.length }} of {{ stockBalanceData.length }} entries</div>
-            <div class="page-controls-wrapper">
-              <div class="page-controls-new">
-                <button type="button" (click)="sbFirstPage()" [disabled]="sbPageNumber === 1">&lt;&lt;</button>
-                <button type="button" (click)="sbPrevPage()" [disabled]="sbPageNumber === 1">&lt;</button>
-                <button type="button" class="active">{{ sbPageNumber }}</button>
-                <button type="button" (click)="sbNextPage()" [disabled]="sbPageNumber === sbTotalPages">&gt;</button>
-                <button type="button" (click)="sbLastPage()" [disabled]="sbPageNumber === sbTotalPages">&gt;&gt;</button>
-              </div>
+        <div class="pagination" *ngIf="visibleStockRows.length > 0">
+          <div class="page-info">Showing {{ (sbPageNumber - 1) * sbPageSize + 1 }} to {{ (sbPageNumber - 1) * sbPageSize + sbPaginatedData.length }} of {{ visibleStockRows.length }} sizes</div>
+          <div class="page-controls-wrapper">
+            <div class="page-controls-new">
+              <button type="button" (click)="sbFirstPage()" [disabled]="sbPageNumber === 1">&lt;&lt;</button>
+              <button type="button" (click)="sbPrevPage()" [disabled]="sbPageNumber === 1">&lt;</button>
+              <button type="button" class="active">{{ sbPageNumber }}</button>
+              <button type="button" (click)="sbNextPage()" [disabled]="sbPageNumber === sbTotalPages">&gt;</button>
+              <button type="button" (click)="sbLastPage()" [disabled]="sbPageNumber === sbTotalPages">&gt;&gt;</button>
+            </div>
+            <div class="page-size-selector">
+              <select [value]="sbPageSize" (change)="changeSbPageSize($event)">
+                <option [value]="10">10 / page</option>
+                <option [value]="25">25 / page</option>
+                <option [value]="50">50 / page</option>
+              </select>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Right: Stock Summary -->
     <div class="summary-details-section">
-      <h3>Stock Summary (Size Wise)</h3>
-      <div class="summary-mini-cards" *ngIf="isStockBalanceVisible">
+      <h3>Stock Summary</h3>
+      <div class="summary-mini-cards">
         <div class="mini-card">
           <h5>Total Inward</h5>
-          <p class="text-green font-bold">{{ sbTotalInward | number }}</p>
+          <p class="text-green font-bold">{{ overallInward | number }}</p>
           <span>Pcs</span>
         </div>
         <div class="mini-card">
           <h5>Total Outward</h5>
-          <p class="text-red  font-bold">{{ sbTotalOutward | number }}</p>
+          <p class="text-red font-bold">{{ overallOutward | number }}</p>
           <span>Pcs</span>
         </div>
         <div class="mini-card">
-          <h5>Available Stock</h5>
-          <p class="text-blue font-bold">{{ sbTotalAvailable | number }}</p>
+          <h5>Net Available</h5>
+          <p class="font-bold" [ngClass]="amountClass(overallAvailable)">{{ formatSigned(overallAvailable) }}</p>
           <span>Pcs</span>
         </div>
       </div>
 
-      <div class="summary-difference" *ngIf="isStockBalanceVisible">
-        <h5>Difference (Inward - Outward)</h5>
-        <p class="text-green font-bold">+{{ sbTotalDifference | number }}</p>
-        <span>Pcs</span>
+      <div class="health-list">
+        <button type="button" (click)="setSizeStatus('ok')">
+          <span>In stock</span>
+          <strong class="text-green">{{ healthyStockCount }}</strong>
+        </button>
+        <button type="button" (click)="setSizeStatus('low')">
+          <span>Low (1–{{ lowStockThreshold }})</span>
+          <strong class="text-orange">{{ lowOnlyCount }}</strong>
+        </button>
+        <button type="button" (click)="setSizeStatus('out')">
+          <span>Out of stock</span>
+          <strong>{{ outOfStockCount }}</strong>
+        </button>
+        <button type="button" (click)="setSizeStatus('negative')">
+          <span>Negative</span>
+          <strong class="text-red">{{ negativeStockCount }}</strong>
+        </button>
       </div>
-
-      <div class="hidden-placeholder" *ngIf="!isStockBalanceVisible">
-        <span class="icon-large text-muted" [innerHTML]="icons.eyeOff | safeHtml"></span>
-        <p class="text-muted">Click View icon to load stock details.</p>
-      </div>
+      <p class="section-note">Negative means more pieces went out than came in for that size in this period.</p>
     </div>
   </div>
 
-
-
-  <!-- Bottom Section: Latest Transactions -->
-  <div class="table-section latest-transactions">
+  <div class="table-section latest-transactions" id="transactions">
     <div class="section-header">
-      <h3>Latest Transactions (Filtered Result)</h3>
-      <div class="header-actions">
-        <button class="btn btn-outline btn-sm" (click)="toggleLastTransactions()">
-          <span class="icon" [innerHTML]="(isLastTransactionsExpanded ? icons.eyeOff : icons.eye) | safeHtml"></span>
-          {{ isLastTransactionsExpanded ? 'Hide' : 'Show' }}
-        </button>
-        <button class="btn btn-primary btn-sm" (click)="openViewAllModal()">
-          View All
-        </button>
+      <div>
+        <h3>Transactions</h3>
+        <p class="section-note">Search by DC, company, style, design, or colour. Open a DC to see the full entry.</p>
       </div>
     </div>
 
-    <div class="table-container" *ngIf="isLastTransactionsExpanded">
+    <div class="table-toolbar">
+      <label class="search-field">
+        <span class="icon" [innerHTML]="icons.search | safeHtml"></span>
+        <input type="search" [ngModel]="txSearch" (ngModelChange)="onTxSearch($event)" placeholder="Search DC, company, style, design, colour" />
+      </label>
+      <div class="chip-group">
+        <button type="button" class="chip" [class.active]="txType === 'ALL'" (click)="setTxType('ALL')">All {{ inwardChipCount + outwardChipCount }}</button>
+        <button type="button" class="chip" [class.active]="txType === 'INWARD'" (click)="setTxType('INWARD')">Inward {{ inwardChipCount }}</button>
+        <button type="button" class="chip" [class.active]="txType === 'OUTWARD'" (click)="setTxType('OUTWARD')">Outward {{ outwardChipCount }}</button>
+        <button type="button" class="chip" [class.active]="txTodayOnly" (click)="toggleTodayOnly()">Today only</button>
+        <button type="button" class="chip chip-ghost" *ngIf="txSearch || txType !== 'ALL' || txTodayOnly" (click)="clearTransactionFilters()">Clear</button>
+      </div>
+      <button class="btn btn-primary btn-sm" (click)="openViewAllModal()">Full list</button>
+    </div>
+
+    <p class="cap-note" *ngIf="transactionCapReached">
+      This list keeps the latest {{ transactionsData.length }} transactions. Narrow the dates or filters if an older DC is missing.
+    </p>
+
+    <div class="table-container">
       <table class="styled-table text-center transaction-table">
         <thead>
           <tr>
-            <th (click)="toggleLtSort()" style="cursor: pointer; user-select: none;" title="Sort by Date">
-              Date <span class="icon" style="display: inline-block; vertical-align: middle; margin-left: 2px;" [innerHTML]="(ltSortDirection === 'asc' ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
+            <th class="sortable" (click)="toggleLtSort()" title="Sort by date">
+              Date {{ ltSortDirection === 'asc' ? '↑' : '↓' }}
             </th>
             <th>Type</th>
             <th>DC No</th>
@@ -265,42 +352,45 @@
             <th>Color</th>
             <th>Inward Qty</th>
             <th>Outward Qty</th>
-            <th>Available Qty</th>
+            <th title="Inward minus outward for this entry">Net Qty</th>
           </tr>
         </thead>
         <tbody>
           <ng-container *ngIf="ltPaginatedData.length > 0; else noLtData">
-            <tr *ngFor="let item of ltPaginatedData">
+            <tr *ngFor="let item of ltPaginatedData; trackBy: trackByTx">
               <td class="text-left">{{ formatDisplayDate(item.date) }}</td>
-              <td><span class="badge" [ngClass]="item.type.toLowerCase()">{{ item.type }}</span></td>
-              <td><a href="javascript:void(0)" class="link-blue font-medium">{{ item.dcNo }}</a></td>
-              <td class="text-left">{{ item.companyName }}</td>
-              <td>{{ item.styleNo }}</td>
-              <td>{{ item.designName }}</td>
-              <td>{{ item.color }}</td>
-              <td class="text-green font-medium">{{ item.inwardQty !== null ? item.inwardQty : '-' }}</td>
-              <td class="text-red font-medium">{{ item.outwardQty !== null ? item.outwardQty : '-' }}</td>
-              <td class="text-blue font-medium">-</td>
+              <td><span class="badge" [ngClass]="typeClass(item.type)">{{ item.type || '—' }}</span></td>
+              <td>
+                <button type="button" class="link-button" (click)="openTransaction(item)" [title]="'Open ' + (item.type || 'entry')">{{ item.dcNo || '—' }}</button>
+              </td>
+              <td class="text-left">{{ item.companyName || '—' }}</td>
+              <td>{{ item.styleNo || '—' }}</td>
+              <td>{{ item.designName || '—' }}</td>
+              <td>{{ item.color || '—' }}</td>
+              <td class="text-green font-medium">{{ item.inwardQty !== null && item.inwardQty !== undefined ? (item.inwardQty | number) : '—' }}</td>
+              <td class="text-red font-medium">{{ item.outwardQty !== null && item.outwardQty !== undefined ? (item.outwardQty | number) : '—' }}</td>
+              <td class="font-medium" [ngClass]="amountClass(netQty(item))">{{ formatSigned(netQty(item)) }}</td>
             </tr>
             <tr class="total-row">
-              <td colspan="7" class="text-right pr-4"><strong>Total</strong></td>
-              <td class="text-green font-bold">{{ ltTotalInward }}</td>
-              <td class="text-red font-bold">{{ ltTotalOutward }}</td>
-              <td class="text-blue font-bold">{{ ltTotalInward - ltTotalOutward }}</td>
+              <td colspan="7" class="text-right pr-4"><strong>{{ transactionTotalsLabel }}</strong></td>
+              <td class="text-green font-bold">{{ ltTotalInward | number }}</td>
+              <td class="text-red font-bold">{{ ltTotalOutward | number }}</td>
+              <td class="font-bold" [ngClass]="amountClass(ltTotalInward - ltTotalOutward)">{{ formatSigned(ltTotalInward - ltTotalOutward) }}</td>
             </tr>
           </ng-container>
           <ng-template #noLtData>
             <tr>
-              <td colspan="10" class="text-center text-muted">No Records Found</td>
+              <td colspan="10" class="empty-cell">
+                <strong>No transactions match this view</strong>
+                <span>Change the date, type, or search. Today’s cards only include entries dated today.</span>
+              </td>
             </tr>
           </ng-template>
         </tbody>
       </table>
 
-      <!-- Pagination -->
-      <div class="pagination" *ngIf="transactionsData.length > 0">
-        <div class="page-info">Showing {{ (ltPageNumber - 1) * ltPageSize + 1 }} to {{ (ltPageNumber - 1) * ltPageSize +
-          ltPaginatedData.length }} of {{ transactionsData.length }} entries</div>
+      <div class="pagination" *ngIf="filteredTransactions.length > 0">
+        <div class="page-info">Showing {{ (ltPageNumber - 1) * ltPageSize + 1 }} to {{ (ltPageNumber - 1) * ltPageSize + ltPaginatedData.length }} of {{ filteredTransactions.length }} entries</div>
         <div class="page-controls-wrapper">
           <div class="page-controls-new">
             <button type="button" (click)="ltFirstPage()" [disabled]="ltPageNumber === 1">&lt;&lt;</button>
@@ -310,10 +400,10 @@
             <button type="button" (click)="ltLastPage()" [disabled]="ltPageNumber === ltTotalPages">&gt;&gt;</button>
           </div>
           <div class="page-size-selector">
-            <select (change)="changeLtPageSize($event)">
-              <option value="5" [selected]="ltPageSize === 5">5 / page</option>
-              <option value="10" [selected]="ltPageSize === 10">10 / page</option>
-              <option value="25" [selected]="ltPageSize === 25">25 / page</option>
+            <select [value]="ltPageSize" (change)="changeLtPageSize($event)">
+              <option [value]="10">10 / page</option>
+              <option [value]="25">25 / page</option>
+              <option [value]="50">50 / page</option>
             </select>
           </div>
         </div>
@@ -322,23 +412,31 @@
   </div>
 </div>
 
-<!-- View All Modal -->
 <div class="modal-backdrop" *ngIf="isViewAllModalOpen" (click)="closeViewAllModal()"></div>
-<div class="custom-modal" *ngIf="isViewAllModalOpen">
+<div class="custom-modal" *ngIf="isViewAllModalOpen" role="dialog" aria-modal="true" aria-label="All transactions">
   <div class="modal-header">
-    <h3>All Transactions</h3>
-    <button class="close-btn" (click)="closeViewAllModal()">
+    <h3>Transactions ({{ filteredTransactions.length | number }})</h3>
+    <button class="close-btn" (click)="closeViewAllModal()" title="Close">
       <span class="icon" [innerHTML]="icons.close | safeHtml"></span>
     </button>
   </div>
   <div class="modal-body">
-    <div class="table-container">
+    <div class="table-toolbar">
+      <label class="search-field">
+        <span class="icon" [innerHTML]="icons.search | safeHtml"></span>
+        <input type="search" [ngModel]="txSearch" (ngModelChange)="onTxSearch($event)" placeholder="Search DC, company, style, design, colour" />
+      </label>
+      <div class="chip-group">
+        <button type="button" class="chip" [class.active]="txType === 'ALL'" (click)="setTxType('ALL')">All</button>
+        <button type="button" class="chip" [class.active]="txType === 'INWARD'" (click)="setTxType('INWARD')">Inward</button>
+        <button type="button" class="chip" [class.active]="txType === 'OUTWARD'" (click)="setTxType('OUTWARD')">Outward</button>
+      </div>
+    </div>
+    <div class="table-container modal-table">
       <table class="styled-table text-center transaction-table">
         <thead>
           <tr>
-            <th (click)="toggleLtSort()" style="cursor: pointer; user-select: none;" title="Sort by Date">
-              Date <span class="icon" style="display: inline-block; vertical-align: middle; margin-left: 2px;" [innerHTML]="(ltSortDirection === 'asc' ? icons.arrowUp : icons.arrowDown) | safeHtml"></span>
-            </th>
+            <th class="sortable" (click)="toggleLtSort()">Date {{ ltSortDirection === 'asc' ? '↑' : '↓' }}</th>
             <th>Type</th>
             <th>DC No</th>
             <th>Company</th>
@@ -347,33 +445,35 @@
             <th>Color</th>
             <th>Inward Qty</th>
             <th>Outward Qty</th>
-            <th>Available Qty</th>
+            <th>Net Qty</th>
           </tr>
         </thead>
         <tbody>
-          <ng-container *ngIf="transactionsData.length > 0; else noModalData">
-            <tr *ngFor="let item of transactionsData">
+          <ng-container *ngIf="filteredTransactions.length > 0; else noModalData">
+            <tr *ngFor="let item of filteredTransactions; trackBy: trackByTx">
               <td class="text-left">{{ formatDisplayDate(item.date) }}</td>
-              <td><span class="badge" [ngClass]="item.type.toLowerCase()">{{ item.type }}</span></td>
-              <td><a href="javascript:void(0)" class="link-blue font-medium">{{ item.dcNo }}</a></td>
-              <td class="text-left">{{ item.companyName }}</td>
-              <td>{{ item.styleNo }}</td>
-              <td>{{ item.designName }}</td>
-              <td>{{ item.color }}</td>
-              <td class="text-green font-medium">{{ item.inwardQty !== null ? item.inwardQty : '-' }}</td>
-              <td class="text-red font-medium">{{ item.outwardQty !== null ? item.outwardQty : '-' }}</td>
-              <td class="text-blue font-medium">-</td>
+              <td><span class="badge" [ngClass]="typeClass(item.type)">{{ item.type || '—' }}</span></td>
+              <td>
+                <button type="button" class="link-button" (click)="openTransaction(item)">{{ item.dcNo || '—' }}</button>
+              </td>
+              <td class="text-left">{{ item.companyName || '—' }}</td>
+              <td>{{ item.styleNo || '—' }}</td>
+              <td>{{ item.designName || '—' }}</td>
+              <td>{{ item.color || '—' }}</td>
+              <td class="text-green font-medium">{{ item.inwardQty !== null && item.inwardQty !== undefined ? (item.inwardQty | number) : '—' }}</td>
+              <td class="text-red font-medium">{{ item.outwardQty !== null && item.outwardQty !== undefined ? (item.outwardQty | number) : '—' }}</td>
+              <td class="font-medium" [ngClass]="amountClass(netQty(item))">{{ formatSigned(netQty(item)) }}</td>
             </tr>
             <tr class="total-row">
-              <td colspan="7" class="text-right pr-4"><strong>Total</strong></td>
-              <td class="text-green font-bold">{{ ltTotalInward }}</td>
-              <td class="text-red font-bold">{{ ltTotalOutward }}</td>
-              <td class="text-blue font-bold">{{ ltTotalInward - ltTotalOutward }}</td>
+              <td colspan="7" class="text-right pr-4"><strong>{{ transactionTotalsLabel }}</strong></td>
+              <td class="text-green font-bold">{{ ltTotalInward | number }}</td>
+              <td class="text-red font-bold">{{ ltTotalOutward | number }}</td>
+              <td class="font-bold" [ngClass]="amountClass(ltTotalInward - ltTotalOutward)">{{ formatSigned(ltTotalInward - ltTotalOutward) }}</td>
             </tr>
           </ng-container>
           <ng-template #noModalData>
             <tr>
-              <td colspan="10" class="text-center text-muted">No Records Found</td>
+              <td colspan="10" class="empty-cell">No transactions match this view.</td>
             </tr>
           </ng-template>
         </tbody>
@@ -382,6 +482,5 @@
   </div>
 </div>
 
-<!-- Filter Modal -->
 <app-dashboard-filter-dialog *ngIf="isFilterModalOpen" (apply)="closeFilterModal()" (cancel)="closeFilterModal()">
 </app-dashboard-filter-dialog>

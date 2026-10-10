@@ -20,6 +20,30 @@ $text-muted: #6b7280;
   background-color: #f4f7f6;
   min-height: 100vh;
 
+  .page-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .page-title-block {
+    h2 {
+      margin: 0 0 0.25rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: $text-main;
+    }
+
+    p {
+      margin: 0;
+      color: $text-muted;
+      font-size: 0.875rem;
+      max-width: 640px;
+    }
+  }
+
   /* Header Actions */
   .page-header-actions {
     display: flex;
@@ -84,7 +108,7 @@ $text-muted: #6b7280;
     gap: 1rem;
     margin-bottom: 1.5rem;
 
-    .card {
+      .card {
       background: white;
       border: 1px solid $border-color;
       border-radius: 8px;
@@ -93,6 +117,28 @@ $text-muted: #6b7280;
       flex-direction: column;
       position: relative;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      text-align: left;
+
+      &.clickable {
+        cursor: pointer;
+        transition: border-color 0.15s, box-shadow 0.15s;
+
+        &:hover,
+        &:focus-visible {
+          border-color: rgba($color-blue, 0.45);
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+          outline: none;
+        }
+      }
+
+      &.active {
+        border-color: $color-blue;
+        box-shadow: 0 0 0 2px rgba($color-blue, 0.15);
+      }
+
+      &.card-alert-hot {
+        border-color: rgba($color-red, 0.45);
+      }
 
       .card-icon {
         width: 40px;
@@ -300,6 +346,35 @@ $text-muted: #6b7280;
         }
       }
 
+      .health-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+
+        button {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          border: 1px solid $border-color;
+          background: white;
+          border-radius: 8px;
+          padding: 0.7rem 0.85rem;
+          cursor: pointer;
+          color: $text-main;
+          font-size: 0.85rem;
+
+          &:hover {
+            background: $bg-color;
+          }
+
+          strong {
+            font-size: 1rem;
+          }
+        }
+      }
+
       .summary-difference {
         text-align: center;
         padding-top: 1rem;
@@ -450,9 +525,209 @@ $text-muted: #6b7280;
   font-size: 0.75rem !important;
 }
 
+.preset-row,
+.table-toolbar,
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.preset-row {
+  margin-bottom: 1rem;
+}
+
+.table-toolbar {
+  margin-bottom: 0.9rem;
+}
+
+.section-note,
+.cap-note {
+  margin: 0.2rem 0 0;
+  color: $text-muted;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.cap-note {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+  color: #9a3412;
+}
+
+.error-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.875rem;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 220px;
+  flex: 1;
+  max-width: 420px;
+  background: white;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  color: $text-muted;
+
+  input {
+    border: 0;
+    outline: none;
+    width: 100%;
+    font-size: 0.85rem;
+    color: $text-main;
+    background: transparent;
+  }
+
+  .icon {
+    display: flex;
+  }
+}
+
+.chip,
+.chip-x,
+.link-button {
+  font: inherit;
+}
+
+.chip {
+  border: 1px solid $border-color;
+  background: white;
+  color: $text-main;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.active {
+    background: rgba($color-blue, 0.12);
+    border-color: rgba($color-blue, 0.4);
+    color: #1d4ed8;
+  }
+
+  &.chip-ghost {
+    background: transparent;
+  }
+}
+
+.chip-x,
+.link-button {
+  border: 0;
+  background: transparent;
+  color: $color-blue;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+}
+
+.chip-x {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: $text-muted;
+
+  &:hover {
+    background: #e2e8f0;
+    color: $text-main;
+  }
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+
+  &.ok {
+    background: rgba($color-green, 0.12);
+    color: #047857;
+  }
+
+  &.low {
+    background: rgba($color-orange, 0.15);
+    color: #c2410c;
+  }
+
+  &.out {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  &.negative {
+    background: rgba($color-red, 0.12);
+    color: #b91c1c;
+  }
+}
+
+.empty-cell {
+  text-align: center;
+  color: $text-muted;
+  padding: 1.5rem 1rem !important;
+
+  strong,
+  span {
+    display: block;
+  }
+
+  span {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.row-negative td {
+  background: rgba($color-red, 0.04);
+}
+
+.row-out td,
+.row-low td {
+  background: rgba($color-orange, 0.04);
+}
+
+.modal-table {
+  max-height: 60vh;
+}
+
 /* Utility Colors */
 .text-green {
   color: $color-green !important;
+}
+
+.text-orange {
+  color: $color-orange !important;
+}
+
+.text-muted {
+  color: $text-muted !important;
 }
 
 .text-red {
@@ -465,6 +740,14 @@ $text-muted: #6b7280;
 
 .text-center {
   text-align: center;
+}
+
+.text-left {
+  text-align: left !important;
+}
+
+.pr-4 {
+  padding-right: 1rem !important;
 }
 
 .font-medium {
@@ -502,7 +785,7 @@ $text-muted: #6b7280;
   th {
     font-weight: 600;
     color: $text-muted;
-    background: transparent;
+    background: #fff;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.05em;
@@ -756,8 +1039,14 @@ $text-muted: #6b7280;
 
 @media (max-width: 768px) {
   .stock-management-page {
+    .page-toolbar,
+    .page-header-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
     .summary-cards {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
     }
 
     .table-section .section-header {

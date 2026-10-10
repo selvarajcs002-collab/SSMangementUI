@@ -1,215 +1,211 @@
 <div class="add-production-container">
-  <!-- Header Section -->
   <div class="page-header">
-    <div>
-      <h2 class="page-title">Add Production Dashboard</h2>
-    </div>
+    <p class="eyebrow">Shop floor</p>
+    <h2 class="page-title">Production</h2>
+    <p class="page-subtitle">Log what each machine made for a client, then check it against the target and the running cost.</p>
   </div>
 
-  <!-- Summary Cards Section -->
   <div class="kpi-cards-grid">
-    <!-- Day Total Production Card -->
     <div class="kpi-card day-card">
       <div class="kpi-icon-wrapper day-icon">
         <span class="icon">☀️</span>
       </div>
       <div class="kpi-info">
-        <span class="kpi-label">Day Total Production</span>
-        <h3 class="kpi-value">{{ dayTotalProduction() | number }} <span class="unit">Units</span></h3>
-        <span class="kpi-badge day-badge">Active Day Shift</span>
+        <span class="kpi-label">Today, day shift</span>
+        <h3 class="kpi-value">{{ todayDayProduction() | number }} <span class="unit">pieces</span></h3>
+        <span class="kpi-badge day-badge">{{ targetHint(todayDayProduction(), todayDayTarget()) }}</span>
       </div>
     </div>
 
-    <!-- Night Total Production Card -->
     <div class="kpi-card night-card">
       <div class="kpi-icon-wrapper night-icon">
         <span class="icon">🌙</span>
       </div>
       <div class="kpi-info">
-        <span class="kpi-label">Night Total Production</span>
-        <h3 class="kpi-value">{{ nightTotalProduction() | number }} <span class="unit">Units</span></h3>
-        <span class="kpi-badge night-badge">Active Night Shift</span>
+        <span class="kpi-label">Today, night shift</span>
+        <h3 class="kpi-value">{{ todayNightProduction() | number }} <span class="unit">pieces</span></h3>
+        <span class="kpi-badge night-badge">{{ targetHint(todayNightProduction(), todayNightTarget()) }}</span>
       </div>
     </div>
 
-    <!-- Yesterday Total Cost Card -->
-    <div class="kpi-card cost-card" style="border-left: 4px solid #10b981; background: #f0fdf4;">
-      <div class="kpi-icon-wrapper" style="background: #d1fae5; color: #10b981;">
-        <span class="icon">💰</span>
+    <div class="kpi-card cost-card">
+      <div class="kpi-icon-wrapper cost-icon">
+        <span class="icon">₹</span>
       </div>
       <div class="kpi-info">
-        <span class="kpi-label">Total Running Cost ({{ yesterdayDateLabel() }})</span>
+        <span class="kpi-label">Yesterday's running cost</span>
         <h3 class="kpi-value">₹{{ yesterdayTotalCost() | number:'1.2-2' }}</h3>
-        <span class="kpi-badge" style="background: #d1fae5; color: #047857;">Yesterday Day + Night</span>
+        <span class="kpi-badge cost-badge">{{ yesterdayDateLabel() }} · day and night</span>
+      </div>
+    </div>
+
+    <div class="kpi-card pending-card">
+      <div class="kpi-icon-wrapper pending-icon">
+        <span class="icon">✓</span>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Waiting for approval</span>
+        <h3 class="kpi-value">{{ pendingCount() | number }}</h3>
+        <span class="kpi-badge pending-badge">{{ pendingCount() ? 'A supervisor can accept these' : 'Nothing is waiting' }}</span>
       </div>
     </div>
   </div>
+  <p class="kpi-note">The cards are for {{ todayDateLabel() }}. The table below can show today, this month, or every saved entry.</p>
 
-  <!-- Main Grid Section -->
   <div class="grid-card">
-    <!-- Grid Toolbar Header -->
     <div class="grid-toolbar">
       <div class="toolbar-title">
         <h3>
-          Production Log Grid
-          <span class="shift-tag" [class.day-tag]="activeShift() === 'Day'"
-            [class.night-tag]="activeShift() === 'Night'">
-            {{ activeShift() === 'Day' ? '☀️ Day Shift View' : '🌙 Night Shift View' }}
+          {{ activeShift() === 'Day' ? 'Day shift log' : 'Night shift log' }}
+          <span class="shift-tag" [class.day-tag]="activeShift() === 'Day'" [class.night-tag]="activeShift() === 'Night'">
+            {{ activeShift() === 'Day' ? 'Day' : 'Night' }}
           </span>
         </h3>
+        <p class="toolbar-note">Pieces made for the client on this shift. Open a row to correct it, or accept it if it is still waiting.</p>
       </div>
 
       <div class="toolbar-actions">
-        <!-- Sun & Moon Shift Toggle -->
         <div class="shift-toggle-group">
-          <button type="button" class="shift-btn sun-btn" [class.active]="activeShift() === 'Day'"
-            (click)="setShift('Day')" title="View Day Shift Data">
+          <button type="button" class="shift-btn sun-btn" [class.active]="activeShift() === 'Day'" (click)="setShift('Day')">
             <span class="shift-icon">☀️</span>
-            <span class="shift-text">Day Shift</span>
+            <span class="shift-text">Day</span>
           </button>
-          <button type="button" class="shift-btn moon-btn" [class.active]="activeShift() === 'Night'"
-            (click)="setShift('Night')" title="View Night Shift Data">
+          <button type="button" class="shift-btn moon-btn" [class.active]="activeShift() === 'Night'" (click)="setShift('Night')">
             <span class="shift-icon">🌙</span>
-            <span class="shift-text">Night Shift</span>
+            <span class="shift-text">Night</span>
           </button>
         </div>
 
-        <!-- Column Customization Dropdown -->
+        <div class="date-scope" role="group" aria-label="Date range">
+          <button type="button" [class.active]="dateScope() === 'today'" (click)="setDateScope('today')">Today</button>
+          <button type="button" [class.active]="dateScope() === 'month'" (click)="setDateScope('month')">This month</button>
+          <button type="button" [class.active]="dateScope() === 'all'" (click)="setDateScope('all')">All dates</button>
+        </div>
+
+        <label class="search-field">
+          <input type="search" [value]="searchText()" (input)="onSearch($event)"
+            placeholder="Search client, employee, machine, style, or design" aria-label="Search production" />
+          <button *ngIf="searchText()" type="button" class="search-clear" (click)="clearSearch()" aria-label="Clear search">×</button>
+        </label>
+
+        <button type="button" class="btn btn-outline" (click)="refresh()">Refresh</button>
+
         <div class="column-select-wrapper">
-          <button type="button" class="btn btn-outline" (click)="toggleColumnDropdown()">
-            <span class="icon">⚙️</span> Columns ▾
-          </button>
+          <button type="button" class="btn btn-outline" (click)="toggleColumnDropdown($event)">Columns ▾</button>
           <div class="column-dropdown-menu" *ngIf="showColumnDropdown()">
-            <div class="column-dropdown-header">Select Visible Columns</div>
+            <div class="column-dropdown-header">Show or hide columns</div>
             <label *ngFor="let col of columns()" class="column-checkbox-item">
-              <input type="checkbox" [checked]="col.visible" (change)="toggleColumnVisibility(col.key)" />
+              <input type="checkbox" [checked]="col.visible" [disabled]="col.key === 'actions' || col.key === 'sNo'"
+                (change)="toggleColumnVisibility(col.key)" />
               <span>{{ col.label }}</span>
             </label>
           </div>
         </div>
 
-        <!-- Export Excel Dropdown -->
-        <div class="column-select-wrapper" style="position: relative; z-index: 99;">
-          <button type="button" class="btn btn-outline" style="background-color: #2563eb; color: white; border-color: #2563eb;" (click)="toggleExportCard($event)">
-            <span class="icon" style="color: white;">📊</span> Export Excel ▾
-          </button>
-          
-          <div class="column-dropdown-menu export-dropdown-menu" *ngIf="isExportCardOpen()" style="width: 250px; padding: 16px; top: calc(100% + 8px); right: 0;">
-            <div class="column-dropdown-header" style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px; font-weight: 600; color: #1f2937;">
-              Export Excel
+        <div class="column-select-wrapper">
+          <button type="button" class="btn btn-export" (click)="toggleExportCard($event)">Export Excel ▾</button>
+          <div class="column-dropdown-menu export-dropdown-menu" *ngIf="isExportCardOpen()">
+            <div class="column-dropdown-header">Download a date range</div>
+            <div class="form-group">
+              <label class="field-label">From date</label>
+              <app-date-picker [ngModel]="exportFromDate()" (ngModelChange)="exportFromDate.set($event)" [placeholder]="'Select from date'"></app-date-picker>
             </div>
-            
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label class="field-label" style="display: block; font-size: 12px; color: #4b5563; margin-bottom: 4px;">From Date</label>
-              <app-date-picker 
-                [ngModel]="exportFromDate()" 
-                (ngModelChange)="exportFromDate.set($event)"
-                [placeholder]="'Select From Date'">
-              </app-date-picker>
+            <div class="form-group">
+              <label class="field-label">To date</label>
+              <app-date-picker [ngModel]="exportToDate()" (ngModelChange)="exportToDate.set($event)" [placeholder]="'Select to date'"></app-date-picker>
             </div>
-            
-            <div class="form-group" style="margin-bottom: 16px;">
-              <label class="field-label" style="display: block; font-size: 12px; color: #4b5563; margin-bottom: 4px;">To Date</label>
-              <app-date-picker 
-                [ngModel]="exportToDate()" 
-                (ngModelChange)="exportToDate.set($event)"
-                [placeholder]="'Select To Date'">
-              </app-date-picker>
-            </div>
-
-            <div *ngIf="exportValidationError()" class="error-msg" style="color: #ef4444; font-size: 12px; margin-bottom: 12px; line-height: 1.2;">
-              {{ exportValidationError() }}
-            </div>
-            
-            <button type="button" class="btn btn-primary" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px;" [disabled]="isExporting()" (click)="exportExcel()">
-              <span *ngIf="!isExporting()">📊 Export</span>
-              <span *ngIf="isExporting()">⏳ Exporting...</span>
+            <div *ngIf="exportValidationError()" class="field-error">{{ exportValidationError() }}</div>
+            <button type="button" class="btn btn-primary export-go" [disabled]="isExporting()" (click)="exportExcel()">
+              {{ isExporting() ? 'Exporting…' : 'Download Excel' }}
             </button>
           </div>
         </div>
 
-        <!-- Add Production Button -->
-        <button type="button" class="btn btn-primary btn-add" (click)="openAddModal()">
-          <span class="plus-icon">+</span> Add Production
-        </button>
+        <button type="button" class="btn btn-primary btn-add" (click)="openAddModal()">+ Add production</button>
       </div>
     </div>
 
-    <!-- Tabular Grid Table -->
+    <p class="limit-note" *ngIf="shiftIsCapped()">
+      This shift has more than {{ fetchCap | number }} entries. The list shows the latest {{ fetchCap | number }}. Use Export Excel for an older date range.
+    </p>
+    <p class="load-error" *ngIf="loadError()">{{ loadError() }} <button type="button" class="btn btn-outline btn-sm" (click)="refresh()">Try again</button></p>
+
     <div class="table-responsive">
       <table class="production-table">
         <thead>
           <tr>
             <ng-container *ngFor="let col of columns()">
-              <th *ngIf="col.visible" (click)="col.key !== 'actions' && sortBy($any(col.key))"
-                [class.sortable-th]="col.key !== 'actions'">
+              <th *ngIf="col.visible" (click)="col.key !== 'actions' && sortBy(col.key)" [class.sortable-th]="col.key !== 'actions'" [class.sticky-col]="col.key === 'actions'">
                 <div class="th-content">
                   <span>{{ col.label }}</span>
-                  <span class="sort-icon" *ngIf="sortColumn() === col.key">
-                    {{ sortDirection() === 'asc' ? '▲' : '▼' }}
-                  </span>
+                  <span class="sort-icon" *ngIf="sortColumn() === col.key">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
                 </div>
               </th>
             </ng-container>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let row of paginatedRecords()">
+          <tr *ngIf="isLoading()">
+            <td [attr.colspan]="visibleColumnCount()" class="empty-state-td">Loading production…</td>
+          </tr>
+          <tr *ngFor="let row of paginatedRecords()" [class.row-pending]="isPending(row.status)">
             <td *ngIf="isColumnVisible('sNo')" class="fw-bold text-secondary">{{ row.sNo }}</td>
-            <td *ngIf="isColumnVisible('createdDate')" class="text-secondary fw-bold">
-              {{ row.createdDate | date:'dd-MMM-yyyy' }}
-            </td>
+            <td *ngIf="isColumnVisible('createdDate')" class="text-secondary fw-bold">{{ row.createdDate | date:'dd MMM yyyy' }}</td>
+            <td *ngIf="isColumnVisible('companyName')" class="client-cell">{{ companyName(row.companyId) }}</td>
             <td *ngIf="isColumnVisible('employeeName')">
               <div class="emp-name-cell">
                 <span class="avatar-sm">{{ (row.employeeName || '?').charAt(0) }}</span>
-                <span>{{ row.employeeName || '-' }}</span>
+                <span>{{ row.employeeName || '—' }}</span>
               </div>
             </td>
             <td *ngIf="isColumnVisible('machineName')">
-              <span class="machine-badge">{{ row.machineName || '-' }}</span>
+              <span class="machine-badge">{{ row.machineName || '—' }}</span>
             </td>
-            <td *ngIf="isColumnVisible('totalProduction')" class="fw-bold text-primary">
-              {{ row.totalProduction | number }}
+            <td *ngIf="isColumnVisible('totalProduction')" class="fw-bold text-primary">{{ row.totalProduction | number }}</td>
+            <td *ngIf="isColumnVisible('achievement')">
+              <div class="target-cell" *ngIf="row.targetProduction; else noTarget">
+                <div class="target-track"><span [style.width.%]="achievementPercent(row)"></span></div>
+                <span class="target-label">{{ achievementLabel(row) }}</span>
+              </div>
+              <ng-template #noTarget><span class="muted">No target</span></ng-template>
             </td>
-            <td *ngIf="isColumnVisible('styleName')">{{ row.styleName || '-' }}</td>
-            <td *ngIf="isColumnVisible('designName')">{{ row.designName || '-' }}</td>
+            <td *ngIf="isColumnVisible('styleName')">{{ row.styleName || '—' }}</td>
+            <td *ngIf="isColumnVisible('designName')">{{ row.designName || '—' }}</td>
             <td *ngIf="isColumnVisible('targetProduction')">{{ row.targetProduction | number }}</td>
-            <td *ngIf="isColumnVisible('costPerPiece')" class="fw-bold">
-              ₹{{ row.costPerPiece | number:'1.2-2' }}
-            </td>
-            <td *ngIf="isColumnVisible('productionCost')" class="text-success fw-bold">
-              ₹{{ row.productionCost | number:'1.2-2' }}
-            </td>
+            <td *ngIf="isColumnVisible('costPerPiece')" class="fw-bold">₹{{ row.costPerPiece | number:'1.2-2' }}</td>
+            <td *ngIf="isColumnVisible('productionCost')" class="text-success fw-bold">₹{{ row.productionCost | number:'1.2-2' }}</td>
             <td *ngIf="isColumnVisible('shift')">
-              <span class="shift-chip" [class.day-chip]="(row.shift || '').toLowerCase().startsWith('day')"
-                [class.night-chip]="(row.shift || '').toLowerCase().startsWith('night')">
-                {{ row.shift || '-' }}
+              <span class="shift-chip" [class.day-chip]="normalizeShift(row.shift) === 'Day'" [class.night-chip]="normalizeShift(row.shift) === 'Night'">
+                {{ normalizeShift(row.shift) }}
               </span>
             </td>
             <td *ngIf="isColumnVisible('status')">
-              <span class="status-chip" [class.status-accept]="row.status === 'Accept'"
-                [class.status-pending]="row.status === 'Pending'">
-                {{ row.status || '-' }}
+              <span class="status-chip" [class.status-accept]="!isPending(row.status)" [class.status-pending]="isPending(row.status)">
+                {{ statusLabel(row.status) }}
               </span>
             </td>
-            <td *ngIf="isColumnVisible('actions')">
+            <td *ngIf="isColumnVisible('actions')" class="sticky-col">
               <div class="action-buttons">
-                <button type="button" class="action-btn btn-edit" title="Edit" (click)="openEditModal(row)">
-                  <span class="material-icons">edit</span>
+                <button *ngIf="canApprove() && isPending(row.status)" type="button" class="action-btn btn-accept"
+                  [disabled]="acceptingId() === row.id" (click)="acceptProduction(row)" title="Accept this entry">
+                  {{ acceptingId() === row.id ? '…' : 'Accept' }}
                 </button>
-                <button type="button" class="action-btn btn-delete" title="Delete" (click)="deleteProduction(row)">
-                  <span class="material-icons">delete</span>
-                </button>
+                <button type="button" class="action-btn btn-edit" title="Edit this entry" (click)="openEditModal(row)">Edit</button>
+                <button type="button" class="action-btn btn-delete" title="Delete this entry" (click)="deleteProduction(row)">Delete</button>
               </div>
             </td>
           </tr>
 
-          <tr *ngIf="paginatedRecords().length === 0">
+          <tr *ngIf="!isLoading() && paginatedRecords().length === 0">
             <td [attr.colspan]="visibleColumnCount()" class="empty-state-td">
               <div class="empty-box">
-                <span class="empty-icon">📂</span>
-                <p>No production records found for {{ activeShift() }} Shift.</p>
-                <button class="btn btn-sm btn-outline" (click)="openAddModal()">+ Log First Entry</button>
+                <h3>{{ searchText() ? 'No entry matches that search' : 'No production for this view' }}</h3>
+                <p *ngIf="searchText()">Try another client, machine, or style. Clear the search to see the full {{ activeShift() | lowercase }} shift.</p>
+                <p *ngIf="!searchText()">Nothing is logged for the {{ activeShift() | lowercase }} shift in this date range. Add the pieces made for the client.</p>
+                <div class="empty-actions">
+                  <button *ngIf="searchText() || dateScope() !== 'all'" type="button" class="btn btn-outline" (click)="clearSearch(); setDateScope('all')">Show all dates</button>
+                  <button type="button" class="btn btn-primary" (click)="openAddModal()">Add production</button>
+                </div>
               </div>
             </td>
           </tr>
@@ -217,115 +213,137 @@
       </table>
     </div>
 
-    <!-- Pagination Controls -->
     <div class="pagination-bar" *ngIf="totalRecords() > 0">
-      <div class="pagination-info">
-        Showing {{ pageStart() }} to {{ pageEnd() }} of {{ totalRecords() }} entries
-      </div>
+      <div class="pagination-info">Showing {{ pageStart() }} to {{ pageEnd() }} of {{ totalRecords() }} entries</div>
       <div class="pagination-controls">
-        <button type="button" class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">
-          ‹ Prev
-        </button>
+        <label class="page-size">
+          Rows
+          <select [value]="pageSize()" (change)="onPageSize($event)" aria-label="Rows per page">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+        <button type="button" class="page-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">Prev</button>
         <span class="page-indicator">Page {{ currentPage() }} of {{ totalPages() }}</span>
-        <button type="button" class="page-btn" [disabled]="currentPage() === totalPages()"
-          (click)="goToPage(currentPage() + 1)">
-          Next ›
-        </button>
+        <button type="button" class="page-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next</button>
       </div>
     </div>
   </div>
 
-  <!-- Add Production Popup Modal -->
   <div class="modal-backdrop" *ngIf="showAddModal()">
-    <div class="modal-dialog">
-      <!-- Modal Header -->
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="production-title">
       <div class="modal-header">
         <div class="modal-title-box">
-          <span class="modal-icon">🏭</span>
           <div>
-            <h3>{{ editingId() ? 'Edit Production Entry' : 'Add Production Entry' }}</h3>
-            <p>{{ editingId() ? 'Update the production record' : 'Input new machine production metrics and target records' }}</p>
+            <h3 id="production-title">{{ editingId() ? 'Edit production' : 'Add production' }}</h3>
+            <p>{{ editingId() ? 'Correct the pieces, target, or cost for this client.' : 'This entry is saved with today\'s date.' }}</p>
           </div>
         </div>
-        <button type="button" class="close-btn" (click)="closeAddModal()">×</button>
+        <button type="button" class="close-btn" (click)="closeAddModal()" aria-label="Close">×</button>
       </div>
 
-      <!-- Modal Form Body -->
       <form [formGroup]="productionForm" (ngSubmit)="saveProduction()">
         <div class="modal-body">
-
           <div class="form-grid">
-            <!-- Company Name -->
-            <div class="form-group" style="position: relative; z-index: 50;">
-              <label class="field-label">Company Name</label>
-              <app-custom-select formControlName="companyId" [options]="companies()" [enableTypeAhead]="true"
-                placeholder="Choose a company...">
-              </app-custom-select>
+            <div class="form-group client-field">
+              <label class="field-label">Client <span class="req">*</span></label>
+              <app-custom-select formControlName="companyId" [options]="companies()" [enableTypeAhead]="true" placeholder="Choose the client"></app-custom-select>
+              <span class="field-error" *ngIf="fieldErrors()['companyId']">{{ fieldErrors()['companyId'] }}</span>
             </div>
 
-            <!-- Employee Name -->
             <div class="form-group">
-              <label class="field-label">Employee Name</label>
-              <input type="text" class="form-control" formControlName="employeeName"
-                placeholder="Enter employee name..." />
-
+              <label class="field-label">Shift <span class="req">*</span></label>
+              <div class="shift-choice">
+                <button type="button" [class.active]="productionForm.get('shift')?.value === 'Day'" (click)="setFormShift('Day')">Day</button>
+                <button type="button" [class.active]="productionForm.get('shift')?.value === 'Night'" (click)="setFormShift('Night')">Night</button>
+              </div>
+              <span class="field-error" *ngIf="fieldErrors()['shift']">{{ fieldErrors()['shift'] }}</span>
             </div>
 
-            <!-- Machine Name -->
             <div class="form-group">
-              <label class="field-label">Machine Name</label>
-              <input type="text" class="form-control" formControlName="machineName" placeholder="Enter machine name..." />
+              <label class="field-label">Employee</label>
+              <input type="text" class="form-control" formControlName="employeeName" placeholder="Who ran the machine" />
+              <span class="field-error" *ngIf="fieldErrors()['employeeName']">{{ fieldErrors()['employeeName'] }}</span>
             </div>
 
-            <!-- Shift -->
             <div class="form-group">
-              <label class="field-label">Shift</label>
-              <input type="text" class="form-control" formControlName="shift" placeholder="Enter shift, for example Day or Night" />
+              <label class="field-label">Machine</label>
+              <input type="text" class="form-control" formControlName="machineName" placeholder="Machine name or number" />
             </div>
 
-            <!-- Style Name -->
             <div class="form-group">
-              <label class="field-label">Style Name</label>
-              <input type="text" class="form-control" formControlName="styleName" placeholder="Enter style name..." />
+              <label class="field-label">Style</label>
+              <input type="text" class="form-control" formControlName="styleName" placeholder="Style number" />
             </div>
 
-            <!-- Design Name -->
             <div class="form-group">
-              <label class="field-label">Design Name</label>
-              <input type="text" class="form-control" formControlName="designName" placeholder="Enter design name..." />
+              <label class="field-label">Design</label>
+              <input type="text" class="form-control" formControlName="designName" placeholder="Design name" />
             </div>
 
-            <!-- Total of Production -->
             <div class="form-group">
-              <label class="field-label">Total Production (Units)</label>
-              <input type="number" class="form-control" formControlName="totalProduction"
-                placeholder="Enter total units..." />
+              <label class="field-label">Pieces made <span class="req">*</span></label>
+              <input type="number" min="0" class="form-control" formControlName="totalProduction" placeholder="How many pieces" />
+              <span class="field-error" *ngIf="fieldErrors()['totalProduction']">{{ fieldErrors()['totalProduction'] }}</span>
             </div>
 
-            <!-- Target Production -->
             <div class="form-group">
-              <label class="field-label">Target Production</label>
-              <input type="number" class="form-control" formControlName="targetProduction"
-                placeholder="Enter target units..." />
+              <label class="field-label">Target pieces</label>
+              <input type="number" min="0" class="form-control" formControlName="targetProduction" placeholder="What the shift should make" />
+              <span class="field-error" *ngIf="fieldErrors()['targetProduction']">{{ fieldErrors()['targetProduction'] }}</span>
             </div>
 
-            <!-- Cost per Piece -->
             <div class="form-group">
-              <label class="field-label">Cost per Piece (₹)</label>
-              <input type="number" step="0.01" class="form-control" formControlName="costPerPiece"
-                placeholder="Enter cost per piece..." />
+              <label class="field-label">Cost per piece (₹)</label>
+              <input type="number" min="0" step="0.01" class="form-control" formControlName="costPerPiece" placeholder="Rate for one piece" />
+              <span class="field-error" *ngIf="fieldErrors()['costPerPiece']">{{ fieldErrors()['costPerPiece'] }}</span>
             </div>
           </div>
+
+          <div class="preview-strip">
+            <div>
+              <span class="preview-label">Running cost</span>
+              <strong>{{ runningCost() != null ? ('₹' + (runningCost() | number:'1.2-2')) : 'Add pieces and a rate' }}</strong>
+            </div>
+            <div>
+              <span class="preview-label">Against target</span>
+              <strong>{{ targetSummary() }}</strong>
+            </div>
+          </div>
+          <p class="save-note" *ngIf="!canApprove() && !editingId()">A supervisor accepts this entry before it counts as final.</p>
         </div>
 
-        <!-- Modal Footer -->
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline" (click)="closeAddModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            {{ editingId() ? 'Update Production Entry' : 'Save Production Entry' }}
+          <button type="button" class="btn btn-outline" (click)="closeAddModal()" [disabled]="isSaving()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+            {{ isSaving() ? 'Saving…' : (editingId() ? 'Update entry' : 'Save entry') }}
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="pendingDelete()" (click)="cancelDelete()">
+    <div class="modal-dialog confirm-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-box">
+          <div>
+            <h3>Delete this entry?</h3>
+            <p>
+              {{ pendingDelete()?.employeeName || pendingDelete()?.machineName || 'This entry' }}
+              · {{ companyName(pendingDelete()?.companyId || null) }}
+              · {{ pendingDelete()?.totalProduction | number }} pieces
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="cancelDelete()" [disabled]="isDeleting()">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDelete()" [disabled]="isDeleting()">
+          {{ isDeleting() ? 'Deleting…' : 'Delete entry' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

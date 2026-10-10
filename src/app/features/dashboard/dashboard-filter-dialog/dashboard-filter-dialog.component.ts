@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, Output, EventEmitter, OnDestroy, Input } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Observable, Subscription, map } from 'rxjs';
@@ -20,6 +20,7 @@ import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardFilterDialogComponent implements OnInit, OnDestroy {
+  @Input() context: 'dashboard' | 'challan' = 'dashboard';
   @Output() apply = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
 

@@ -38,6 +38,7 @@ export class CreateQuotationComponent {
   quotationForm: FormGroup;
   imagePreview: string | ArrayBuffer | null = null;
   isLoadingCompanies = true;
+  customFieldLabel = 'Additional Detail';
 
   companyOptions: CompanyDropdownModel[] = [];
 
@@ -55,6 +56,8 @@ export class CreateQuotationComponent {
       styleNo: [''],
       embDesign: [''],
       noOfStitches: [''],
+      numberOfTrimmings: [''],
+      customField: [''],
       chenilleColors: [''],
       normalEmbColors: [''],
       ratePerPiece: [''],
@@ -66,7 +69,19 @@ export class CreateQuotationComponent {
   }
 
   ngOnInit() {
+    this.loadFieldLabel();
     this.loadCompanies();
+  }
+
+  loadFieldLabel() {
+    this.rateQuotationService.getSettings().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        const label = response?.data?.customFieldLabel?.trim();
+        if (label) {
+          this.customFieldLabel = label;
+        }
+      }
+    });
   }
 
   loadCompanies() {
@@ -186,6 +201,8 @@ export class CreateQuotationComponent {
       "designName": formValue.embDesign ?? '',
       "productType": defaults.productType || "",
       "noOfStitches": this.asText(formValue.noOfStitches),
+      "numberOfTrimmings": this.asText(formValue.numberOfTrimmings),
+      "customField": this.asText(formValue.customField),
       "chenilleColors": this.asNumber(formValue.chenilleColors),
       "normalEmbColors": this.asNumber(formValue.normalEmbColors),
       "ratePerPiece": this.asText(formValue.ratePerPiece),

@@ -6,8 +6,8 @@
       <div class="header-content">
         <div class="icon-wrapper" [innerHTML]="icons.filter | safeHtml"></div>
         <div class="title-group">
-          <h2 class="title">Dashboard Filters</h2>
-          <p class="subtitle">Filter the dashboard summary and reports</p>
+          <h2 class="title">{{ context === 'challan' ? 'Challan filters' : 'Dashboard Filters' }}</h2>
+          <p class="subtitle">{{ context === 'challan' ? 'Choose the client, style, dates, and challan numbers to show.' : 'Filter the dashboard summary and reports' }}</p>
         </div>
       </div>
       <button class="btn-close" (click)="onCancel()" [innerHTML]="icons.close | safeHtml" aria-label="Close"></button>
@@ -84,8 +84,8 @@
       <div class="dc-section" [class.is-active]="filterForm.get('isDcBased')?.value">
         <div class="dc-toggle-header">
           <div class="dc-title">
-            <h4>Delivery Challan Based Stock</h4>
-            <p>Enable this option to calculate stock only for selected Delivery Challan(s).</p>
+            <h4>{{ context === 'challan' ? 'Specific challan numbers' : 'Delivery Challan Based Stock' }}</h4>
+            <p>{{ context === 'challan' ? 'Show only the challan numbers you pick. Leave this off to see every challan in the date range.' : 'Enable this option to calculate stock only for selected Delivery Challan(s).' }}</p>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" formControlName="isDcBased">

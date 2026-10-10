@@ -44,6 +44,7 @@ export class EditQuotationComponent {
   isGeneratingPdf = false;
   quotationId: number | null = null;
   quotationNo: string = '';
+  customFieldLabel = 'Additional Detail';
 
   companyOptions: CompanyDropdownModel[] = [];
 
@@ -62,6 +63,8 @@ export class EditQuotationComponent {
       styleNo: [''],
       embDesign: [''],
       noOfStitches: [''],
+      numberOfTrimmings: [''],
+      customField: [''],
       chenilleColors: [''],
       normalEmbColors: [''],
       ratePerPiece: [''],
@@ -80,7 +83,19 @@ export class EditQuotationComponent {
       return;
     }
     this.quotationId = Number(idParam);
+    this.loadFieldLabel();
     this.loadCompanies();
+  }
+
+  loadFieldLabel() {
+    this.rateQuotationService.getSettings().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        const label = response?.data?.customFieldLabel?.trim();
+        if (label) {
+          this.customFieldLabel = label;
+        }
+      }
+    });
   }
 
   loadCompanies() {
@@ -166,6 +181,8 @@ export class EditQuotationComponent {
           embCost: data.ratePerMeter,
           paymentTerms: data.remarks,
           noOfStitches: data.noOfStitches ?? '',
+          numberOfTrimmings: data.numberOfTrimmings ?? '',
+          customField: data.customField ?? '',
           chenilleColors: data.chenilleColors ?? '',
           normalEmbColors: data.normalEmbColors ?? '',
           ratePerPiece: data.ratePerPiece ?? ''
@@ -307,6 +324,8 @@ export class EditQuotationComponent {
       "designName": formValue.embDesign ?? '',
       "productType": defaults.productType || "",
       "noOfStitches": this.asText(formValue.noOfStitches),
+      "numberOfTrimmings": this.asText(formValue.numberOfTrimmings),
+      "customField": this.asText(formValue.customField),
       "chenilleColors": this.asNumber(formValue.chenilleColors),
       "normalEmbColors": this.asNumber(formValue.normalEmbColors),
       "ratePerPiece": this.asText(formValue.ratePerPiece),

@@ -1,18 +1,22 @@
 <div class="table-card animate-fade-in">
 
-  <!-- Table Header Section -->
   <div class="table-header">
-    <h3 class="title">Activity Log</h3>
+    <div>
+      <h3 class="title">{{ title }}</h3>
+      <p class="table-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+    </div>
     <div class="header-actions">
-      <div class="record-count"> Total Records: <span>{{ totalRecords }}</span> </div>
+      <div class="record-count">Challans: <span>{{ totalRecords }}</span></div>
       <div class="column-toggle-wrapper">
-        <button class="btn-icon settings-btn" (click)="toggleDropdown()" title="Toggle Columns">
+        <button type="button" class="btn-icon settings-btn" (click)="toggleDropdown($event)" title="Choose columns" aria-label="Choose columns">
           <span [innerHTML]="icons.settings | safeHtml"></span>
         </button>
         <div class="dropdown-menu" *ngIf="showColumnDropdown">
-          <div class="dropdown-header">Show/Hide Columns</div>
+          <div class="dropdown-header">Show or hide columns</div>
           <label *ngFor="let col of columns" class="dropdown-item">
-            <input type="checkbox" [checked]="!hiddenColumns.has(col.key)" (change)="toggleColumn(col.key, $event)">
+            <input type="checkbox" [checked]="!hiddenColumns.has(col.key)"
+              [disabled]="col.key === 'action' || col.key === 'sno'"
+              (change)="toggleColumn(col.key, $event)">
             <span>{{ col.label }}</span>
           </label>
         </div>
@@ -20,75 +24,114 @@
     </div>
   </div>
 
-  <!-- Table Container -->
   <div class="table-container">
     <table class="modern-table">
       <thead>
         <tr>
+          <th class="col-expand" aria-label="Details"></th>
           <th *ngFor="let col of visibleColumns" [style.text-align]="col.align || 'left'" [ngClass]="'col-' + col.key">
             {{ col.label }}
           </th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of data; let i = index" class="table-row">
-          <td *ngFor="let col of visibleColumns" [style.text-align]="col.align || 'left'" [ngClass]="'col-' + col.key">
+        <ng-container *ngFor="let row of data; let i = index">
+          <tr class="table-row" [class.is-open]="isExpanded(row)">
+            <td class="col-expand">
+              <button type="button" class="btn-expand" (click)="toggleExpand(row)"
+                [attr.aria-expanded]="isExpanded(row)"
+                [attr.aria-label]="isExpanded(row) ? 'Hide challan lines' : 'Show challan lines'">
+                <span class="chevron" [class.open]="isExpanded(row)">›</span>
+              </button>
+            </td>
+            <td *ngFor="let col of visibleColumns" [style.text-align]="col.align || 'left'" [ngClass]="'col-' + col.key">
 
-            <!-- S.No Column -->
-            <ng-container *ngIf="col.key === 'sno'">
-              {{ (currentPage - 1) * pageSize + i + 1 }}
-            </ng-container>
+              <ng-container *ngIf="col.key === 'sno'">
+                {{ (currentPage - 1) * pageSize + i + 1 }}
+              </ng-container>
 
-            <!-- Count/Meter Column (Badge) -->
-            <ng-container *ngIf="col.key === 'bitsCount' || col.key === 'totalMeter'">
-              <span class="badge-count">{{ row[col.key] }}</span>
-            </ng-container>
+              <ng-container *ngIf="col.key === 'bitsCount' || col.key === 'totalMeter'">
+                <span class="badge-count">{{ row[col.key] | number:(col.key === 'totalMeter' ? '1.2-2' : '1.0-2') }}</span>
+              </ng-container>
 
-            <!-- Authorized By Column (Avatar + Name) -->
-            <ng-container *ngIf="col.key === 'authorizedBy'">
-              <div class="auth-wrapper">
-                <div class="avatar">
-                  <img [src]="row['profileImage'] || 'assets/images/default-avatar.png'" [alt]="row[col.key]">
+              <ng-container *ngIf="col.key === 'dcNo'">
+                <div class="dc-no-cell">
+                  <span class="dc-no">{{ row.dcNo || '-' }}</span>
+                  <button *ngIf="row.dcNo && row.dcNo !== '-'" type="button" class="btn-copy"
+                    (click)="copyDc(row, $event)"
+                    [attr.aria-label]="'Copy DC number ' + row.dcNo">
+                    {{ copiedKey === rowKey(row) ? 'Copied' : 'Copy' }}
+                  </button>
                 </div>
-                <span class="auth-name">{{ row[col.key] }}</span>
+              </ng-container>
+
+              <ng-container *ngIf="col.key === 'entryKind'">
+                <span class="type-pill" [class.meter]="row.entryKind === 'Meter'" [class.size]="row.entryKind === 'Size'">
+                  {{ row.entryKind || '—' }}
+                </span>
+              </ng-container>
+
+              <ng-container *ngIf="col.key === 'action'">
+                <div class="action-buttons">
+                  <button *ngIf="showViewAction" type="button" class="btn-icon view" (click)="onView(row)" [title]="viewTitle" [attr.aria-label]="viewTitle">
+                    <span [innerHTML]="icons.view | safeHtml"></span>
+                  </button>
+                  <button type="button" class="btn-icon edit" (click)="onEdit(row)" title="Edit this challan" aria-label="Edit this challan">
+                    <span [innerHTML]="icons.edit | safeHtml"></span>
+                  </button>
+                  <button type="button" class="btn-icon delete" (click)="onDelete(row)" title="Delete this challan" aria-label="Delete this challan">
+                    <span [innerHTML]="icons.delete | safeHtml"></span>
+                  </button>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="!specialKeys.includes(col.key)">
+                {{ row[col.key] || '-' }}
+              </ng-container>
+
+            </td>
+          </tr>
+
+          <tr *ngIf="isExpanded(row)" class="detail-row">
+            <td [attr.colspan]="visibleColumns.length + 1">
+              <div class="detail-panel">
+                <div class="detail-head">
+                  <div>
+                    <div class="detail-kicker">Challan lines</div>
+                    <div class="detail-title">DC {{ row.dcNo }} · {{ row.companyName }} · {{ row.date }}</div>
+                  </div>
+                  <div class="detail-summary" *ngIf="lineSummary(row)">{{ lineSummary(row) }}</div>
+                </div>
+
+                <div class="line-list" *ngIf="lineItems(row).length; else noLines">
+                  <div class="line-chip" *ngFor="let line of lineItems(row)">
+                    <span class="line-primary">{{ line.primary }}</span>
+                    <span class="line-secondary">{{ line.secondary }}</span>
+                  </div>
+                </div>
+                <ng-template #noLines>
+                  <p class="no-lines">No size or meter lines were saved on this challan.</p>
+                </ng-template>
+
+                <div class="detail-actions">
+                  <button *ngIf="showPrintAction" type="button" class="text-action" (click)="onView(row)">Open printable challan</button>
+                  <button type="button" class="text-action" (click)="onEdit(row)">Edit entry</button>
+                  <button type="button" class="text-action danger" (click)="onDelete(row)">Delete</button>
+                </div>
               </div>
-            </ng-container>
+            </td>
+          </tr>
+        </ng-container>
 
-            <!-- Action Column -->
-            <ng-container *ngIf="col.key === 'action'">
-              <div class="action-buttons">
-                <button *ngIf="showViewAction" class="btn-icon view" (click)="onView(row)" title="View">
-                  <span [innerHTML]="icons.view | safeHtml"></span>
-                </button>
-                <button class="btn-icon edit" (click)="onEdit(row)" title="Edit">
-                  <span [innerHTML]="icons.edit | safeHtml"></span>
-                </button>
-                <button class="btn-icon delete" (click)="onDelete(row)" title="Delete">
-                  <span [innerHTML]="icons.delete | safeHtml"></span>
-                </button>
-              </div>
-            </ng-container>
-
-            <!-- Default Columns -->
-            <ng-container *ngIf="!['sno', 'bitsCount', 'totalMeter', 'authorizedBy', 'action'].includes(col.key)">
-              {{ row[col.key] || '-' }}
-            </ng-container>
-
-          </td>
-        </tr>
-
-        <!-- No Records State -->
         <tr *ngIf="data.length === 0">
-          <td [attr.colspan]="visibleColumns.length" class="no-records">
+          <td [attr.colspan]="visibleColumns.length + 1" class="no-records">
             <div class="empty-state">
-              <span>No Records Found</span>
+              <span>No challans on this page</span>
             </div>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
-
-
 
 </div>

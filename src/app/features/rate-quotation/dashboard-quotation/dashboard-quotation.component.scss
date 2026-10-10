@@ -202,6 +202,38 @@
   }
 }
 
+.quote-link {
+  border: 0;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+
+  &:hover {
+    background: #dbeafe;
+  }
+}
+
+.empty-row {
+  text-align: center;
+  color: #64748b;
+  padding: 28px 16px !important;
+}
+
+.filter-select-group select,
+.filter-date-group input {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 14px;
+}
+
 /* Typography utilities for table cells */
 .font-medium {
   font-weight: 700;

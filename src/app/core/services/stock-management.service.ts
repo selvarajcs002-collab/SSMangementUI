@@ -66,22 +66,22 @@ export class StockManagementService {
     return payload;
   }
 
-  getSummary(filters: any): Observable<StockSummary> {
+  getSummary(filters: any): Observable<StockSummary | null> {
     const payload = this.formatFilters(filters);
     return this.api.post<ApiResponse<StockSummary>>(`${this.baseRoute}/summary`, payload)
-      .pipe(map(res => res.data));
+      .pipe(map(res => res?.data ?? null));
   }
 
   getStockBalance(filters: any): Observable<StockBalanceSizeWise[]> {
     const payload = this.formatFilters(filters);
     return this.api.post<ApiResponse<StockBalanceSizeWise[]>>(`${this.baseRoute}/balance`, payload)
-      .pipe(map(res => res.data));
+      .pipe(map(res => res?.data ?? []));
   }
 
   getLastTransactions(filters: any): Observable<LastTransaction[]> {
     const payload = this.formatFilters(filters);
     return this.api.post<ApiResponse<LastTransaction[]>>(`${this.baseRoute}/transactions`, payload)
-      .pipe(map(res => res.data));
+      .pipe(map(res => res?.data ?? []));
   }
 
   getStyles(companyId: number): Observable<any[]> {

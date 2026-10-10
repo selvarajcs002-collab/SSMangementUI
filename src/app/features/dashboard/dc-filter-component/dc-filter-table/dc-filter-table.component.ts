@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 
 export interface TableColumn {
   key: string;
@@ -23,30 +23,117 @@ export class DcFilterTableComponent {
   @Input() currentPage: number = 1;
   @Input() pageSize: number = 10;
   @Input() showViewAction: boolean = true;
+  @Input() showPrintAction: boolean = false;
+  @Input() title: string = 'Challans';
+  @Input() subtitle: string = '';
+  @Input() viewTitle: string = 'View';
+  @Input() expandedId: string | number | null = null;
 
   @Output() view = new EventEmitter<any>();
   @Output() edit = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
   @Output() pageChange = new EventEmitter<number>();
+  @Output() expandToggle = new EventEmitter<string | number | null>();
 
   showColumnDropdown = false;
   hiddenColumns: Set<string> = new Set();
+  copiedKey: string | number | null = null;
+  specialKeys = ['sno', 'bitsCount', 'totalMeter', 'authorizedBy', 'action', 'dcNo', 'entryKind'];
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.column-toggle-wrapper')) {
+      this.showColumnDropdown = false;
+    }
+  }
 
   get visibleColumns(): TableColumn[] {
     return this.columns.filter(c => !this.hiddenColumns.has(c.key));
   }
 
-  toggleDropdown(): void {
+  toggleDropdown(event: Event): void {
+    event.stopPropagation();
     this.showColumnDropdown = !this.showColumnDropdown;
   }
 
   toggleColumn(key: string, event: Event): void {
+    if (key === 'action' || key === 'sno') return;
     const isChecked = (event.target as HTMLInputElement).checked;
     if (isChecked) {
       this.hiddenColumns.delete(key);
     } else {
       this.hiddenColumns.add(key);
     }
+  }
+
+  rowKey(row: any): string | number {
+    return row?.fullData?.id ?? row?.fullData?.Id ?? row?.dcNo ?? '';
+  }
+
+  isExpanded(row: any): boolean {
+    return this.expandedId != null && String(this.expandedId) === String(this.rowKey(row));
+  }
+
+  toggleExpand(row: any): void {
+    const key = this.rowKey(row);
+    this.expandToggle.emit(this.isExpanded(row) ? null : key);
+  }
+
+  lineItems(row: any): { primary: string; secondary: string }[] {
+    const details = row?.fullData?.details || row?.fullData?.Details || [];
+    if (!Array.isArray(details)) return [];
+    return details.map((detail: any) => {
+      const size = detail.size ?? detail.Size;
+      const count = detail.count ?? detail.Count;
+      const meter = detail.meterValue ?? detail.MeterValue;
+      const bits = detail.bitsCount ?? detail.BitsCount;
+      const total = detail.totalMeter ?? detail.TotalMeter;
+      if (size) {
+        return { primary: String(size), secondary: `${count ?? 0} pcs` };
+      }
+      const meterText = meter != null && meter !== '' ? `${Number(meter).toFixed(2)} m / bit` : 'Meter';
+      const bitsText = bits != null && bits !== '' ? `${bits} bits` : '';
+      const totalText = total != null && total !== '' ? `${Number(total).toFixed(2)} m total` : '';
+      return { primary: meterText, secondary: [bitsText, totalText].filter(Boolean).join(' · ') || '—' };
+    });
+  }
+
+  lineSummary(row: any): string {
+    if (!this.lineItems(row).length) return '';
+    if (row.entryKind === 'Meter' || (Number(row.totalMeter) > 0 && row.entryKind !== 'Size')) {
+      return `Total meter ${Number(row.totalMeter || 0).toFixed(2)}`;
+    }
+    return `Total pieces ${Number(row.bitsCount || 0)}`;
+  }
+
+  copyDc(row: any, event: Event): void {
+    event.stopPropagation();
+    const value = String(row?.dcNo || '');
+    if (!value || value === '-') return;
+    const done = () => {
+      this.copiedKey = this.rowKey(row);
+      setTimeout(() => {
+        if (this.copiedKey === this.rowKey(row)) this.copiedKey = null;
+      }, 1500);
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(value).then(done).catch(() => this.fallbackCopy(value, done));
+      return;
+    }
+    this.fallbackCopy(value, done);
+  }
+
+  private fallbackCopy(value: string, done: () => void): void {
+    const area = document.createElement('textarea');
+    area.value = value;
+    area.style.position = 'fixed';
+    area.style.left = '-9999px';
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    document.body.removeChild(area);
+    done();
   }
 
   Math = Math;

@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -11,7 +12,6 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
-import { CustomSelectComponent } from '../../../shared/components/custom-select/custom-select.component';
 import { RateQuotationService, RateQuotationModel } from '../../../core/services/rate-quotation.service';
 import { MessageService } from '../../../core/services/message.service';
 
@@ -22,6 +22,7 @@ import { MessageService } from '../../../core/services/message.service';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
@@ -31,27 +32,26 @@ import { MessageService } from '../../../core/services/message.service';
     MatNativeDateModule,
     MatButtonModule,
     MatTableModule,
-    MatPaginatorModule,
-    CustomSelectComponent
+    MatPaginatorModule
   ]
 })
 export class DashboardQuotationComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['index', 'quoteNo', 'companyName', 'styleNo', 'embDesign', 'date', 'actions'];
   dataSource = new MatTableDataSource<RateQuotationModel>([]);
+  allQuotations: RateQuotationModel[] = [];
+  searchQuery = '';
+  companyFilter = '';
+  statusFilter = '';
+  fromDate = '';
+  toDate = '';
+  companyNames: string[] = [];
+  statusNames: string[] = [];
+
+  get filteredCount(): number {
+    return this.dataSource.data.length;
+  }
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
-
-  companyOptions = [
-    { key: 'all', value: 'All Companies' },
-    { key: 'acme', value: 'Acme Corp' },
-    { key: 'globex', value: 'Globex' }
-  ];
-
-  statusOptions = [
-    { key: 'all', value: 'All Status' },
-    { key: 'approved', value: 'Approved' },
-    { key: 'draft', value: 'Draft' }
-  ];
 
   constructor(
     private router: Router, 
@@ -72,7 +72,10 @@ export class DashboardQuotationComponent implements OnInit, AfterViewInit {
     this.rateQuotationService.getAllRateQuotations().subscribe({
       next: (response) => {
         if (response && response.success && response.data) {
-          this.dataSource.data = response.data;
+          this.allQuotations = response.data;
+          this.companyNames = Array.from(new Set(response.data.map(item => item.companyName).filter(Boolean))).sort();
+          this.statusNames = Array.from(new Set(response.data.map(item => item.status).filter(Boolean))).sort();
+          this.applyFilter();
           this.cdr.detectChanges();
         }
       },
@@ -80,6 +83,34 @@ export class DashboardQuotationComponent implements OnInit, AfterViewInit {
         console.error('Error fetching rate quotations', error);
       }
     });
+  }
+
+  applyFilter(): void {
+    const query = this.searchQuery.trim().toLowerCase();
+    this.dataSource.data = this.allQuotations.filter(item => {
+      const haystack = [item.quotationNo, item.companyName, item.styleNo, item.designName]
+        .join(' ')
+        .toLowerCase();
+      const matchesQuery = !query || haystack.includes(query);
+      const matchesCompany = !this.companyFilter || item.companyName === this.companyFilter;
+      const matchesStatus = !this.statusFilter || item.status === this.statusFilter;
+      const quoteDate = item.quotationDate ? item.quotationDate.slice(0, 10) : '';
+      const matchesFrom = !this.fromDate || quoteDate >= this.fromDate;
+      const matchesTo = !this.toDate || quoteDate <= this.toDate;
+      return matchesQuery && matchesCompany && matchesStatus && matchesFrom && matchesTo;
+    });
+    if (this.paginator) {
+      this.paginator.firstPage();
+    }
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.companyFilter = '';
+    this.statusFilter = '';
+    this.fromDate = '';
+    this.toDate = '';
+    this.applyFilter();
   }
 
   navigateToCreate() {

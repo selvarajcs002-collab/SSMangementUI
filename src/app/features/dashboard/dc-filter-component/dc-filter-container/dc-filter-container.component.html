@@ -1,112 +1,175 @@
 <div class="dc-container animate-fade-in">
 
-  <!-- Header Section -->
-  <div class="section-header">
+  <div class="page-hero">
     <app-dc-filter-header></app-dc-filter-header>
+    <div class="hero-actions">
+      <button type="button" class="btn-hero secondary" (click)="goToInward()">New inward</button>
+      <button type="button" class="btn-hero primary" (click)="goToOutward()">New outward</button>
+    </div>
   </div>
 
-  <!-- Toggle Section (Inward/Outward only) -->
-  <div class="toggle-wrapper">
-    <app-dynamic-toggle [config]="toggleConfig" [(value)]="activeView" (valueChange)="onToggleChange($event)">
-    </app-dynamic-toggle>
+  <div class="context-bar">
+    <div class="toggle-block">
+      <app-dynamic-toggle [config]="toggleConfig" [(value)]="activeView" (valueChange)="onToggleChange($event)">
+      </app-dynamic-toggle>
+      <p class="view-hint">
+        {{ activeView === 'inward'
+          ? 'Inward is cloth or work you received from the client.'
+          : 'Outward is the finished delivery you send back to the client.' }}
+      </p>
+    </div>
+    <div class="mode-switch" role="group" aria-label="Challan type">
+      <button type="button" [class.active]="currentViewType === 'S'" (click)="setMode('S')">Size</button>
+      <button type="button" [class.active]="currentViewType === 'M'" (click)="setMode('M')">Meter</button>
+      <button type="button" [class.active]="currentViewType === 'ALL'" (click)="setMode('ALL')">All</button>
+    </div>
   </div>
+  <p class="mode-hint">Size lists pieces by size. Meter lists fabric length and bits. All shows both.</p>
 
-  <!-- Loading Indicator -->
-  <div class="loader-container" *ngIf="isLoading">
-    <div class="spinner"></div>
-    <span>Loading Records...</span>
-  </div>
-
-  <!-- Filter Control Button -->
-  <div class="filter-controls" *ngIf="!isLoading">
-    <app-excel-report [filters]="excelReportPayload"></app-excel-report>
-    <button class="btn-toggle-filter" (click)="openFilterDialog()">
+  <div class="toolbar">
+    <label class="search-field">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
-      </svg>
-      Filters
-    </button>
-  </div>
-
-  <!-- New Filter Dialog -->
-  <app-dashboard-filter-dialog 
-    *ngIf="showFilter" 
-    (apply)="closeFilterDialog()" 
-    (cancel)="closeFilterDialog()">
-  </app-dashboard-filter-dialog>
-
-
-
-
-  <!-- Table Section -->
-  <div class="section-table" *ngIf="!isLoading && tableData.length > 0">
-    <app-dc-filter-table [columns]="tableColumns" [data]="tableData" [totalRecords]="totalRecords"
-      [currentPage]="pageNumber" [showViewAction]="activeView === 'outward'" (view)="onView($event)"
-      (edit)="onEdit($event)" (delete)="onDelete($event)" (pageChange)="onPageChange($event)">
-    </app-dc-filter-table>
-  </div>
-
-  <!-- Empty State -->
-  <div class="empty-state-wrapper" *ngIf="!isLoading && tableData.length === 0">
-    <div class="empty-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.3-4.3" />
       </svg>
-      <p>No matching records found.</p>
+      <input type="search" [value]="searchText" (input)="onSearchInput($event)"
+        placeholder="Search DC number, client, style, design, or colour" aria-label="Search challans" />
+      <button *ngIf="searchText" type="button" class="search-clear" (click)="clearSearch()" aria-label="Clear search">×</button>
+    </label>
+    <button type="button" class="btn-tool" (click)="toggleSort()">
+      {{ sortDirection === 'DESC' ? 'Newest first' : 'Oldest first' }}
+    </button>
+    <button type="button" class="btn-tool" (click)="refresh()">Refresh</button>
+    <app-excel-report [filters]="excelReportPayload"></app-excel-report>
+    <button type="button" class="btn-toggle-filter" (click)="openFilterDialog()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+      </svg>
+      Filters
+      <span class="filter-badge" *ngIf="activeFilterCount">{{ activeFilterCount }}</span>
+    </button>
+  </div>
+
+  <div class="filter-chips" *ngIf="dateRangeLabel || filterChips.length">
+    <button type="button" class="chip quiet" (click)="openFilterDialog()">{{ dateRangeLabel }}</button>
+    <button type="button" class="chip" *ngFor="let chip of filterChips" (click)="clearChip(chip.key)">
+      {{ chip.label }} <span aria-hidden="true">×</span>
+    </button>
+    <button type="button" class="chip reset" *ngIf="activeFilterCount || searchText" (click)="resetFilters()">Clear all</button>
+  </div>
+
+  <div class="limit-note" *ngIf="wideCapped && !isLoading">
+    This list uses the latest 500 challans in the selected dates. Shorten the date range if a challan is missing.
+  </div>
+
+  <div class="loading-line" *ngIf="isLoading" role="status">{{ loadingLabel }}</div>
+
+  <div class="summary-cards" *ngIf="hasLoaded">
+    <div class="summary-card">
+      <span class="summary-label">Challans</span>
+      <span class="summary-value">{{ totalRecords | number }}</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">{{ quantityLabel }}</span>
+      <span class="summary-value">{{ summaryTotals.totalBitsCount | number:'1.0-2' }}</span>
+    </div>
+    <div class="summary-card" *ngIf="showMeterCard">
+      <span class="summary-label">Total meter</span>
+      <span class="summary-value">{{ summaryTotals.totalMeter | number:'1.2-2' }}</span>
+    </div>
+    <p class="summary-note">{{ summaryNote }}</p>
+  </div>
+
+  <app-dashboard-filter-dialog
+    *ngIf="showFilter"
+    context="challan"
+    (apply)="closeFilterDialog()"
+    (cancel)="closeFilterDialog()">
+  </app-dashboard-filter-dialog>
+
+  <div class="section-table" *ngIf="tableData.length > 0">
+    <app-dc-filter-table
+      [columns]="tableColumns"
+      [data]="tableData"
+      [totalRecords]="totalRecords"
+      [currentPage]="pageNumber"
+      [pageSize]="pageSize"
+      [title]="activeView === 'inward' ? 'Received challans' : 'Sent challans'"
+      [subtitle]="activeView === 'inward'
+        ? 'Quantities received from the client. Open a row to see each size or meter.'
+        : 'Delivery sent to the client. Open the printable challan before you hand it over.'"
+      [showViewAction]="true"
+      [showPrintAction]="activeView === 'outward'"
+      [viewTitle]="activeView === 'outward' ? 'Open printable challan' : 'Show quantities'"
+      [expandedId]="expandedId"
+      (expandToggle)="onExpand($event)"
+      (view)="onView($event)"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+      (pageChange)="onPageChange($event)">
+    </app-dc-filter-table>
+  </div>
+
+  <div class="empty-state-wrapper" *ngIf="!isLoading && hasLoaded && tableData.length === 0">
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+      <h3>{{ emptyTitle }}</h3>
+      <p>{{ emptyHint }}</p>
+      <div class="empty-actions">
+        <button *ngIf="loadFailed" type="button" class="btn-hero primary" (click)="refresh()">Try again</button>
+        <button *ngIf="!loadFailed && (activeFilterCount || searchText)" type="button" class="btn-hero secondary" (click)="resetFilters()">Clear filters</button>
+        <button *ngIf="!loadFailed" type="button" class="btn-hero secondary" (click)="goToInward()">New inward</button>
+        <button *ngIf="!loadFailed" type="button" class="btn-hero primary" (click)="goToOutward()">New outward</button>
+      </div>
     </div>
   </div>
 
-  <!-- No Data Dialog Modal -->
-  <div class="modal-overlay" *ngIf="showNoDataModal">
-    <div class="modal-content modern-dialog">
-      <div class="modal-header">
-        <h3 class="modal-title">No Records Found</h3>
-      </div>
-      <div class="modal-body">
-        <p class="modal-text">Sorry mama, there is nothing to show for the selected filters.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-ok" (click)="closeNoDataModal()">OK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Summary Section -->
-  <div class="summary-section card-wrapper" *ngIf="!isLoading && tableData.length > 0">
-    <div class="summary-content">
-      <h3 class="summary-title">Summary</h3>
-      <div class="summary-grid">
-        <div class="summary-item" *ngIf="currentViewType === 'S'">
-          <span class="summary-label">Total Bits Count:</span>
-          <span class="summary-value">{{ summaryTotals.totalBitsCount }}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Total Meter:</span>
-          <span class="summary-value">{{ summaryTotals.totalMeter }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Pagination Controls (Explicit) -->
-  <div class="pagination-controls-wrapper" *ngIf="!isLoading && totalRecords > 0">
+  <div class="pagination-controls-wrapper" *ngIf="hasLoaded && totalRecords > 0">
     <div class="pagination-info">
-      Showing {{ (pageNumber - 1) * pageSize + 1 }} to {{ Math.min(pageNumber * pageSize, totalRecords) }} of {{
-      totalRecords }} entries
+      Showing {{ rangeStart }} to {{ rangeEnd }} of {{ totalRecords }} challans
     </div>
     <div class="pagination-actions">
-      <button class="btn-nav" [disabled]="pageNumber === 1" (click)="prevPage()">
-        Prev
+      <label class="page-size">
+        Rows
+        <select [value]="pageSize" (change)="onPageSize($event)" aria-label="Rows per page">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+        </select>
+      </label>
+      <button type="button" class="btn-nav" [disabled]="pageNumber === 1" (click)="prevPage()">Prev</button>
+      <button type="button" class="btn-page" *ngFor="let page of visiblePages"
+        [class.active]="page === pageNumber" [class.dots]="page < 0" [disabled]="page < 0"
+        (click)="onPageChange(page)">
+        {{ page < 0 ? '…' : page }}
       </button>
+      <button type="button" class="btn-nav" [disabled]="pageNumber === totalPages" (click)="nextPage()">Next</button>
+    </div>
+  </div>
 
-      <span class="page-info">Page {{ pageNumber }} of {{ totalPages }}</span>
-
-      <button class="btn-nav" [disabled]="pageNumber === totalPages" (click)="nextPage()">
-        Next
-      </button>
+  <div class="modal-overlay" *ngIf="pendingDelete" (click)="cancelDelete()">
+    <div class="modal-content modern-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title"
+      (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="delete-title" class="modal-title">Delete this challan?</h3>
+      </div>
+      <div class="modal-body">
+        <p class="modal-text">{{ pendingDelete.message }}</p>
+      </div>
+      <div class="modal-footer modal-actions">
+        <button type="button" class="btn-cancel" (click)="cancelDelete()" [disabled]="isDeleting">Cancel</button>
+        <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="isDeleting">
+          {{ isDeleting ? 'Deleting…' : 'Delete challan' }}
+        </button>
+      </div>
     </div>
   </div>
 

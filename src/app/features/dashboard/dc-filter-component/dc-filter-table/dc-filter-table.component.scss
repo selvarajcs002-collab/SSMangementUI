@@ -18,11 +18,46 @@
   padding: 20px 24px;
   border-bottom: 1.5px solid #F1F5F9;
 
+  .title-block {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .title {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     color: #0F172A;
     margin: 0;
+  }
+
+  .btn-info-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #94A3B8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s ease;
+
+    span {
+      display: flex;
+    }
+
+    &:hover {
+      background: #F1F5F9;
+      color: #3B82F6;
+    }
   }
 
   .table-subtitle {
@@ -146,8 +181,8 @@
   }
 
   .col-action {
-    width: 8%;
-    min-width: 120px;
+    width: 10%;
+    min-width: 148px;
     text-align: center;
   }
 
@@ -224,12 +259,22 @@
     display: flex;
   }
 
+  &.lines {
+    color: #64748B;
+
+    &:hover,
+    &.active {
+      background: #EFF6FF;
+      color: #2563EB;
+    }
+  }
+
   &.view {
     color: #64748B;
 
     &:hover {
-      background: #F1F5F9;
-      color: #3B82F6;
+      background: #ECFDF5;
+      color: #059669;
     }
   }
 
@@ -453,20 +498,91 @@
   letter-spacing: 0.01em;
 }
 
-.btn-copy,
-.text-action {
+.btn-copy-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   border: 1px solid #E2E8F0;
-  background: #fff;
-  color: #1D4ED8;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
+  background: #F8FAFC;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+
+  span {
+    display: flex;
+  }
+
+  &:hover {
+    background: #EFF6FF;
+    border-color: #BFDBFE;
+    color: #2563EB;
+  }
+
+  &.copied {
+    background: #ECFDF5;
+    border-color: #A7F3D0;
+    color: #059669;
+  }
 }
 
-.btn-copy {
-  height: 26px;
-  padding: 0 8px;
+.detail-head-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-icon-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F8FAFC;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+}
+
+.btn-icon-sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+
+  span {
+    display: flex;
+  }
+
+  &:hover {
+    background: #FFFFFF;
+    color: #2563EB;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  &.print:hover {
+    color: #059669;
+  }
+
+  &.copied {
+    color: #059669;
+    background: #ECFDF5;
+  }
+
+  &.danger:hover {
+    background: #FEF2F2;
+    color: #DC2626;
+  }
 }
 
 .type-pill {

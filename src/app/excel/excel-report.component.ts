@@ -17,6 +17,7 @@ export class ExcelReportComponent {
     mode: 'Inward',
     type: 'Size'
   };
+  @Input() iconOnly: boolean = false;
 
   constructor(private excelReportService: ExcelReportService) { }
 

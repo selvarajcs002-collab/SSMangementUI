@@ -1,14 +1,27 @@
 <div class="table-card animate-fade-in">
 
   <div class="table-header">
-    <div>
-      <h3 class="title">{{ title }}</h3>
-      <p class="table-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+    <div class="title-block">
+      <div class="title-row">
+        <h3 class="title">{{ title }}</h3>
+        <button
+          *ngIf="subtitle"
+          type="button"
+          class="btn-info-icon"
+          (click)="showSubtitleInfo = !showSubtitleInfo"
+          [title]="subtitle"
+          aria-label="Table info">
+          <span [innerHTML]="icons.info | safeHtml"></span>
+        </button>
+      </div>
+      <p class="table-subtitle" *ngIf="subtitle && showSubtitleInfo">{{ subtitle }}</p>
     </div>
     <div class="header-actions">
-      <div class="record-count">Challans: <span>{{ totalRecords }}</span></div>
+      <div class="record-count" [title]="'Total challans: ' + totalRecords">
+        <span>{{ totalRecords }}</span>
+      </div>
       <div class="column-toggle-wrapper">
-        <button type="button" class="btn-icon settings-btn" (click)="toggleDropdown($event)" title="Choose columns" aria-label="Choose columns">
+        <button type="button" class="btn-icon settings-btn" (click)="toggleDropdown($event)" title="Show or hide columns" aria-label="Show or hide columns">
           <span [innerHTML]="icons.settings | safeHtml"></span>
         </button>
         <div class="dropdown-menu" *ngIf="showColumnDropdown">
@@ -39,6 +52,7 @@
           <tr class="table-row" [class.is-open]="isExpanded(row)">
             <td class="col-expand">
               <button type="button" class="btn-expand" (click)="toggleExpand(row)"
+                [title]="isExpanded(row) ? 'Hide challan lines' : 'Show challan lines'"
                 [attr.aria-expanded]="isExpanded(row)"
                 [attr.aria-label]="isExpanded(row) ? 'Hide challan lines' : 'Show challan lines'">
                 <span class="chevron" [class.open]="isExpanded(row)">›</span>
@@ -57,10 +71,12 @@
               <ng-container *ngIf="col.key === 'dcNo'">
                 <div class="dc-no-cell">
                   <span class="dc-no">{{ row.dcNo || '-' }}</span>
-                  <button *ngIf="row.dcNo && row.dcNo !== '-'" type="button" class="btn-copy"
+                  <button *ngIf="row.dcNo && row.dcNo !== '-'" type="button" class="btn-copy-icon"
+                    [class.copied]="copiedKey === rowKey(row)"
                     (click)="copyDc(row, $event)"
+                    [title]="copiedKey === rowKey(row) ? 'Copied!' : 'Copy DC number ' + row.dcNo"
                     [attr.aria-label]="'Copy DC number ' + row.dcNo">
-                    {{ copiedKey === rowKey(row) ? 'Copied' : 'Copy' }}
+                    <span [innerHTML]="(copiedKey === rowKey(row) ? icons.check : icons.copy) | safeHtml"></span>
                   </button>
                 </div>
               </ng-container>
@@ -73,13 +89,28 @@
 
               <ng-container *ngIf="col.key === 'action'">
                 <div class="action-buttons">
-                  <button *ngIf="showViewAction" type="button" class="btn-icon view" (click)="onView(row)" [title]="viewTitle" [attr.aria-label]="viewTitle">
-                    <span [innerHTML]="icons.view | safeHtml"></span>
+                  <button
+                    type="button"
+                    class="btn-icon lines"
+                    [class.active]="isExpanded(row)"
+                    (click)="toggleExpand(row)"
+                    [title]="isExpanded(row) ? 'Hide quantities' : 'View quantities'"
+                    [attr.aria-label]="isExpanded(row) ? 'Hide quantities' : 'View quantities'">
+                    <span [innerHTML]="icons.lines | safeHtml"></span>
                   </button>
-                  <button type="button" class="btn-icon edit" (click)="onEdit(row)" title="Edit this challan" aria-label="Edit this challan">
+                  <button
+                    *ngIf="showPrintAction"
+                    type="button"
+                    class="btn-icon view"
+                    (click)="onView(row)"
+                    [title]="viewTitle"
+                    [attr.aria-label]="viewTitle">
+                    <span [innerHTML]="icons.print | safeHtml"></span>
+                  </button>
+                  <button type="button" class="btn-icon edit" (click)="onEdit(row)" title="Edit challan" aria-label="Edit challan">
                     <span [innerHTML]="icons.edit | safeHtml"></span>
                   </button>
-                  <button type="button" class="btn-icon delete" (click)="onDelete(row)" title="Delete this challan" aria-label="Delete this challan">
+                  <button type="button" class="btn-icon delete" (click)="onDelete(row)" title="Delete challan" aria-label="Delete challan">
                     <span [innerHTML]="icons.delete | safeHtml"></span>
                   </button>
                 </div>
@@ -100,7 +131,49 @@
                     <div class="detail-kicker">Challan lines</div>
                     <div class="detail-title">DC {{ row.dcNo }} · {{ row.companyName }} · {{ row.date }}</div>
                   </div>
-                  <div class="detail-summary" *ngIf="lineSummary(row)">{{ lineSummary(row) }}</div>
+                  <div class="detail-head-right">
+                    <div class="detail-summary" *ngIf="lineSummary(row)">{{ lineSummary(row) }}</div>
+                    <div class="detail-icon-actions">
+                      <button
+                        *ngIf="row.dcNo && row.dcNo !== '-'"
+                        type="button"
+                        class="btn-icon-sm"
+                        [class.copied]="copiedKey === rowKey(row)"
+                        (click)="copyDc(row, $event)"
+                        [title]="copiedKey === rowKey(row) ? 'Copied!' : 'Copy DC number'">
+                        <span [innerHTML]="(copiedKey === rowKey(row) ? icons.check : icons.copy) | safeHtml"></span>
+                      </button>
+                      <button
+                        *ngIf="showPrintAction"
+                        type="button"
+                        class="btn-icon-sm print"
+                        (click)="onView(row)"
+                        title="Open printable challan">
+                        <span [innerHTML]="icons.print | safeHtml"></span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-icon-sm edit"
+                        (click)="onEdit(row)"
+                        title="Edit challan">
+                        <span [innerHTML]="icons.edit | safeHtml"></span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-icon-sm danger"
+                        (click)="onDelete(row)"
+                        title="Delete challan">
+                        <span [innerHTML]="icons.delete | safeHtml"></span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-icon-sm"
+                        (click)="toggleExpand(row)"
+                        title="Close details">
+                        <span [innerHTML]="icons.close | safeHtml"></span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="line-list" *ngIf="lineItems(row).length; else noLines">
@@ -112,12 +185,6 @@
                 <ng-template #noLines>
                   <p class="no-lines">No size or meter lines were saved on this challan.</p>
                 </ng-template>
-
-                <div class="detail-actions">
-                  <button *ngIf="showPrintAction" type="button" class="text-action" (click)="onView(row)">Open printable challan</button>
-                  <button type="button" class="text-action" (click)="onEdit(row)">Edit entry</button>
-                  <button type="button" class="text-action danger" (click)="onDelete(row)">Delete</button>
-                </div>
               </div>
             </td>
           </tr>

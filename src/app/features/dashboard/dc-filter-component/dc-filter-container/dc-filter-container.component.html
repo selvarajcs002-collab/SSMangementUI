@@ -2,31 +2,124 @@
 
   <div class="page-hero">
     <app-dc-filter-header></app-dc-filter-header>
-    <div class="hero-actions">
-      <button type="button" class="btn-hero secondary" (click)="goToInward()">New inward</button>
-      <button type="button" class="btn-hero primary" (click)="goToOutward()">New outward</button>
+
+    <div class="hero-right">
+      <!-- Compact inline summary pills with icons -->
+      <div class="inline-stats" *ngIf="hasLoaded">
+        <div class="stat-pill" title="Total challans in current filter">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span class="stat-label">Challans</span>
+          <strong class="stat-val">{{ totalRecords | number }}</strong>
+        </div>
+        <div class="stat-pill" [title]="'Total ' + quantityLabel.toLowerCase() + ' (' + summaryNote + ')'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+          <span class="stat-label">{{ quantityLabel }}</span>
+          <strong class="stat-val">{{ summaryTotals.totalBitsCount | number:'1.0-2' }}</strong>
+        </div>
+        <div class="stat-pill" *ngIf="showMeterCard" [title]="'Total meter (' + summaryNote + ')'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/>
+            <path d="m14.5 12.5 2-2"/>
+            <path d="m11.5 9.5 2-2"/>
+            <path d="m8.5 6.5 2-2"/>
+          </svg>
+          <span class="stat-label">Meter</span>
+          <strong class="stat-val">{{ summaryTotals.totalMeter | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <!-- Quick create icon buttons -->
+      <div class="hero-actions">
+        <button
+          type="button"
+          class="btn-action-icon inward-action"
+          (click)="goToInward()"
+          title="New Inward Challan (cloth/work received from client)"
+          aria-label="New Inward Challan">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3v12"/>
+            <path d="m8 11 4 4 4-4"/>
+            <path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/>
+          </svg>
+          <span class="action-badge">+ Inward</span>
+        </button>
+        <button
+          type="button"
+          class="btn-action-icon outward-action"
+          (click)="goToOutward()"
+          title="New Outward Challan (finished delivery sent to client)"
+          aria-label="New Outward Challan">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 15V3"/>
+            <path d="m8 7 4-4 4 4"/>
+            <path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/>
+          </svg>
+          <span class="action-badge">+ Outward</span>
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="context-bar">
-    <div class="toggle-block">
-      <app-dynamic-toggle [config]="toggleConfig" [(value)]="activeView" (valueChange)="onToggleChange($event)">
-      </app-dynamic-toggle>
-      <p class="view-hint">
-        {{ activeView === 'inward'
-          ? 'Inward is cloth or work you received from the client.'
-          : 'Outward is the finished delivery you send back to the client.' }}
-      </p>
-    </div>
-    <div class="mode-switch" role="group" aria-label="Challan type">
-      <button type="button" [class.active]="currentViewType === 'S'" (click)="setMode('S')">Size</button>
-      <button type="button" [class.active]="currentViewType === 'M'" (click)="setMode('M')">Meter</button>
-      <button type="button" [class.active]="currentViewType === 'ALL'" (click)="setMode('ALL')">All</button>
-    </div>
-  </div>
-  <p class="mode-hint">Size lists pieces by size. Meter lists fabric length and bits. All shows both.</p>
+  <!-- Unified Control & Icon Bar -->
+  <div class="unified-toolbar">
+    <div class="toolbar-left">
+      <div [title]="activeView === 'inward' ? 'Inward: cloth or work received from client' : 'Outward: finished delivery sent to client'">
+        <app-dynamic-toggle [config]="toggleConfig" [(value)]="activeView" (valueChange)="onToggleChange($event)">
+        </app-dynamic-toggle>
+      </div>
 
-  <div class="toolbar">
+      <div class="mode-switch" role="group" aria-label="Challan type">
+        <button
+          type="button"
+          [class.active]="currentViewType === 'S'"
+          (click)="setMode('S')"
+          title="Size mode: lists pieces by size">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+          </svg>
+          <span>Size</span>
+        </button>
+        <button
+          type="button"
+          [class.active]="currentViewType === 'M'"
+          (click)="setMode('M')"
+          title="Meter mode: lists fabric length and bits">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/>
+            <path d="m14.5 12.5 2-2"/>
+            <path d="m11.5 9.5 2-2"/>
+            <path d="m8.5 6.5 2-2"/>
+          </svg>
+          <span>Meter</span>
+        </button>
+        <button
+          type="button"
+          [class.active]="currentViewType === 'ALL'"
+          (click)="setMode('ALL')"
+          title="All mode: shows both Size and Meter challans">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+          <span>All</span>
+        </button>
+      </div>
+    </div>
+
     <label class="search-field">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -35,38 +128,285 @@
       </svg>
       <input type="search" [value]="searchText" (input)="onSearchInput($event)"
         placeholder="Search DC number, client, style, design, or colour" aria-label="Search challans" />
-      <button *ngIf="searchText" type="button" class="search-clear" (click)="clearSearch()" aria-label="Clear search">×</button>
+      <button *ngIf="searchText" type="button" class="search-clear" (click)="clearSearch()" title="Clear search" aria-label="Clear search">×</button>
     </label>
-    <button type="button" class="btn-tool" (click)="toggleSort()">
-      {{ sortDirection === 'DESC' ? 'Newest first' : 'Oldest first' }}
-    </button>
-    <button type="button" class="btn-tool" (click)="refresh()">Refresh</button>
-    <app-excel-report [filters]="excelReportPayload"></app-excel-report>
-    <button type="button" class="btn-toggle-filter" (click)="openFilterDialog()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
-      </svg>
-      Filters
-      <span class="filter-badge" *ngIf="activeFilterCount">{{ activeFilterCount }}</span>
-    </button>
+
+    <!-- Icon Action Dock -->
+    <div class="icon-dock">
+      <!-- Date Range / Calendar Icon Pill + Modern Calendar Popover -->
+      <div class="date-picker-anchor">
+        <button
+          type="button"
+          class="btn-date-pill"
+          [class.is-open]="showDatePicker"
+          (click)="toggleDatePicker($event)"
+          [title]="'Date range: ' + (dateRangeLabel || 'Select dates') + ' (click to open calendar)'"
+          aria-label="Change date range"
+          [attr.aria-expanded]="showDatePicker">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+            <line x1="16" x2="16" y1="2" y2="6"/>
+            <line x1="8" x2="8" y1="2" y2="6"/>
+            <line x1="3" x2="21" y1="10" y2="10"/>
+          </svg>
+          <span class="date-text">{{ dateRangeLabel || 'Select Date Range' }}</span>
+          <svg class="date-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </button>
+
+        <!-- Modern Date Range Calendar Popover -->
+        <div
+          *ngIf="showDatePicker"
+          class="date-range-popover"
+          role="dialog"
+          aria-label="Select From and To date range"
+          (click)="$event.stopPropagation()">
+
+          <!-- Quick Presets -->
+          <div class="drp-presets">
+            <button type="button" class="drp-preset-chip" [class.active]="isPresetActive('today')" (click)="applyDatePreset('today')">Today</button>
+            <button type="button" class="drp-preset-chip" [class.active]="isPresetActive('7d')" (click)="applyDatePreset('7d')">Last 7 Days</button>
+            <button type="button" class="drp-preset-chip" [class.active]="isPresetActive('thisMonth')" (click)="applyDatePreset('thisMonth')">This Month</button>
+            <button type="button" class="drp-preset-chip" [class.active]="isPresetActive('lastMonth')" (click)="applyDatePreset('lastMonth')">Last Month</button>
+            <button type="button" class="drp-preset-chip" [class.active]="isPresetActive('30d')" (click)="applyDatePreset('30d')">Last 30 Days</button>
+          </div>
+
+          <!-- From & To Date Interactive Cards -->
+          <div class="drp-inputs-row">
+            <div
+              class="drp-date-box"
+              [class.is-active]="activeDateField === 'from'"
+              (click)="setActiveDateField('from')">
+              <div class="drp-box-header">
+                <span class="drp-box-label">From Date</span>
+                <span class="drp-box-dot" *ngIf="activeDateField === 'from'">Picking</span>
+              </div>
+              <div class="drp-box-value">{{ tempFromDate ? formatTempDate(tempFromDate) : 'Select start' }}</div>
+              <input
+                type="date"
+                class="drp-native-input"
+                [value]="tempFromDate || ''"
+                [max]="tempToDate || null"
+                (change)="onManualDateInput('from', $event)"
+                (click)="$event.stopPropagation()"
+                title="Type or pick From Date"
+                aria-label="From Date" />
+            </div>
+
+            <div class="drp-range-arrow" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"/>
+                <path d="m12 5 7 7-7 7"/>
+              </svg>
+            </div>
+
+            <div
+              class="drp-date-box"
+              [class.is-active]="activeDateField === 'to'"
+              (click)="setActiveDateField('to')">
+              <div class="drp-box-header">
+                <span class="drp-box-label">To Date</span>
+                <span class="drp-box-dot" *ngIf="activeDateField === 'to'">Picking</span>
+              </div>
+              <div class="drp-box-value">{{ tempToDate ? formatTempDate(tempToDate) : 'Select end' }}</div>
+              <input
+                type="date"
+                class="drp-native-input"
+                [value]="tempToDate || ''"
+                [min]="tempFromDate || null"
+                (change)="onManualDateInput('to', $event)"
+                (click)="$event.stopPropagation()"
+                title="Type or pick To Date"
+                aria-label="To Date" />
+            </div>
+          </div>
+
+          <!-- Calendar Navigation Header -->
+          <div class="drp-cal-header">
+            <button type="button" class="drp-nav-btn" (click)="prevCalendarMonth()" title="Previous month" aria-label="Previous month">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+            </button>
+
+            <div class="drp-month-year">
+              <select class="drp-month-select" [value]="calendarMonth" (change)="onCalendarMonthSelect($event)" aria-label="Select month">
+                <option *ngFor="let m of monthNames; let idx = index" [value]="idx">{{ m }}</option>
+              </select>
+              <div class="drp-year-stepper">
+                <button type="button" class="drp-year-btn" (click)="changeCalendarYear(-1)" title="Previous year" aria-label="Previous year">−</button>
+                <span class="drp-year-text">{{ calendarYear }}</span>
+                <button type="button" class="drp-year-btn" (click)="changeCalendarYear(1)" title="Next year" aria-label="Next year">+</button>
+              </div>
+            </div>
+
+            <button type="button" class="drp-nav-btn" (click)="nextCalendarMonth()" title="Next month" aria-label="Next month">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Calendar Weekday Labels -->
+          <div class="drp-weekdays">
+            <span *ngFor="let wd of weekDays" class="drp-weekday">{{ wd }}</span>
+          </div>
+
+          <!-- Calendar 42-Day Grid -->
+          <div class="drp-days-grid" (mouseleave)="onDayHover(null)">
+            <button
+              *ngFor="let cell of calendarDays"
+              type="button"
+              class="drp-day"
+              [class.is-outside]="!cell.isCurrentMonth"
+              [class.is-today]="cell.isToday"
+              [class.is-start]="cell.isStart"
+              [class.is-end]="cell.isEnd"
+              [class.is-in-range]="cell.isInRange"
+              [class.is-single]="cell.isStart && cell.isEnd"
+              (click)="onDayClick(cell.dateStr)"
+              (mouseenter)="onDayHover(cell.dateStr)"
+              [attr.aria-label]="cell.dateStr">
+              <span class="drp-day-num">{{ cell.day }}</span>
+            </button>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="drp-footer">
+            <div class="drp-footer-meta">
+              <span class="drp-span-badge" *ngIf="selectedDaySpan > 0">
+                {{ selectedDaySpan }} {{ selectedDaySpan === 1 ? 'day' : 'days' }}
+              </span>
+              <button type="button" class="drp-btn-reset" (click)="resetDateRange()" title="Reset to This Month">Reset</button>
+            </div>
+            <div class="drp-footer-actions">
+              <button type="button" class="drp-btn-cancel" (click)="closeDatePicker()">Cancel</button>
+              <button type="button" class="drp-btn-apply" (click)="applyDateRange()">Apply Range</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sort Direction Icon -->
+      <button
+        type="button"
+        class="btn-tool-icon"
+        (click)="toggleSort()"
+        [title]="sortDirection === 'DESC' ? 'Sorted: Newest first (click for Oldest first)' : 'Sorted: Oldest first (click for Newest first)'"
+        [attr.aria-label]="sortDirection === 'DESC' ? 'Newest first' : 'Oldest first'">
+        <svg *ngIf="sortDirection === 'DESC'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m3 16 4 4 4-4"/>
+          <path d="M7 20V4"/>
+          <path d="M11 4h10"/>
+          <path d="M11 8h7"/>
+          <path d="M11 12h4"/>
+        </svg>
+        <svg *ngIf="sortDirection === 'ASC'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m3 8 4-4 4 4"/>
+          <path d="M7 4v16"/>
+          <path d="M11 12h4"/>
+          <path d="M11 16h7"/>
+          <path d="M11 20h10"/>
+        </svg>
+      </button>
+
+      <!-- Summary Cards Toggle Icon -->
+      <button
+        type="button"
+        class="btn-tool-icon"
+        [class.active]="showSummaryCards"
+        (click)="showSummaryCards = !showSummaryCards"
+        [title]="showSummaryCards ? 'Hide summary cards' : 'Show summary cards'"
+        aria-label="Toggle summary cards">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" x2="18" y1="20" y2="10"/>
+          <line x1="12" x2="12" y1="20" y2="4"/>
+          <line x1="6" x2="6" y1="20" y2="14"/>
+        </svg>
+      </button>
+
+      <!-- Refresh Icon -->
+      <button
+        type="button"
+        class="btn-tool-icon"
+        (click)="refresh()"
+        title="Refresh challans"
+        aria-label="Refresh challans">
+        <svg [class.spinning]="isLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+          <path d="M16 16h5v5"/>
+        </svg>
+      </button>
+
+      <!-- Excel Report Icon -->
+      <app-excel-report [filters]="excelReportPayload" [iconOnly]="true"></app-excel-report>
+
+      <!-- Filters Icon with Badge -->
+      <button
+        type="button"
+        class="btn-tool-icon filter-trigger"
+        [class.active]="activeFilterCount > 0"
+        (click)="openFilterDialog()"
+        title="Filter challans"
+        aria-label="Filter challans">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+        </svg>
+        <span class="filter-badge" *ngIf="activeFilterCount">{{ activeFilterCount }}</span>
+      </button>
+
+      <!-- Reset / Clear All Filters Icon -->
+      <button
+        *ngIf="activeFilterCount || searchText"
+        type="button"
+        class="btn-tool-icon reset-trigger"
+        (click)="resetFilters()"
+        title="Clear all filters and search"
+        aria-label="Clear all filters and search">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.055"/>
+          <path d="m22 3-5 5"/>
+          <path d="m17 3 5 5"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <div class="filter-chips" *ngIf="dateRangeLabel || filterChips.length">
-    <button type="button" class="chip quiet" (click)="openFilterDialog()">{{ dateRangeLabel }}</button>
-    <button type="button" class="chip" *ngFor="let chip of filterChips" (click)="clearChip(chip.key)">
+  <!-- Active Filter Chips (only shown when narrowing filters are active) -->
+  <div class="filter-chips" *ngIf="filterChips.length">
+    <button type="button" class="chip" *ngFor="let chip of filterChips" (click)="clearChip(chip.key)" [title]="'Remove filter: ' + chip.label">
       {{ chip.label }} <span aria-hidden="true">×</span>
     </button>
-    <button type="button" class="chip reset" *ngIf="activeFilterCount || searchText" (click)="resetFilters()">Clear all</button>
   </div>
 
   <div class="limit-note" *ngIf="wideCapped && !isLoading">
-    This list uses the latest 500 challans in the selected dates. Shorten the date range if a challan is missing.
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" x2="12" y1="8" y2="12"/>
+      <line x1="12" x2="12.01" y1="16" y2="16"/>
+    </svg>
+    <span>Showing latest 500 challans in selected dates. Shorten the date range if a challan is missing.</span>
   </div>
 
   <div class="loading-line" *ngIf="isLoading" role="status">{{ loadingLabel }}</div>
 
-  <div class="summary-cards" *ngIf="hasLoaded">
+  <!-- Collapsible Summary Cards (toggled via the chart icon in the toolbar) -->
+  <div class="summary-cards" *ngIf="hasLoaded && showSummaryCards">
     <div class="summary-card">
       <span class="summary-label">Challans</span>
       <span class="summary-value">{{ totalRecords | number }}</span>
@@ -145,13 +485,13 @@
           <option value="50">50</option>
         </select>
       </label>
-      <button type="button" class="btn-nav" [disabled]="pageNumber === 1" (click)="prevPage()">Prev</button>
+      <button type="button" class="btn-nav" [disabled]="pageNumber === 1" (click)="prevPage()" title="Previous page" aria-label="Previous page">‹</button>
       <button type="button" class="btn-page" *ngFor="let page of visiblePages"
         [class.active]="page === pageNumber" [class.dots]="page < 0" [disabled]="page < 0"
         (click)="onPageChange(page)">
         {{ page < 0 ? '…' : page }}
       </button>
-      <button type="button" class="btn-nav" [disabled]="pageNumber === totalPages" (click)="nextPage()">Next</button>
+      <button type="button" class="btn-nav" [disabled]="pageNumber === totalPages" (click)="nextPage()" title="Next page" aria-label="Next page">›</button>
     </div>
   </div>
 

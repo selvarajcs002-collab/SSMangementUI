@@ -76,6 +76,30 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
   summaryTotals = { totalBitsCount: 0, totalMeter: 0 };
   currentFilters: any = {};
   showFilter: boolean = false;
+  showSummaryCards: boolean = false;
+  showDatePicker: boolean = false;
+  activeDateField: 'from' | 'to' = 'from';
+  tempFromDate: string | null = null;
+  tempToDate: string | null = null;
+  hoverDate: string | null = null;
+  calendarMonth: number = new Date().getMonth();
+  calendarYear: number = new Date().getFullYear();
+  calendarDays: {
+    dateStr: string;
+    day: number;
+    month: number;
+    year: number;
+    isCurrentMonth: boolean;
+    isToday: boolean;
+    isStart: boolean;
+    isEnd: boolean;
+    isInRange: boolean;
+  }[] = [];
+  readonly weekDays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  readonly monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
   excelReportPayload: any = {};
 
   private companyNames = new Map<string, string>();
@@ -126,8 +150,21 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
+    if (this.showDatePicker) {
+      this.closeDatePicker();
+      return;
+    }
     if (this.pendingDelete && !this.isDeleting) {
       this.cancelDelete();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.showDatePicker) return;
+    const target = event.target as HTMLElement;
+    if (target && !target.closest('.date-picker-anchor')) {
+      this.closeDatePicker();
     }
   }
 
@@ -224,6 +261,7 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
   }
 
   openFilterDialog(): void {
+    this.showDatePicker = false;
     this.showFilter = true;
     this.cdr.markForCheck();
   }
@@ -231,6 +269,285 @@ export class DcFilterContainerComponent implements OnInit, OnDestroy {
   closeFilterDialog(): void {
     this.showFilter = false;
     this.cdr.markForCheck();
+  }
+
+  toggleDatePicker(event: MouseEvent): void {
+    event.stopPropagation();
+    if (this.showDatePicker) {
+      this.closeDatePicker();
+      return;
+    }
+    this.tempFromDate = this.currentFilters?.fromDate || null;
+    this.tempToDate = this.currentFilters?.toDate || null;
+    this.activeDateField = 'from';
+    this.hoverDate = null;
+
+    const focusDate = this.parseIsoDate(this.tempFromDate) || this.parseIsoDate(this.tempToDate) || new Date();
+    this.calendarMonth = focusDate.getMonth();
+    this.calendarYear = focusDate.getFullYear();
+    this.buildCalendarGrid();
+    this.showDatePicker = true;
+    this.cdr.markForCheck();
+  }
+
+  closeDatePicker(): void {
+    this.showDatePicker = false;
+    this.hoverDate = null;
+    this.cdr.markForCheck();
+  }
+
+  setActiveDateField(field: 'from' | 'to'): void {
+    this.activeDateField = field;
+    const target = this.parseIsoDate(field === 'from' ? this.tempFromDate : this.tempToDate);
+    if (target) {
+      this.calendarMonth = target.getMonth();
+      this.calendarYear = target.getFullYear();
+      this.buildCalendarGrid();
+    }
+    this.cdr.markForCheck();
+  }
+
+  prevCalendarMonth(): void {
+    if (this.calendarMonth === 0) {
+      this.calendarMonth = 11;
+      this.calendarYear--;
+    } else {
+      this.calendarMonth--;
+    }
+    this.buildCalendarGrid();
+  }
+
+  nextCalendarMonth(): void {
+    if (this.calendarMonth === 11) {
+      this.calendarMonth = 0;
+      this.calendarYear++;
+    } else {
+      this.calendarMonth++;
+    }
+    this.buildCalendarGrid();
+  }
+
+  onCalendarMonthSelect(event: Event): void {
+    this.calendarMonth = Number((event.target as HTMLSelectElement).value);
+    this.buildCalendarGrid();
+  }
+
+  changeCalendarYear(delta: number): void {
+    this.calendarYear += delta;
+    this.buildCalendarGrid();
+  }
+
+  onDayClick(dateStr: string): void {
+    if (this.activeDateField === 'from') {
+      this.tempFromDate = dateStr;
+      if (this.tempToDate && dateStr > this.tempToDate) {
+        this.tempToDate = dateStr;
+      }
+      this.activeDateField = 'to';
+    } else {
+      if (this.tempFromDate && dateStr < this.tempFromDate) {
+        this.tempToDate = this.tempFromDate;
+        this.tempFromDate = dateStr;
+      } else {
+        this.tempToDate = dateStr;
+      }
+      this.activeDateField = 'from';
+    }
+    this.hoverDate = null;
+    this.buildCalendarGrid();
+    this.cdr.markForCheck();
+  }
+
+  onDayHover(dateStr: string | null): void {
+    if (this.activeDateField !== 'to' || !this.tempFromDate) return;
+    if (this.hoverDate === dateStr) return;
+    this.hoverDate = dateStr;
+    this.buildCalendarGrid();
+  }
+
+  onManualDateInput(field: 'from' | 'to', event: Event): void {
+    const val = (event.target as HTMLInputElement).value || null;
+    if (field === 'from') {
+      this.tempFromDate = val;
+      if (val && this.tempToDate && val > this.tempToDate) {
+        this.tempToDate = val;
+      }
+    } else {
+      this.tempToDate = val;
+      if (val && this.tempFromDate && val < this.tempFromDate) {
+        this.tempFromDate = val;
+      }
+    }
+    const parsed = this.parseIsoDate(val);
+    if (parsed) {
+      this.calendarMonth = parsed.getMonth();
+      this.calendarYear = parsed.getFullYear();
+    }
+    this.buildCalendarGrid();
+  }
+
+  applyDatePreset(preset: 'today' | '7d' | 'thisMonth' | 'lastMonth' | '30d'): void {
+    const today = new Date();
+    let start = new Date(today);
+    let end = new Date(today);
+
+    if (preset === '7d') {
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
+    } else if (preset === '30d') {
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+    } else if (preset === 'thisMonth') {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+    } else if (preset === 'lastMonth') {
+      start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      end = new Date(today.getFullYear(), today.getMonth(), 0);
+    }
+
+    this.tempFromDate = this.toIsoDate(start);
+    this.tempToDate = this.toIsoDate(end);
+    this.calendarMonth = end.getMonth();
+    this.calendarYear = end.getFullYear();
+    this.buildCalendarGrid();
+    this.cdr.markForCheck();
+  }
+
+  isPresetActive(preset: 'today' | '7d' | 'thisMonth' | 'lastMonth' | '30d'): boolean {
+    const today = new Date();
+    const todayIso = this.toIsoDate(today);
+    if (preset === 'today') {
+      return this.tempFromDate === todayIso && this.tempToDate === todayIso;
+    }
+    if (preset === '7d') {
+      const start = this.toIsoDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6));
+      return this.tempFromDate === start && this.tempToDate === todayIso;
+    }
+    if (preset === '30d') {
+      const start = this.toIsoDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29));
+      return this.tempFromDate === start && this.tempToDate === todayIso;
+    }
+    if (preset === 'thisMonth') {
+      const start = this.toIsoDate(new Date(today.getFullYear(), today.getMonth(), 1));
+      return this.tempFromDate === start && this.tempToDate === todayIso;
+    }
+    if (preset === 'lastMonth') {
+      const start = this.toIsoDate(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+      const end = this.toIsoDate(new Date(today.getFullYear(), today.getMonth(), 0));
+      return this.tempFromDate === start && this.tempToDate === end;
+    }
+    return false;
+  }
+
+  resetDateRange(): void {
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    this.tempFromDate = this.toIsoDate(firstOfMonth);
+    this.tempToDate = this.toIsoDate(today);
+    this.calendarMonth = today.getMonth();
+    this.calendarYear = today.getFullYear();
+    this.buildCalendarGrid();
+    this.cdr.markForCheck();
+  }
+
+  applyDateRange(): void {
+    if (this.tempFromDate && this.tempToDate && this.tempFromDate > this.tempToDate) {
+      this.messageService.error('From Date cannot be greater than To Date.');
+      return;
+    }
+    this.pageNumber = 1;
+    this.invalidateWideCache();
+    this.filterStateService.updateState({
+      fromDate: this.tempFromDate,
+      toDate: this.tempToDate
+    });
+    this.closeDatePicker();
+  }
+
+  get selectedDaySpan(): number {
+    const start = this.parseIsoDate(this.tempFromDate);
+    const end = this.parseIsoDate(this.tempToDate);
+    if (!start || !end) return 0;
+    const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return diff > 0 ? diff : 0;
+  }
+
+  formatTempDate(value: string | null): string {
+    return this.formatChipDate(value);
+  }
+
+  private buildCalendarGrid(): void {
+    const year = this.calendarYear;
+    const month = this.calendarMonth;
+    const firstDayOfWeek = new Date(year, month, 1).getDay();
+    const prefixCount = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    const todayIso = this.toIsoDate(new Date());
+    const startIso = this.tempFromDate;
+    const effectiveEndIso = (this.activeDateField === 'to' && this.hoverDate && startIso && this.hoverDate >= startIso)
+      ? this.hoverDate
+      : this.tempToDate;
+
+    const cells: typeof this.calendarDays = [];
+
+    for (let i = prefixCount - 1; i >= 0; i--) {
+      const d = prevMonthDays - i;
+      const pm = month === 0 ? 11 : month - 1;
+      const py = month === 0 ? year - 1 : year;
+      cells.push(this.createCalendarCell(py, pm, d, false, todayIso, startIso, effectiveEndIso));
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push(this.createCalendarCell(year, month, d, true, todayIso, startIso, effectiveEndIso));
+    }
+
+    const remaining = 42 - cells.length;
+    for (let d = 1; d <= remaining; d++) {
+      const nm = month === 11 ? 0 : month + 1;
+      const ny = month === 11 ? year + 1 : year;
+      cells.push(this.createCalendarCell(ny, nm, d, false, todayIso, startIso, effectiveEndIso));
+    }
+
+    this.calendarDays = cells;
+  }
+
+  private createCalendarCell(
+    year: number,
+    month: number,
+    day: number,
+    isCurrentMonth: boolean,
+    todayIso: string,
+    startIso: string | null,
+    endIso: string | null
+  ) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const isStart = !!startIso && dateStr === startIso;
+    const isEnd = !!endIso && dateStr === endIso;
+    const isInRange = !!(startIso && endIso && dateStr > startIso && dateStr < endIso);
+    return {
+      dateStr,
+      day,
+      month,
+      year,
+      isCurrentMonth,
+      isToday: dateStr === todayIso,
+      isStart,
+      isEnd,
+      isInRange
+    };
+  }
+
+  private toIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private parseIsoDate(val: string | null): Date | null {
+    if (!val) return null;
+    const parts = String(val).split('-').map(Number);
+    if (parts.length !== 3 || parts.some(p => Number.isNaN(p))) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
   }
 
   onToggleChange(newMode: string): void {

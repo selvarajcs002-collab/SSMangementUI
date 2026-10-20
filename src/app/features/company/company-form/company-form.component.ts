@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -32,297 +32,1286 @@ import { gstValidator, phoneValidator, pincodeValidator } from '../../../shared/
     SafeHtmlPipe
   ],
   template: `
-    <div class="form-container animate-fade-in">
-      <div class="form-card">
-        <header class="form-header">
-          <div class="title-with-icon">
-            <span class="main-icon" [innerHTML]="icons.building | safeHtml"></span>
-            <h1 class="form-title">{{ mode === 'add' ? 'Add New Company' : 'Update Company' }}</h1>
+    <div class="company-workspace animate-fade-in">
+      <!-- Top Navigation & Mode Bar -->
+      <div class="workspace-topbar">
+        <button type="button" class="btn-back" (click)="onCancel()" title="Back to Company Management">
+          <span class="btn-back-icon" [innerHTML]="icons.arrowLeft | safeHtml"></span>
+          <span>Back to Companies</span>
+        </button>
+
+        <div class="mode-Segmented" role="tablist" aria-label="Company form mode">
+          <button
+            type="button"
+            class="mode-tab"
+            [class.active]="mode === 'add'"
+            (click)="switchMode('add')">
+            <span class="tab-icon" [innerHTML]="icons.plus | safeHtml"></span>
+            <span>Add Company</span>
+          </button>
+          <button
+            type="button"
+            class="mode-tab"
+            [class.active]="mode === 'update'"
+            (click)="switchMode('update')">
+            <span class="tab-icon" [innerHTML]="icons.edit | safeHtml"></span>
+            <span>Update Company</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Hero Banner -->
+      <header class="hero-banner" [class.is-update]="mode === 'update'">
+        <div class="hero-left">
+          <div class="hero-icon-box">
+            <span class="main-icon" [innerHTML]="(mode === 'add' ? icons.building : icons.editBuilding) | safeHtml"></span>
           </div>
-          <p class="form-subtitle">Fill in the details below to {{ mode === 'add' ? 'create a new' : 'update the' }} company profile.</p>
-        </header>
+          <div class="hero-copy">
+            <div class="hero-eyebrow-row">
+              <span class="hero-badge" [class.badge-update]="mode === 'update'">
+                {{ mode === 'add' ? 'NEW REGISTRATION' : 'PROFILE UPDATE' }}
+              </span>
+              <span class="hero-id-pill" *ngIf="mode === 'update' && editId">
+                Company ID #{{ editId }}
+              </span>
+            </div>
+            <h1 class="form-title">{{ mode === 'add' ? 'Add New Company' : 'Update Company Details' }}</h1>
+            <p class="form-subtitle">
+              {{ mode === 'add'
+                ? 'Register a new client company with GST credentials, billing address, and delivery destinations.'
+                : 'Select an existing company profile below to modify its name, GST number, address, or delivery locations.' }}
+            </p>
+          </div>
+        </div>
 
-        <app-alert
-          *ngIf="alertMessage"
-          [message]="alertMessage"
-          [type]="alertType"
-          (close)="alertMessage = null"
-        ></app-alert>
+        <div class="hero-right">
+          <div class="completion-pill" [class.is-ready]="companyForm.valid">
+            <span class="completion-dot"></span>
+            <span>{{ companyForm.valid ? 'Ready to ' + (isEdit ? 'Update' : 'Create') : completionPercentage + '% Completed' }}</span>
+          </div>
+        </div>
+      </header>
 
-        <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="company-form">
-          <!-- Basic Details Section -->
-          <app-section-header title="Basic Details" [icon]="icons.building"></app-section-header>
-          
-          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
-            <ng-container *ngIf="mode === 'update'; else addNameTemplate">
-              <label class="label">Company Name <span class="required">*</span></label>
+      <app-alert
+        *ngIf="alertMessage"
+        [message]="alertMessage"
+        [type]="alertType"
+        (close)="alertMessage = null"
+      ></app-alert>
+
+      <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="workspace-grid">
+        <!-- Main Form Column -->
+        <div class="form-main-col">
+
+          <!-- Update Mode: Spotlight Company Selector Card -->
+          <section class="section-card selector-spotlight" *ngIf="mode === 'update'">
+            <div class="selector-header">
+              <div class="selector-title-group">
+                <span class="selector-badge-num">STEP 1</span>
+                <div>
+                  <h2 class="selector-title">Select Company to Edit</h2>
+                  <p class="selector-desc">Search and choose a registered company to load its current details into the form</p>
+                </div>
+              </div>
+              <span class="company-count-pill" *ngIf="companySelectOptions.length">
+                {{ companySelectOptions.length }} Companies
+              </span>
+            </div>
+
+            <div class="select-field-container">
+              <label class="field-label">Search Registered Company <span class="required">*</span></label>
               <app-custom-select
                 formControlName="companyId"
                 [options]="companySelectOptions"
                 [enableTypeAhead]="true"
                 [icon]="icons.building"
-                placeholder="Type to search company"
+                placeholder="Type company name to search and select..."
                 (change)="onCompanyChange($event)">
               </app-custom-select>
               <div class="error-message" *ngIf="getErrorMessage('companyId')">{{ getErrorMessage('companyId') }}</div>
-            </ng-container>
+            </div>
+          </section>
 
-            <ng-template #addNameTemplate>
-              <app-input-field
-                label="Company Name"
-                placeholder="Enter company name"
-                formControlName="companyName"
-                [required]="true"
-                [icon]="icons.building"
-              ></app-input-field>
-              <div *ngIf="companyForm.controls['companyName'].touched && companyForm.controls['companyName'].invalid" class="text-red-500 text-xs mt-1">
-                Company Name is required
+          <!-- Section 1: Corporate & Tax Identity -->
+          <section class="section-card">
+            <div class="section-card-header">
+              <div class="section-icon-wrap blue">
+                <span [innerHTML]="icons.building | safeHtml"></span>
               </div>
-            </ng-template>
-
-            <app-input-field
-              label="Phone Number"
-              placeholder="10-digit mobile number"
-              formControlName="phoneNumber"
-              [required]="false"
-              [icon]="icons.phone"
-            ></app-input-field>
-
-            <app-input-field
-              label="GST Number"
-              placeholder="e.g. 22AAAAA0000A1Z5"
-              formControlName="gst_No"
-              [required]="true"
-              [icon]="icons.hash"
-              [error]="getErrorMessage('gst_No')"
-            ></app-input-field>
-
-          <!-- Delivery To Locations (Kendo Chip Style) -->
-          <div class="delivery-to-section" style="grid-column: 1 / -1; margin-top: 10px;">
-            <label style="font-size: 14px; font-weight: 500; color: var(--text-main); margin-bottom: 8px; display: block;">Delivery To Locations</label>
-            
-            <div style="display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px;">
-              <div style="flex: 1; display: flex; flex-direction: column;">
-                <div class="input-wrapper" [class.invalid]="locationInputError" style="height: 48px; display: flex; align-items: center; border: 1px solid var(--border, #e2e8f0); border-radius: 6px; background: #fff; transition: all 0.2s;">
-                  <span class="input-icon" [innerHTML]="icons.building | safeHtml" style="margin-left: 14px; color: #94A3B8; display: flex;"></span>
-                  <input type="text" [formControl]="newLocationControl" (keyup.enter)="$event.preventDefault(); addLocation()" placeholder="Enter Delivery To location" class="input" style="flex: 1; padding: 0 16px; border: none; outline: none; background: transparent; font-size: 14px; color: var(--text-main, #1e293b); height: 100%;">
-                </div>
-                <div *ngIf="locationInputError" style="color: var(--error, #ef4444); font-size: 12px; margin-top: 4px; font-weight: 500;">{{ locationInputError }}</div>
+              <div class="section-header-text">
+                <h2 class="section-title">Basic & Tax Information</h2>
+                <p class="section-subtitle">Official registered business name, GSTIN, and primary contact number</p>
               </div>
-              <app-button type="button" variant="primary" (btnClick)="addLocation()" style="height: 48px;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span [innerHTML]="icons.plus | safeHtml" class="add-btn-icon" style="display: flex; align-items: center; justify-content: center;"></span>
-                  <span>Add</span>
-                </div>
-              </app-button>
             </div>
 
-            <!-- Chips Display -->
-            <div class="k-chip-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
-              <div *ngFor="let loc of deliveryToLocations; let i = index" class="k-chip" style="display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 16px; font-size: 13px; color: #334155; font-weight: 500; transition: all 0.2s;">
-                <span>{{ loc }}</span>
-                <button type="button" (click)="removeLocation(i)" class="chip-remove-btn" title="Remove">
-                  <span [innerHTML]="icons.x | safeHtml" style="display: flex; align-items: center; justify-content: center;"></span>
+            <div class="fields-grid-2">
+              <div class="field-span-full">
+                <app-input-field
+                  [label]="mode === 'update' ? 'Company Name (Editable)' : 'Company Name'"
+                  placeholder="Enter official company name"
+                  formControlName="companyName"
+                  [required]="true"
+                  [icon]="icons.building"
+                  [error]="getErrorMessage('companyName')"
+                ></app-input-field>
+              </div>
+
+              <app-input-field
+                label="GST Number (15-Digit GSTIN)"
+                placeholder="e.g. 22AAAAA0000A1Z5"
+                formControlName="gst_No"
+                [required]="true"
+                [icon]="icons.hash"
+                [maxLength]="15"
+                [error]="getErrorMessage('gst_No')"
+              ></app-input-field>
+
+              <app-input-field
+                label="Phone Number"
+                placeholder="10-digit contact number"
+                formControlName="phoneNumber"
+                [required]="false"
+                [icon]="icons.phone"
+                inputMode="tel"
+                [maxLength]="15"
+              ></app-input-field>
+            </div>
+          </section>
+
+          <!-- Section 2: Delivery To Locations -->
+          <section class="section-card">
+            <div class="section-card-header">
+              <div class="section-icon-wrap indigo">
+                <span [innerHTML]="icons.truck | safeHtml"></span>
+              </div>
+              <div class="section-header-text">
+                <h2 class="section-title">Delivery To Locations</h2>
+                <p class="section-subtitle">Add one or more warehouse, branch, or factory drop-off locations for challans</p>
+              </div>
+              <span class="location-count-badge">
+                {{ deliveryToLocations.length }} {{ deliveryToLocations.length === 1 ? 'Location' : 'Locations' }}
+              </span>
+            </div>
+
+            <div class="delivery-composer">
+              <div class="composer-input-row">
+                <div class="composer-field-wrap">
+                  <div class="composer-input-box" [class.invalid]="locationInputError">
+                    <span class="composer-icon" [innerHTML]="icons.mapPin | safeHtml"></span>
+                    <input
+                      type="text"
+                      [formControl]="newLocationControl"
+                      (keyup.enter)="$event.preventDefault(); addLocation()"
+                      placeholder="Type a delivery destination (e.g. Tirupur Unit 2, Warehouse B) and press Enter"
+                      class="composer-input" />
+                    <button
+                      *ngIf="newLocationControl.value"
+                      type="button"
+                      class="composer-clear-btn"
+                      (click)="newLocationControl.reset(); locationInputError = null"
+                      title="Clear text">
+                      ×
+                    </button>
+                  </div>
+                  <div *ngIf="locationInputError" class="composer-error">{{ locationInputError }}</div>
+                </div>
+
+                <button type="button" class="btn-add-location" (click)="addLocation()">
+                  <span class="add-btn-icon" [innerHTML]="icons.plus | safeHtml"></span>
+                  <span>Add Location</span>
                 </button>
               </div>
+
+              <!-- Chips Display -->
+              <div class="locations-chip-area" *ngIf="deliveryToLocations.length > 0; else emptyLocationsTpl">
+                <div *ngFor="let loc of deliveryToLocations; let i = index" class="location-chip">
+                  <span class="chip-pin" [innerHTML]="icons.mapPin | safeHtml"></span>
+                  <span class="chip-text">{{ loc }}</span>
+                  <button type="button" (click)="removeLocation(i)" class="chip-remove-btn" title="Remove location">
+                    <span [innerHTML]="icons.x | safeHtml"></span>
+                  </button>
+                </div>
+              </div>
+
+              <ng-template #emptyLocationsTpl>
+                <div class="empty-locations-box">
+                  <span class="empty-loc-icon" [innerHTML]="icons.mapPin | safeHtml"></span>
+                  <span>No delivery locations added yet. Add locations above for quick selection during DC creation.</span>
+                </div>
+              </ng-template>
             </div>
-            <div *ngIf="deliveryToLocations.length === 0" style="color: #94a3b8; font-size: 13px; font-style: italic; margin-top: 4px;">
-              No delivery locations added yet.
+          </section>
+
+          <!-- Section 3: Registered Address Information -->
+          <section class="section-card">
+            <div class="section-card-header">
+              <div class="section-icon-wrap emerald">
+                <span [innerHTML]="icons.mapPin | safeHtml"></span>
+              </div>
+              <div class="section-header-text">
+                <h2 class="section-title">Address Information</h2>
+                <p class="section-subtitle">Complete street address, landmark, city, and postal code</p>
+              </div>
+            </div>
+
+            <div class="fields-grid-address">
+              <app-input-field
+                label="Door / Plot No"
+                placeholder="e.g. 402/A"
+                formControlName="door_No"
+                [required]="false"
+                [icon]="icons.door"
+                [error]="getErrorMessage('door_No')"
+              ></app-input-field>
+
+              <div class="street-span">
+                <app-input-field
+                  label="Street Name / Building"
+                  placeholder="Enter street, industrial estate, or building name"
+                  formControlName="street_Name"
+                  [required]="true"
+                  [icon]="icons.street"
+                  [error]="getErrorMessage('street_Name')"
+                ></app-input-field>
+              </div>
+
+              <app-input-field
+                label="Nearby / Landmark"
+                placeholder="e.g. Near City Center"
+                formControlName="landmark"
+                [icon]="icons.landmark"
+                [error]="getErrorMessage('landmark')"
+              ></app-input-field>
+
+              <app-input-field
+                label="City / District"
+                placeholder="Enter city"
+                formControlName="city"
+                [required]="true"
+                [icon]="icons.city"
+                [error]="getErrorMessage('city')"
+              ></app-input-field>
+
+              <app-input-field
+                label="Pincode"
+                placeholder="6-digit pincode"
+                formControlName="pincode"
+                [required]="true"
+                [icon]="icons.hash"
+                inputMode="numeric"
+                [maxLength]="6"
+                [error]="getErrorMessage('pincode')"
+              ></app-input-field>
+            </div>
+          </section>
+
+          <!-- Action Footer -->
+          <footer class="modern-form-footer">
+            <button
+              type="button"
+              class="btn-footer-reset"
+              (click)="onResetForm()"
+              [disabled]="isLoading">
+              Reset Fields
+            </button>
+
+            <div class="footer-right-actions">
+              <app-button
+                type="button"
+                variant="secondary"
+                (btnClick)="onCancel()"
+                [disabled]="isLoading">
+                Cancel
+              </app-button>
+              <app-button
+                type="submit"
+                variant="primary"
+                [isLoading]="isLoading"
+                [disabled]="companyForm.invalid || isLoading">
+                {{ isEdit ? 'Update Company' : 'Create Company' }}
+              </app-button>
+            </div>
+          </footer>
+        </div>
+
+        <!-- Right Sticky Column: Live Company Profile Preview -->
+        <aside class="preview-sidebar">
+          <div class="preview-card">
+            <div class="preview-top-banner">
+              <div class="preview-avatar">
+                {{ companyInitials }}
+              </div>
+              <div class="preview-status-tag">
+                {{ isEdit ? (editId ? 'EDITING #' + editId : 'SELECT COMPANY') : 'LIVE PREVIEW' }}
+              </div>
+            </div>
+
+            <div class="preview-body">
+              <h3 class="preview-company-name" [class.is-placeholder]="!companyForm.get('companyName')?.value">
+                {{ companyForm.get('companyName')?.value || 'Company Name Preview' }}
+              </h3>
+
+              <div class="preview-meta-pills">
+                <span class="meta-pill gst">
+                  <strong>GST:</strong> {{ (companyForm.get('gst_No')?.value | uppercase) || 'Not entered' }}
+                </span>
+                <span class="meta-pill phone" *ngIf="companyForm.get('phoneNumber')?.value">
+                  <strong>Tel:</strong> {{ companyForm.get('phoneNumber')?.value }}
+                </span>
+              </div>
+
+              <div class="preview-divider"></div>
+
+              <div class="preview-block">
+                <span class="preview-block-label">BILLING ADDRESS</span>
+                <p class="preview-address-text" [class.is-placeholder]="!formattedAddressPreview">
+                  {{ formattedAddressPreview || 'Address details will appear here as you type...' }}
+                </p>
+              </div>
+
+              <div class="preview-block">
+                <div class="preview-block-row">
+                  <span class="preview-block-label">DELIVERY LOCATIONS</span>
+                  <span class="preview-mini-count">{{ deliveryToLocations.length }}</span>
+                </div>
+                <div class="preview-locs-wrap" *ngIf="deliveryToLocations.length > 0; else noPreviewLocs">
+                  <span *ngFor="let loc of deliveryToLocations" class="preview-loc-tag">{{ loc }}</span>
+                </div>
+                <ng-template #noPreviewLocs>
+                  <p class="preview-empty-hint">No delivery locations added</p>
+                </ng-template>
+              </div>
+
+              <div class="preview-divider"></div>
+
+              <!-- Field Readiness Checklist -->
+              <div class="preview-checklist">
+                <span class="preview-block-label">REQUIRED CHECKLIST</span>
+                <div class="check-item" [class.done]="companyForm.get('companyName')?.valid">
+                  <span class="check-dot"></span>
+                  <span>Company Name</span>
+                </div>
+                <div class="check-item" [class.done]="companyForm.get('gst_No')?.valid">
+                  <span class="check-dot"></span>
+                  <span>Valid 15-Digit GSTIN</span>
+                </div>
+                <div class="check-item" [class.done]="companyForm.get('street_Name')?.valid">
+                  <span class="check-dot"></span>
+                  <span>Street / Building Address</span>
+                </div>
+                <div class="check-item" [class.done]="companyForm.get('city')?.valid && companyForm.get('pincode')?.valid">
+                  <span class="check-dot"></span>
+                  <span>City & 6-Digit Pincode</span>
+                </div>
+              </div>
             </div>
           </div>
-          </app-grid-layout>
-
-          <!-- Address Information Section -->
-          <app-section-header title="Address Information" [icon]="icons.mapPin"></app-section-header>
-          
-          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
-            <app-input-field
-              label="Door No"
-              placeholder="e.g. 402/A"
-              formControlName="door_No"
-              [required]="false"
-              [icon]="icons.door"
-              [error]="getErrorMessage('door_No')"
-            ></app-input-field>
-
-            <app-input-field
-              label="Street Name / Building"
-              placeholder="Enter street or building name"
-              formControlName="street_Name"
-              [required]="true"
-              [icon]="icons.street"
-              [error]="getErrorMessage('street_Name')"
-            ></app-input-field>
-          </app-grid-layout>
-
-          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
-            <app-input-field
-              label="Nearby / Landmark"
-              placeholder="e.g. Near City Center"
-              formControlName="landmark"
-              [icon]="icons.landmark"
-              [error]="getErrorMessage('landmark')"
-            ></app-input-field>
-          </app-grid-layout>
-
-          <app-grid-layout gap="24px" columns="repeat(auto-fit, minmax(min(100%, 450px), 1fr))">
-             <app-input-field
-              label="City"
-              placeholder="Enter city"
-              formControlName="city"
-              [required]="true"
-              [icon]="icons.city"
-              [error]="getErrorMessage('city')"
-            ></app-input-field>
-            <app-input-field
-              label="Pincode"
-              placeholder="6 digits"
-              formControlName="pincode"
-              [required]="true"
-              [icon]="icons.hash"
-              inputMode="numeric"
-              [maxLength]="6"
-            ></app-input-field>
-            <div *ngIf="companyForm.controls['pincode'].invalid && companyForm.controls['pincode'].touched" class="text-red-500 text-xs mt-1">
-              Enter valid 6-digit pincode
-            </div>
-          </app-grid-layout>
-
-          <footer class="form-actions">
-            <app-button
-              type="button"
-              variant="secondary"
-              (click)="onCancel()"
-              [disabled]="isLoading"
-            >
-              Cancel
-            </app-button>
-            <app-button
-              type="submit"
-              variant="primary"
-              [isLoading]="isLoading"
-              [disabled]="companyForm.invalid || isLoading"
-            >
-              {{ isEdit ? 'Update' : 'Create' }}
-            </app-button>
-          </footer>
-        </form>
-      </div>
+        </aside>
+      </form>
     </div>
   `,
   styles: [`
-    .form-container {
+    .company-workspace {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 40px 20px;
-      min-height: 100%;
+      flex-direction: column;
+      gap: 20px;
     }
 
-    .form-card {
-      background: var(--bg-card);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-soft);
-      padding: 40px;
-      width: 100%;
-      border: 1px solid var(--border);
-    }
-
-    .form-header {
-      margin-bottom: 40px;
-      text-align: left;
-    }
-
-    .title-with-icon {
+    /* Top Bar */
+    .workspace-topbar {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 12px;
-      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: 1px solid #E2E8F0;
+      background: #FFFFFF;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.16s ease;
+
+      &:hover {
+        background: #F8FAFC;
+        border-color: #CBD5E1;
+        color: #0F172A;
+        transform: translateX(-2px);
+      }
+    }
+
+    .btn-back-icon {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .btn-back-icon ::ng-deep svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .mode-Segmented {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px;
+      border-radius: 12px;
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      gap: 4px;
+    }
+
+    .mode-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: #64748B;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.16s ease;
+
+      &:hover:not(.active) {
+        color: #0F172A;
+      }
+
+      &.active {
+        background: #FFFFFF;
+        color: #2563EB;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+      }
+    }
+
+    .tab-icon {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .tab-icon ::ng-deep svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 24px 28px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 8px 24px -10px rgba(15, 23, 42, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: linear-gradient(180deg, #2563EB, #3B82F6);
+    }
+
+    .hero-banner.is-update::before {
+      background: linear-gradient(180deg, #4F46E5, #6366F1);
+    }
+
+    .hero-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .hero-icon-box {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+      border: 1px solid #BFDBFE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2563EB;
+      flex-shrink: 0;
+    }
+
+    .hero-banner.is-update .hero-icon-box {
+      background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+      border-color: #C7D2FE;
+      color: #4F46E5;
     }
 
     .main-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--primary);
     }
 
     .main-icon ::ng-deep svg {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .hero-eyebrow-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .hero-badge {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #DBEAFE;
+      color: #1D4ED8;
+    }
+
+    .hero-badge.badge-update {
+      background: #E0E7FF;
+      color: #4338CA;
+    }
+
+    .hero-id-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: #F1F5F9;
+      color: #334155;
+      border: 1px solid #E2E8F0;
     }
 
     .form-title {
-      font-size: 26px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 0px;
-      letter-spacing: -0.5px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
     }
 
     .form-subtitle {
-      font-size: 14px;
-      color: var(--text-muted);
+      font-size: 13.5px;
+      color: #64748B;
+      margin: 0;
     }
 
-    .company-form {
+    .completion-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      color: #B45309;
+      font-size: 12.5px;
+      font-weight: 800;
+
+      .completion-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #F59E0B;
+      }
+
+      &.is-ready {
+        background: #ECFDF5;
+        border-color: #A7F3D0;
+        color: #047857;
+
+        .completion-dot {
+          background: #10B981;
+        }
+      }
+    }
+
+    /* Two-column layout */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .form-main-col {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
     }
 
-    .form-actions {
+    /* Section Cards */
+    .section-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 4px 16px -6px rgba(15, 23, 42, 0.05);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        border-color: #CBD5E1;
+      }
+    }
+
+    .selector-spotlight {
+      background: linear-gradient(135deg, #F8FAFF 0%, #EFF6FF 100%);
+      border: 1.5px solid #BFDBFE;
+    }
+
+    .selector-header {
       display: flex;
-      justify-content: flex-end;
-      gap: 16px;
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1px solid #F1F5F9;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
     }
 
-    @media (max-width: 768px) {
-      .form-actions {
-        flex-direction: column-reverse;
+    .selector-title-group {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .selector-badge-num {
+      padding: 4px 9px;
+      border-radius: 8px;
+      background: #2563EB;
+      color: #FFFFFF;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+
+    .selector-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 0 0 2px;
+    }
+
+    .selector-desc {
+      font-size: 12.5px;
+      color: #475569;
+      margin: 0;
+    }
+
+    .company-count-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #FFFFFF;
+      border: 1px solid #BFDBFE;
+      color: #1D4ED8;
+      font-size: 11.5px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .section-card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 18px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #F1F5F9;
+    }
+
+    .section-icon-wrap {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      &.blue {
+        background: #EFF6FF;
+        color: #2563EB;
+        border: 1px solid #DBEAFE;
       }
-      .form-actions > * {
-        width: 100%;
+
+      &.indigo {
+        background: #EEF2FF;
+        color: #4F46E5;
+        border: 1px solid #E0E7FF;
+      }
+
+      &.emerald {
+        background: #ECFDF5;
+        color: #059669;
+        border: 1px solid #D1FAE5;
       }
     }
 
-    .add-btn-icon ::ng-deep svg {
+    .section-icon-wrap ::ng-deep svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .section-header-text {
+      flex: 1;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 0 0 2px;
+    }
+
+    .section-subtitle {
+      font-size: 12.5px;
+      color: #64748B;
+      margin: 0;
+    }
+
+    .location-count-badge {
+      padding: 4px 11px;
+      border-radius: 999px;
+      background: #EEF2FF;
+      color: #4338CA;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    /* Field Grids */
+    .fields-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .field-span-full {
+      grid-column: 1 / -1;
+    }
+
+    .fields-grid-address {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .street-span {
+      grid-column: span 2;
+    }
+
+    /* Delivery Locations Composer */
+    .delivery-composer {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .composer-input-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .composer-field-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .composer-input-box {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      background: #F8FAFC;
+      padding: 0 12px;
+      transition: all 0.18s ease;
+
+      &:focus-within {
+        background: #FFFFFF;
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+      }
+
+      &.invalid {
+        border-color: #EF4444;
+        background: #FEF2F2;
+      }
+    }
+
+    .composer-icon {
+      display: flex;
+      align-items: center;
+      color: #64748B;
+      margin-right: 10px;
+    }
+
+    .composer-icon ::ng-deep svg {
       width: 18px;
       height: 18px;
     }
 
-    .chip-remove-btn {
-      background: #e2e8f0; 
-      border: none; 
-      padding: 0; 
-      margin: 0; 
-      color: #64748b; 
-      cursor: pointer; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      width: 20px; 
-      height: 20px; 
-      border-radius: 50%; 
-      transition: all 0.2s;
+    .composer-input {
+      flex: 1;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      color: #0F172A;
     }
 
-    .chip-remove-btn:hover {
-      color: #ef4444; 
-      background: #fee2e2;
+    .composer-clear-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: none;
+      background: #E2E8F0;
+      color: #475569;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .composer-error {
+      color: #EF4444;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+
+    .btn-add-location {
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #2563EB, #1D4ED8);
+      color: #FFFFFF;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+      transition: all 0.16s ease;
+
+      &:hover {
+        background: linear-gradient(135deg, #1D4ED8, #1E40AF);
+        transform: translateY(-1px);
+      }
+    }
+
+    .add-btn-icon {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .add-btn-icon ::ng-deep svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .locations-chip-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #F8FAFC;
+      border: 1px dashed #CBD5E1;
+    }
+
+    .location-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px 6px 12px;
+      border-radius: 999px;
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      color: #1E293B;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      transition: all 0.15s ease;
+
+      &:hover {
+        border-color: #93C5FD;
+        background: #EFF6FF;
+      }
+    }
+
+    .chip-pin {
+      display: inline-flex;
+      color: #2563EB;
+    }
+
+    .chip-pin ::ng-deep svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .chip-remove-btn {
+      background: #F1F5F9;
+      border: none;
+      padding: 0;
+      margin: 0;
+      color: #64748B;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      transition: all 0.15s ease;
+
+      &:hover {
+        color: #EF4444;
+        background: #FEE2E2;
+      }
     }
 
     .chip-remove-btn ::ng-deep svg {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
+    }
+
+    .empty-locations-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #F8FAFC;
+      border: 1px dashed #CBD5E1;
+      color: #64748B;
+      font-size: 13px;
+    }
+
+    .empty-loc-icon {
+      display: inline-flex;
+      color: #94A3B8;
+    }
+
+    .empty-loc-icon ::ng-deep svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Footer */
+    .modern-form-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 18px 24px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px -6px rgba(15, 23, 42, 0.05);
+    }
+
+    .btn-footer-reset {
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #64748B;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover:not(:disabled) {
+        background: #F1F5F9;
+        color: #0F172A;
+      }
+    }
+
+    .footer-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Live Preview Sidebar */
+    .preview-sidebar {
+      position: sticky;
+      top: 20px;
+    }
+
+    .preview-card {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px -10px rgba(15, 23, 42, 0.08);
+    }
+
+    .preview-top-banner {
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preview-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .preview-status-tag {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #E2E8F0;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+    }
+
+    .preview-body {
+      padding: 20px;
+    }
+
+    .preview-company-name {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0F172A;
+      margin: 0 0 10px;
+      word-break: break-word;
+
+      &.is-placeholder {
+        color: #94A3B8;
+        font-weight: 600;
+      }
+    }
+
+    .preview-meta-pills {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      color: #334155;
+    }
+
+    .preview-divider {
+      height: 1px;
+      background: #F1F5F9;
+      margin: 16px 0;
+    }
+
+    .preview-block {
+      margin-bottom: 14px;
+    }
+
+    .preview-block-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .preview-block-label {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      color: #64748B;
+      margin-bottom: 6px;
+    }
+
+    .preview-mini-count {
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: #EFF6FF;
+      color: #2563EB;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .preview-address-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #334155;
+      margin: 0;
+
+      &.is-placeholder {
+        color: #94A3B8;
+        font-style: italic;
+      }
+    }
+
+    .preview-locs-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .preview-loc-tag {
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #F1F5F9;
+      color: #334155;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .preview-empty-hint {
+      font-size: 12.5px;
+      color: #94A3B8;
+      font-style: italic;
+      margin: 0;
+    }
+
+    .preview-checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #64748B;
+
+      .check-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #CBD5E1;
+        transition: all 0.15s ease;
+      }
+
+      &.done {
+        color: #0F172A;
+
+        .check-dot {
+          background: #10B981;
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+        }
+      }
+    }
+
+    .select-field-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1E293B;
+    }
+
+    .required {
+      color: var(--error, #ef4444);
+    }
+
+    .error-message {
+      font-size: 12px;
+      color: var(--error, #ef4444);
+      font-weight: 500;
+      margin-top: -4px;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-sidebar {
+        position: static;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .fields-grid-2,
+      .fields-grid-address {
+        grid-template-columns: 1fr;
+      }
+
+      .street-span {
+        grid-column: span 1;
+      }
+
+      .composer-input-row {
+        flex-direction: column;
+      }
+
+      .btn-add-location {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .modern-form-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+
+      .footer-right-actions {
+        flex-direction: column-reverse;
+      }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CompanyFormComponent implements OnInit {
+export class CompanyFormComponent implements OnInit, OnChanges {
   @Input() mode: 'add' | 'update' = 'add';
   @Input() companyId: number | null = null;
 
@@ -337,6 +1326,10 @@ export class CompanyFormComponent implements OnInit {
 
   icons = {
     building: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M16 18h.01"/></svg>`,
+    editBuilding: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`,
+    arrowLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`,
+    edit: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    truck: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>`,
     phone: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
     hash: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hash"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>`,
     plus: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
@@ -386,19 +1379,29 @@ export class CompanyFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.initForm();
     this.isEdit = this.mode === 'update';
+    this.initForm();
     if (this.isEdit) {
       this.editId = this.companyId;
       this.loadCompanyList();
-      if (this.editId) {
+      if (this.editId && this.editId > 0) {
         this.fetchAndPatchCompany(this.editId);
+      }
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['companyId'] && !changes['companyId'].firstChange) {
+      const nextId = Number(this.companyId || 0);
+      if (this.isEdit && nextId > 0 && nextId !== this.editId) {
+        this.fetchAndPatchCompany(nextId);
       }
     }
   }
 
   initForm(): void {
     this.companyForm = this.fb.group({
+      companyId: [null, this.mode === 'update' ? [Validators.required] : []],
       companyName: ['', Validators.required],
       gst_No: ['', [Validators.required, gstValidator]],
       phoneNumber: [''],
@@ -424,18 +1427,25 @@ export class CompanyFormComponent implements OnInit {
     });
   }
 
+  private hasFieldEdits(): boolean {
+    if (!this.companyForm || !this.editId) return false;
+    const keys = ['companyName', 'gst_No', 'phoneNumber', 'door_No', 'street_Name', 'landmark', 'city', 'pincode'];
+    return keys.some(k => this.companyForm.get(k)?.dirty);
+  }
+
   async onCompanyChange(event: any) {
     const newId = Number(event?.target?.value ?? event);
-    if (!newId) return;
+    if (!newId || newId === this.editId) return;
 
-    if (this.companyForm.dirty) {
+    if (this.hasFieldEdits()) {
       const confirmed = await this.modalService.showConfirmation({
         title: 'Switch Company?',
         message: 'Switching company will reset current data. Do you want to continue?'
       });
 
       if (!confirmed) {
-        this.companyForm.get('companyId')?.setValue(this.companyId, { emitEvent: false });
+        this.companyForm.get('companyId')?.setValue(this.editId, { emitEvent: false });
+        this.cdr.markForCheck();
         return;
       }
     }
@@ -445,35 +1455,42 @@ export class CompanyFormComponent implements OnInit {
 
   fetchAndPatchCompany(id: number): void {
     this.isLoading = true;
-    this.companyService.getCompanyById(id).subscribe(details => {
-      this.isLoading = false;
-      const loadedId = readCompanyId(details);
-      if (details && loadedId === id) {
-        this.editId = loadedId;
-        this.companyForm.patchValue({
-          companyId: loadedId,
-          companyName: details.companyName ?? details.CompanyName,
-          phoneNumber: details.phoneNumber ?? details.PhoneNumber,
-          gst_No: readCompanyGst(details),
-          door_No: details.door_No ?? details.Door_No,
-          street_Name: details.street_Name ?? details.Street_Name,
-          landmark: details.landmark ?? details.Landmark,
-          city: details.city ?? details.City,
-          pincode: details.pincode ?? details.Pincode
-        });
+    this.companyService.getCompanyById(id).subscribe({
+      next: details => {
+        this.isLoading = false;
+        const loadedId = readCompanyId(details);
+        if (details && loadedId === id) {
+          this.editId = loadedId;
+          this.companyForm.patchValue({
+            companyId: loadedId,
+            companyName: details.companyName ?? details.CompanyName ?? '',
+            phoneNumber: details.phoneNumber ?? details.PhoneNumber ?? '',
+            gst_No: readCompanyGst(details),
+            door_No: details.door_No ?? details.Door_No ?? '',
+            street_Name: details.street_Name ?? details.Street_Name ?? '',
+            landmark: details.landmark ?? details.Landmark ?? '',
+            city: details.city ?? details.City ?? '',
+            pincode: details.pincode ?? details.Pincode ?? ''
+          }, { emitEvent: false });
 
-        // Patch delivery to array
-        if (details.deliveryToLocations && Array.isArray(details.deliveryToLocations)) {
-           this.deliveryToLocations = [...details.deliveryToLocations];
-        } else if (details.deliveryTo) {
-           this.deliveryToLocations = [details.deliveryTo];
-        } else {
-           this.deliveryToLocations = [];
+          // Patch delivery to array
+          if (details.deliveryToLocations && Array.isArray(details.deliveryToLocations)) {
+            this.deliveryToLocations = [...details.deliveryToLocations];
+          } else if (details.deliveryTo) {
+            this.deliveryToLocations = [details.deliveryTo];
+          } else {
+            this.deliveryToLocations = [];
+          }
+
+          this.companyForm.markAsPristine();
+          this.companyForm.markAsUntouched();
         }
-
-        this.companyForm.markAsPristine();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
       }
-      this.cdr.markForCheck();
     });
   }
 
@@ -498,11 +1515,17 @@ export class CompanyFormComponent implements OnInit {
     }
 
     // 2. Prepare payload
+    const formValues = this.companyForm.getRawValue();
+    const resolvedCompanyId = this.isEdit
+      ? Number(this.editId || formValues.companyId || 0) || undefined
+      : undefined;
+
     const payload: CompanyRequest = {
-      ...this.companyForm.value,
+      ...formValues,
+      companyName: String(formValues.companyName || '').trim(),
       deliveryToLocations: this.deliveryToLocations,
       mode: this.isEdit ? 'UPDATE' : 'INSERT',
-      companyId: this.isEdit ? this.editId ?? undefined : undefined
+      companyId: resolvedCompanyId
     } as any;
 
     this.isLoading = true;
@@ -521,6 +1544,10 @@ export class CompanyFormComponent implements OnInit {
 
           // Store response
           localStorage.setItem('companyId', res.id.toString());
+
+          if (this.isEdit) {
+            this.loadCompanyList();
+          }
 
           alert(res.message);
 
@@ -547,6 +1574,57 @@ export class CompanyFormComponent implements OnInit {
 
   onCancel(): void {
     this.router.navigate(['/dashboard/company']);
+  }
+
+  switchMode(targetMode: 'add' | 'update'): void {
+    if (this.mode === targetMode) return;
+    this.router.navigate([
+      targetMode === 'add' ? '/dashboard/company/add' : '/dashboard/company/update'
+    ]);
+  }
+
+  onResetForm(): void {
+    if (this.isEdit && this.editId) {
+      this.fetchAndPatchCompany(this.editId);
+      return;
+    }
+    this.companyForm.reset();
+    this.deliveryToLocations = [];
+    this.newLocationControl.reset();
+    this.locationInputError = null;
+    this.cdr.markForCheck();
+  }
+
+  get companyInitials(): string {
+    const name = String(this.companyForm?.get('companyName')?.value || '').trim();
+    if (!name) return 'CO';
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
+
+  get formattedAddressPreview(): string {
+    if (!this.companyForm) return '';
+    const v = this.companyForm.value;
+    const parts = [
+      v.door_No ? `No. ${v.door_No}` : '',
+      v.street_Name || '',
+      v.landmark ? `(${v.landmark})` : '',
+      v.city || '',
+      v.pincode ? `- ${v.pincode}` : ''
+    ].filter(Boolean);
+    return parts.join(', ').replace(', - ', ' - ');
+  }
+
+  get completionPercentage(): number {
+    if (!this.companyForm) return 0;
+    const requiredKeys = this.isEdit
+      ? ['companyId', 'companyName', 'gst_No', 'street_Name', 'city', 'pincode']
+      : ['companyName', 'gst_No', 'street_Name', 'city', 'pincode'];
+    const validCount = requiredKeys.filter(k => this.companyForm.get(k)?.valid).length;
+    return Math.round((validCount / requiredKeys.length) * 100);
   }
 
   scrollToFirstError(): void {

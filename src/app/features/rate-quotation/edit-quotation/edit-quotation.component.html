@@ -9,7 +9,7 @@
           <div class="section-title">
             <span class="quote-chip" *ngIf="quotationNo">{{ quotationNo }}</span>
             <h2>Edit Quotation</h2>
-            <p class="section-hint">Update the design rate, then generate the PDF.</p>
+            <p class="section-hint">Update only the details you want on the PDF. Blank or 0 values are skipped.</p>
             <mat-icon *ngIf="isLoadingQuotation" class="loading-spinner rotating">autorenew</mat-icon>
             <div class="title-underline"></div>
           </div>
@@ -70,13 +70,28 @@
             <!-- Rate Per Piece -->
             <div class="input-group">
               <label>Rate Per Piece</label>
-              <input type="text" formControlName="ratePerPiece" placeholder="Enter Rate Per Piece">
+              <div class="money-input">
+                <span class="money-prefix">RS</span>
+                <input type="text" formControlName="ratePerPiece" placeholder="Enter rate per piece">
+              </div>
             </div>
 
             <!-- Embroidery Cost / 1000 Sts -->
             <div class="input-group">
               <label>Embroidery Cost / 1000 Sts</label>
-              <input type="text" formControlName="embCost" placeholder="Enter Cost per 1000 Stitches">
+              <div class="money-input">
+                <span class="money-prefix">RS</span>
+                <input type="text" formControlName="embCost" placeholder="Enter cost per 1000 stitches">
+              </div>
+            </div>
+
+            <!-- Total Amount -->
+            <div class="input-group">
+              <label>Total Amount</label>
+              <div class="money-input">
+                <span class="money-prefix">RS</span>
+                <input type="text" formControlName="totalAmount" placeholder="Enter total amount">
+              </div>
             </div>
 
             <!-- Payment Terms -->
@@ -95,7 +110,8 @@
 
           <input type="file" #fileInput hidden accept=".jpg,.jpeg,.png" (change)="onFileSelected($event)">
 
-          <div class="upload-box" *ngIf="!imagePreview" (click)="fileInput.click()">
+          <div class="upload-box" *ngIf="!imagePreview" (click)="fileInput.click()"
+            (dragover)="onDragOver($event)" (drop)="onFileDropped($event)">
             <mat-icon class="upload-icon">image</mat-icon>
             <span class="upload-text">Click to upload<br>or drag and drop</span>
             <span class="upload-hint">PNG, JPG, JPEG<br>Max size: 5MB</span>

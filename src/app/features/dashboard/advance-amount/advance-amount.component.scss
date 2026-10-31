@@ -77,6 +77,10 @@ $text-muted: #6c757d;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
   align-items: center;
+  flex-wrap: wrap;
+  overflow: visible;
+  position: relative;
+  z-index: 4;
 
   .search-box, .date-range-box {
     display: flex;
@@ -98,13 +102,53 @@ $text-muted: #6c757d;
 
   .search-box {
     width: 300px;
+    height: 42px;
+    box-sizing: border-box;
     .search-icon { color: $text-muted; margin-right: 0.5rem; }
     input { width: 100%; }
+  }
+
+  .filter-date {
+    width: 240px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 5;
+
+    ::ng-deep {
+      .input-wrapper {
+        height: 42px;
+        border-radius: 6px;
+      }
+
+      .date-input {
+        line-height: 42px !important;
+        padding-top: 0;
+      }
+
+      .calendar-popup {
+        width: 320px;
+        max-width: min(320px, calc(100vw - 2rem));
+        z-index: 40;
+      }
+    }
   }
 
   .date-range-box {
     .calendar-icon { color: $text-muted; margin-right: 0.5rem; }
     .separator { margin: 0 0.5rem; color: $text-muted; }
+  }
+
+  .view-all-btn {
+    margin-left: auto;
+    height: 42px;
+    min-width: 120px;
+
+    &.active {
+      background-color: #eaf2ff;
+      border-color: $primary-color;
+      color: $primary-color;
+      font-weight: 600;
+    }
   }
 }
 
@@ -158,6 +202,110 @@ $text-muted: #6c757d;
         color: $text-dark;
       }
     }
+  }
+}
+
+.view-all-card {
+  background: #fff;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  max-height: 62vh;
+  overflow: hidden;
+}
+
+.view-all-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $border-color;
+  flex-shrink: 0;
+
+  h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: $primary-color;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    color: $text-muted;
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    color: $text-muted;
+    cursor: pointer;
+    &:hover { color: #333; }
+  }
+}
+
+.view-all-body {
+  overflow-y: auto;
+  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.view-all-row {
+  display: grid;
+  grid-template-columns: 56px minmax(160px, 1.4fr) 120px 140px minmax(160px, 1.6fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid #f0f2f5;
+  font-size: 0.92rem;
+
+  .text-right { text-align: right; }
+  .font-medium { font-weight: 500; }
+  .text-muted { color: $text-muted; }
+
+  &:last-child { border-bottom: none; }
+}
+
+.view-all-row-head {
+  position: sticky;
+  top: 0;
+  background: #f4f6fb;
+  color: $primary-color;
+  font-weight: 600;
+  font-size: 0.9rem;
+  z-index: 1;
+  border-bottom: 1px solid $border-color;
+}
+
+.view-all-empty {
+  padding: 2.5rem 1.25rem;
+  text-align: center;
+  color: $text-muted;
+}
+
+.view-all-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.95rem 1.25rem;
+  border-top: 1px solid $border-color;
+  background: #f8fafc;
+  flex-shrink: 0;
+
+  span {
+    font-size: 0.95rem;
+    color: $text-muted;
+    font-weight: 500;
+  }
+
+  strong {
+    font-size: 1.2rem;
+    color: $text-dark;
+    font-weight: 700;
   }
 }
 
@@ -256,6 +404,8 @@ $text-muted: #6c757d;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-top: 1.5rem;
   padding: 0 0.5rem;
 
@@ -266,9 +416,12 @@ $text-muted: #6c757d;
 
   .pagination-controls {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 0.25rem;
 
     .page-btn {
+      min-width: 36px;
       border: 1px solid $border-color;
       background: #fff;
       padding: 0.4rem 0.8rem;
@@ -285,6 +438,14 @@ $text-muted: #6c757d;
         background-color: $primary-color;
         color: #fff;
         border-color: $primary-color;
+      }
+
+      &.dots {
+        border: none;
+        background: transparent;
+        min-width: 24px;
+        padding: 0.4rem 0.2rem;
+        cursor: default;
       }
 
       &:disabled {
@@ -316,10 +477,14 @@ $text-muted: #6c757d;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 
   &.delete-modal {
     width: 400px;
+  }
+
+  ::ng-deep .calendar-popup {
+    z-index: 1100;
   }
 }
 
@@ -607,7 +772,15 @@ $text-muted: #6c757d;
   .filter-section {
     flex-direction: column;
     align-items: stretch;
-    .search-box { width: 100%; }
+    .search-box,
+    .filter-date,
+    .view-all-btn { width: 100%; margin-left: 0; }
+  }
+
+  .view-all-row,
+  .view-all-row-head {
+    grid-template-columns: 40px minmax(120px, 1fr) 100px 110px minmax(120px, 1fr);
+    min-width: 640px;
   }
 
   .modal-body .form-row-2 {

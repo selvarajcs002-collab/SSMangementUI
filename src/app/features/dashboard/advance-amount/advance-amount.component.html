@@ -27,9 +27,20 @@
       <span class="search-icon">🔍</span>
       <input type="text" placeholder="Search by name..." [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()">
     </div>
-    <div style="width: 200px;">
-      <app-date-picker [(ngModel)]="filterDate" (valueChange)="applyFilters()" placeholder="Select Date"></app-date-picker>
+    <div class="filter-date">
+      <app-date-picker
+        [(ngModel)]="filterDate"
+        (ngModelChange)="applyFilters()"
+        placeholder="Select date">
+      </app-date-picker>
     </div>
+    <button
+      type="button"
+      class="btn btn-outline view-all-btn"
+      [class.active]="showAllRecords"
+      (click)="toggleViewAll()">
+      {{ showAllRecords ? 'Back to Table' : 'View All' }}
+    </button>
   </div>
 
   <!-- Loading State -->
@@ -50,8 +61,42 @@
     </div>
   </div>
 
+  <!-- View All content card -->
+  <div class="view-all-card" *ngIf="!isLoading && showAllRecords">
+    <div class="view-all-header">
+      <div>
+        <h3>All Advance Details</h3>
+        <p>{{ filteredAdvances.length }} record{{ filteredAdvances.length === 1 ? '' : 's' }}</p>
+      </div>
+      <button type="button" class="close-btn" (click)="toggleViewAll()" aria-label="Close view all">✕</button>
+    </div>
+    <div class="view-all-body">
+      <div class="view-all-row view-all-row-head">
+        <span>#</span>
+        <span>Name</span>
+        <span>Date</span>
+        <span class="text-right">Amount (₹)</span>
+        <span>Remarks</span>
+      </div>
+      <div class="view-all-empty" *ngIf="filteredAdvances.length === 0">
+        No advance records found for the selected filter.
+      </div>
+      <div class="view-all-row" *ngFor="let item of filteredAdvances; let i = index">
+        <span>{{ i + 1 }}</span>
+        <span class="font-medium">{{ item.name }}</span>
+        <span>{{ item.date | date:'dd-MM-yyyy' }}</span>
+        <span class="text-right font-medium">₹{{ item.amount | number:'1.2-2' }}</span>
+        <span class="text-muted">{{ item.remarks || '-' }}</span>
+      </div>
+    </div>
+    <div class="view-all-footer">
+      <span>Total Amount</span>
+      <strong>₹{{ totalAdvancePaid | number:'1.2-2' }}</strong>
+    </div>
+  </div>
+
   <!-- Table -->
-  <div class="table-container" *ngIf="!isLoading">
+  <div class="table-container" *ngIf="!isLoading && !showAllRecords">
     <table class="custom-table">
       <colgroup>
         <col style="width: 5%">
@@ -103,7 +148,7 @@
   </div>
 
   <!-- Pagination -->
-  <div class="pagination-section" *ngIf="!isLoading && filteredAdvances.length > 0">
+  <div class="pagination-section" *ngIf="!isLoading && !showAllRecords && filteredAdvances.length > 0">
     <div class="pagination-info">
       Showing {{ (currentPage - 1) * pageSize + 1 }} to 
       {{ (currentPage * pageSize > filteredAdvances.length) ? filteredAdvances.length : (currentPage * pageSize) }} 
@@ -111,8 +156,14 @@
     </div>
     <div class="pagination-controls">
       <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">Previous</button>
-      <button class="page-btn" *ngFor="let p of getPages()" [class.active]="currentPage === p" (click)="goToPage(p)">
-        {{ p }}
+      <button
+        class="page-btn"
+        *ngFor="let p of visiblePages"
+        [class.active]="currentPage === p"
+        [class.dots]="p < 0"
+        [disabled]="p < 0"
+        (click)="goToPage(p)">
+        {{ p < 0 ? '…' : p }}
       </button>
       <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">Next</button>
     </div>

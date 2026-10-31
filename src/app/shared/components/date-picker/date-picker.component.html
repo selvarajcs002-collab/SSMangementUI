@@ -22,12 +22,12 @@
   <div class="calendar-popup animate-fade-in" *ngIf="isOpen">
 <div class="calendar-header">
   <select class="month-select" [(ngModel)]="currentMonth" (change)="onMonthChange($event)" aria-label="Select month">
-    <option *ngFor="let month of months; let i = index" [value]="i">{{ month }}</option>
+    <option *ngFor="let month of months; let i = index" [ngValue]="i">{{ month }}</option>
   </select>
   <div class="year-stepper">
-    <button type="button" class="step-btn" (click)="changeYear(-1)" aria-label="Previous year">&#9650;</button>
+    <button type="button" class="step-btn" (click)="changeYear(-1); $event.stopPropagation()" aria-label="Previous year">‹</button>
     <input class="year-input" type="number" [(ngModel)]="currentYear" (change)="onYearChange($event)" min="1900" max="2100" aria-label="Year" />
-    <button type="button" class="step-btn" (click)="changeYear(1)" aria-label="Next year">&#9660;</button>
+    <button type="button" class="step-btn" (click)="changeYear(1); $event.stopPropagation()" aria-label="Next year">›</button>
   </div>
 </div>
 

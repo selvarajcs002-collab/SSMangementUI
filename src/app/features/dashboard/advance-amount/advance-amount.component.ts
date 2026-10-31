@@ -44,6 +44,7 @@ export class AdvanceAmountComponent implements OnInit {
   isSubmitting: boolean = false;
   isGeneratingChallan: boolean = false;
   generatingChallanId: number | null = null;
+  showAllRecords: boolean = false;
   
   @ViewChild('advanceDatePicker') advanceDatePicker!: DatePickerComponent;
   
@@ -103,14 +104,30 @@ export class AdvanceAmountComponent implements OnInit {
       result = result.filter(a => a.name.toLowerCase().includes(q));
     }
 
-    if (this.filterDate) {
-        result = result.filter(a => a.date === this.filterDate);
+    const selectedDate = this.toDateKey(this.filterDate);
+    if (selectedDate) {
+      result = result.filter(a => this.toDateKey(a.date) === selectedDate);
     }
 
     this.filteredAdvances = result;
     this.totalPages = Math.ceil(this.filteredAdvances.length / this.pageSize) || 1;
     this.currentPage = 1;
     this.updatePagination();
+  }
+
+  /** Normalize API ISO dates and picker values to yyyy-MM-dd for exact-day matching. */
+  private toDateKey(value: string | null | undefined): string {
+    if (!value) return '';
+    const trimmed = String(value).trim();
+    const isoDay = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (isoDay) return isoDay[1];
+
+    const parsed = new Date(trimmed);
+    if (isNaN(parsed.getTime())) return '';
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   updatePagination(): void {
@@ -122,6 +139,10 @@ export class AdvanceAmountComponent implements OnInit {
     return this.filteredAdvances.reduce((sum, advance) => sum + Number(advance.amount || 0), 0);
   }
 
+  toggleViewAll(): void {
+    this.showAllRecords = !this.showAllRecords;
+  }
+
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -129,8 +150,27 @@ export class AdvanceAmountComponent implements OnInit {
     }
   }
 
-  getPages(): number[] {
-    return Array.from({length: this.totalPages}, (_, i) => i + 1);
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    const current = this.currentPage;
+
+    if (total <= 1) return total === 1 ? [1] : [];
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+      return pages;
+    }
+
+    pages.push(1);
+    if (current > 3) pages.push(-1);
+
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+
+    if (current < total - 2) pages.push(-1);
+    pages.push(total);
+    return pages;
   }
 
   // --- Actions ---

@@ -93,8 +93,8 @@ export class DatePickerComponent implements ControlValueAccessor, OnInit {
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       if (this._value) {
-        const d = new Date(this._value);
-        if (!isNaN(d.getTime())) {
+        const d = this.parseLocalDate(this._value);
+        if (d) {
           this.currentYear = d.getFullYear();
           this.currentMonth = d.getMonth();
         }
@@ -218,19 +218,25 @@ export class DatePickerComponent implements ControlValueAccessor, OnInit {
 
   private checkIsSelected(year: number, month: number, day: number): boolean {
     if (!this.value) return false;
-    const sel = new Date(this.value);
+    const sel = this.parseLocalDate(this.value);
+    if (!sel) return false;
     return sel.getDate() === day && sel.getMonth() === month && sel.getFullYear() === year;
+  }
+
+  private parseLocalDate(value: string): Date | null {
+    if (!value) return null;
+    const match = String(value).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? null : parsed;
   }
 
   private formatDisplayValue() {
     if (!this.value) { this.displayValue = ''; return; }
-    const parts = this.value.split('-');
-    if (parts.length !== 3) { this.displayValue = this.value; return; }
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const day = parseInt(parts[2], 10);
-    const d = new Date(year, month, day);
-    if (isNaN(d.getTime())) { this.displayValue = this.value; return; }
+    const d = this.parseLocalDate(this.value);
+    if (!d) { this.displayValue = this.value; return; }
     this.displayValue = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 

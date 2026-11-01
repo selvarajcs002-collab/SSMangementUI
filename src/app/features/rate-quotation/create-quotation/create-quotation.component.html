@@ -8,7 +8,7 @@
         <div class="form-section">
           <div class="section-title">
             <h2>New Quotation</h2>
-            <p class="section-hint">Fill the design details. The extra field name can be changed later in application settings.</p>
+            <p class="section-hint">Fill only the details you want on the PDF. Blank or 0 values are skipped. The extra field name can be changed later in application settings.</p>
             <div class="title-underline"></div>
           </div>
 
@@ -68,13 +68,28 @@
             <!-- Rate Per Piece -->
             <div class="input-group">
               <label>Rate Per Piece</label>
-              <input type="text" formControlName="ratePerPiece" placeholder="Enter Rate Per Piece">
+              <div class="money-input">
+                <span class="money-prefix">RS</span>
+                <input type="text" formControlName="ratePerPiece" placeholder="Enter rate per piece">
+              </div>
             </div>
 
             <!-- Embroidery Cost / 1000 Sts -->
             <div class="input-group">
               <label>Embroidery Cost / 1000 Sts</label>
-              <input type="text" formControlName="embCost" placeholder="Enter Cost per 1000 Stitches">
+              <div class="money-input">
+                <span class="money-prefix">RS</span>
+                <input type="text" formControlName="embCost" placeholder="Enter cost per 1000 stitches">
+              </div>
+            </div>
+
+            <!-- Total Amount -->
+            <div class="input-group">
+              <label>Total Amount</label>
+              <div class="money-input">
+                <span class="money-prefix">RS</span>
+                <input type="text" formControlName="totalAmount" placeholder="Enter total amount">
+              </div>
             </div>
 
             <!-- Payment Terms -->
@@ -93,7 +108,8 @@
 
           <input type="file" #fileInput hidden accept=".jpg,.jpeg,.png" (change)="onFileSelected($event)">
 
-          <div class="upload-box" *ngIf="!imagePreview" (click)="fileInput.click()">
+          <div class="upload-box" *ngIf="!imagePreview" (click)="fileInput.click()"
+            (dragover)="onDragOver($event)" (drop)="onFileDropped($event)">
             <mat-icon class="upload-icon">image</mat-icon>
             <span class="upload-text">Click to upload<br>or drag and drop</span>
             <span class="upload-hint">PNG, JPG, JPEG<br>Max size: 5MB</span>
@@ -142,8 +158,8 @@
       <button class="btn-pdf" type="button" (click)="generatePdf()">
         <mat-icon>insert_drive_file</mat-icon> GENERATE PDF
       </button>
-      <button class="btn-submit" type="submit">
-        <mat-icon>send</mat-icon> SUBMIT QUOTATION
+      <button class="btn-submit" type="submit" [disabled]="isSaving">
+        <mat-icon>send</mat-icon> {{ isSaving ? 'SUBMITTING...' : 'SUBMIT QUOTATION' }}
       </button>
     </div>
   </form>

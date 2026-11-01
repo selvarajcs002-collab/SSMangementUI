@@ -38,6 +38,7 @@ export class CreateQuotationComponent {
   quotationForm: FormGroup;
   imagePreview: string | ArrayBuffer | null = null;
   isLoadingCompanies = true;
+  isSaving = false;
   customFieldLabel = 'Additional Detail';
 
   companyOptions: CompanyDropdownModel[] = [];
@@ -62,6 +63,7 @@ export class CreateQuotationComponent {
       normalEmbColors: [''],
       ratePerPiece: [''],
       embCost: [''],
+      totalAmount: [''],
       paymentTerms: ['']
     });
 
@@ -140,16 +142,31 @@ export class CreateQuotationComponent {
 
   onFileSelected(event: any) {
     const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target && e.target.result) {
-          this.imagePreview = e.target.result;
-        }
-      };
-      reader.readAsDataURL(file);
+    this.setSelectedFile(file);
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+  }
+
+  onFileDropped(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    this.setSelectedFile(file);
+  }
+
+  private setSelectedFile(file?: File) {
+    if (!file) {
+      return;
     }
+    this.selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target && e.target.result) {
+        this.imagePreview = e.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   removeImage() {
@@ -162,14 +179,22 @@ export class CreateQuotationComponent {
   }
 
   generatePdf() {
-    console.log('Generating PDF...');
+    this.messageService.error('Please submit the quotation first, then generate the PDF from the saved quotation.');
   }
 
-  private asText(value: unknown): string | null {
-    if (value === null || value === undefined || value === '') {
-      return null;
+  private asText(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
     }
-    return String(value);
+    const text = String(value).trim();
+    if (text === '' || text === '0') {
+      return '';
+    }
+    const numeric = Number(text);
+    if (!Number.isNaN(numeric) && numeric === 0) {
+      return '';
+    }
+    return text;
   }
 
   private asNumber(value: unknown): number | null {
@@ -177,41 +202,48 @@ export class CreateQuotationComponent {
       return null;
     }
     const n = Number(value);
-    return Number.isNaN(n) ? null : n;
+    if (Number.isNaN(n) || n === 0) {
+      return null;
+    }
+    return n;
   }
 
   submitQuotation() {
+    if (this.isSaving) {
+      return;
+    }
+
+    this.isSaving = true;
     const formValue = this.quotationForm.getRawValue();
     const defaults = this.appConfig.defaultQuotationSettings;
 
     const selectedCompany = this.companyOptions.find(c => c.key === formValue.companyId);
     const companyName = selectedCompany ? selectedCompany.value : '';
-    const embCost = this.asNumber(formValue.embCost);
     const quantity = this.asNumber(defaults.quantity);
 
     const payload = {
       "quotationDate": new Date().toISOString(),
-      "companyId": formValue.companyId ?? null,
-      "companyName": companyName,
-      "contactPerson": defaults.contactPerson,
-      "mobileNo": defaults.mobileNo,
-      "emailId": defaults.emailId,
-      "address": defaults.address,
-      "styleNo": formValue.styleNo ?? '',
-      "designName": formValue.embDesign ?? '',
-      "productType": defaults.productType || "",
+      "companyId": formValue.companyId ?? 0,
+      "companyName": this.asText(companyName),
+      "contactPerson": this.asText(defaults.contactPerson),
+      "mobileNo": this.asText(defaults.mobileNo),
+      "emailId": this.asText(defaults.emailId),
+      "address": this.asText(defaults.address),
+      "styleNo": this.asText(formValue.styleNo),
+      "designName": this.asText(formValue.embDesign),
+      "productType": this.asText(defaults.productType),
       "noOfStitches": this.asText(formValue.noOfStitches),
       "numberOfTrimmings": this.asText(formValue.numberOfTrimmings),
       "customField": this.asText(formValue.customField),
-      "chenilleColors": this.asNumber(formValue.chenilleColors),
-      "normalEmbColors": this.asNumber(formValue.normalEmbColors),
+      "chenilleColors": this.asText(formValue.chenilleColors),
+      "normalEmbColors": this.asText(formValue.normalEmbColors),
       "ratePerPiece": this.asText(formValue.ratePerPiece),
       "ratePerMeter": this.asText(formValue.embCost),
-      "quantity": quantity,
-      "totalAmount": embCost === null ? null : embCost * (quantity ?? 0),
-      "remarks": formValue.paymentTerms ?? '',
-      "status": defaults.status || "",
-      "createdBy": defaults.createdBy || null
+      "quantity": quantity ?? 0,
+      "totalAmount": this.asText(formValue.totalAmount),
+      "remarks": this.asText(formValue.paymentTerms),
+      "status": this.asText(defaults.status) || "Draft",
+      "createdBy": defaults.createdBy || 1
     };
 
       console.log('Payload Before Save:', payload);
@@ -223,10 +255,12 @@ export class CreateQuotationComponent {
             if (this.selectedFile && newId) {
               this.rateQuotationService.uploadImage(newId, this.selectedFile).subscribe({
                 next: () => {
+                  this.isSaving = false;
                   this.messageService.success('Rate Quotation created and image saved successfully.');
                   this.router.navigate(['/dashboard/rate-quotation/dashboard']);
                 },
                 error: (err) => {
+                  this.isSaving = false;
                   console.error('Image upload error:', err);
                   this.rateQuotationService.deleteRateQuotation(newId).subscribe();
                   this.messageService.error('Failed to save image. Rate Quotation was not saved.');
@@ -234,14 +268,17 @@ export class CreateQuotationComponent {
                 }
               });
             } else {
+              this.isSaving = false;
               this.messageService.success(response.message || 'Rate Quotation created successfully.');
               this.router.navigate(['/dashboard/rate-quotation/dashboard']);
             }
           } else {
+            this.isSaving = false;
             this.messageService.error(response.message || 'Failed to create rate quotation.');
           }
         },
         error: (error) => {
+          this.isSaving = false;
           this.messageService.error('An error occurred while creating the quotation.');
           console.error(error);
         }

@@ -69,6 +69,7 @@ export class EditQuotationComponent {
       normalEmbColors: [''],
       ratePerPiece: [''],
       embCost: [''],
+      totalAmount: [''],
       paymentTerms: ['']
     });
 
@@ -167,8 +168,7 @@ export class EditQuotationComponent {
         this.quotationNo = data.quotationNo || '';
         console.log('API Success: Fetched quotation details', data);
 
-        // Verify company exists
-        if (!this.companyOptions.some(c => c.key === data.companyId)) {
+        if (data.companyId && !this.companyOptions.some(c => c.key === data.companyId)) {
           this.messageService.error('Selected company no longer available');
         }
 
@@ -178,14 +178,15 @@ export class EditQuotationComponent {
           embDesign: data.designName,
           productType: data.productType,
           quantity: data.quantity,
-          embCost: data.ratePerMeter,
+          embCost: this.stripRsPrefix(data.ratePerMeter),
           paymentTerms: data.remarks,
           noOfStitches: data.noOfStitches ?? '',
           numberOfTrimmings: data.numberOfTrimmings ?? '',
           customField: data.customField ?? '',
           chenilleColors: data.chenilleColors ?? '',
           normalEmbColors: data.normalEmbColors ?? '',
-          ratePerPiece: data.ratePerPiece ?? ''
+          ratePerPiece: this.stripRsPrefix(data.ratePerPiece),
+          totalAmount: this.stripRsPrefix(data.totalAmount)
         });
 
         this.quotationForm.enable();
@@ -225,17 +226,32 @@ export class EditQuotationComponent {
 
   onFileSelected(event: any) {
     const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-      this.imageRemoved = false;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target && e.target.result) {
-          this.imagePreview = e.target.result;
-        }
-      };
-      reader.readAsDataURL(file);
+    this.setSelectedFile(file);
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+  }
+
+  onFileDropped(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    this.setSelectedFile(file);
+  }
+
+  private setSelectedFile(file?: File) {
+    if (!file) {
+      return;
     }
+    this.selectedFile = file;
+    this.imageRemoved = false;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target && e.target.result) {
+        this.imagePreview = e.target.result;
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   removeImage() {
@@ -283,11 +299,26 @@ export class EditQuotationComponent {
     });
   }
 
-  private asText(value: unknown): string | null {
+  private stripRsPrefix(value: unknown): string {
     if (value === null || value === undefined || value === '') {
-      return null;
+      return '';
     }
-    return String(value);
+    return String(value).replace(/^\s*RS\s*/i, '');
+  }
+
+  private asText(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    const text = String(value).trim();
+    if (text === '' || text === '0') {
+      return '';
+    }
+    const numeric = Number(text);
+    if (!Number.isNaN(numeric) && numeric === 0) {
+      return '';
+    }
+    return text;
   }
 
   private asNumber(value: unknown): number | null {
@@ -295,7 +326,10 @@ export class EditQuotationComponent {
       return null;
     }
     const n = Number(value);
-    return Number.isNaN(n) ? null : n;
+    if (Number.isNaN(n) || n === 0) {
+      return null;
+    }
+    return n;
   }
 
   submitQuotation() {
@@ -309,32 +343,31 @@ export class EditQuotationComponent {
 
     const selectedCompany = this.companyOptions.find(c => c.key === formValue.companyId);
     const companyName = selectedCompany ? selectedCompany.value : '';
-    const embCost = this.asNumber(formValue.embCost);
     const quantity = this.asNumber(formValue.quantity ?? defaults.quantity);
 
     const payload = {
       "quotationDate": new Date().toISOString().split('T')[0],
-      "companyId": formValue.companyId ?? null,
-      "companyName": companyName,
-      "contactPerson": defaults.contactPerson,
-      "mobileNo": defaults.mobileNo,
-      "emailId": defaults.emailId,
-      "address": defaults.address,
-      "styleNo": formValue.styleNo ?? '',
-      "designName": formValue.embDesign ?? '',
-      "productType": defaults.productType || "",
+      "companyId": formValue.companyId ?? 0,
+      "companyName": this.asText(companyName),
+      "contactPerson": this.asText(defaults.contactPerson),
+      "mobileNo": this.asText(defaults.mobileNo),
+      "emailId": this.asText(defaults.emailId),
+      "address": this.asText(defaults.address),
+      "styleNo": this.asText(formValue.styleNo),
+      "designName": this.asText(formValue.embDesign),
+      "productType": this.asText(defaults.productType),
       "noOfStitches": this.asText(formValue.noOfStitches),
       "numberOfTrimmings": this.asText(formValue.numberOfTrimmings),
       "customField": this.asText(formValue.customField),
-      "chenilleColors": this.asNumber(formValue.chenilleColors),
-      "normalEmbColors": this.asNumber(formValue.normalEmbColors),
+      "chenilleColors": this.asText(formValue.chenilleColors),
+      "normalEmbColors": this.asText(formValue.normalEmbColors),
       "ratePerPiece": this.asText(formValue.ratePerPiece),
       "ratePerMeter": this.asText(formValue.embCost),
-      "quantity": quantity,
-      "totalAmount": embCost === null ? null : embCost * (quantity ?? 0),
-      "remarks": formValue.paymentTerms ?? '',
-      "status": defaults.status || "",
-      "modifiedBy": defaults.createdBy || null
+      "quantity": quantity ?? 0,
+      "totalAmount": this.asText(formValue.totalAmount),
+      "remarks": this.asText(formValue.paymentTerms),
+      "status": this.asText(defaults.status) || "Draft",
+      "modifiedBy": defaults.createdBy || 1
     };
 
       console.log('Update Payload:', payload);

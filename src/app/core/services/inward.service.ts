@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, tap, BehaviorSubject, forkJoin } from 'rxjs';
+import { Observable, of, tap, BehaviorSubject, forkJoin, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 
 export interface InwardSavePayload {
@@ -96,7 +97,14 @@ export class InwardService {
 
     const params = { companyId };
     return this.api.get<any[]>('inward/design-style-colour', params).pipe(
-      tap(data => this.selectionCache.set(companyId, data))
+      tap(data => this.selectionCache.set(companyId, Array.isArray(data) ? data : [])),
+      catchError((err) => {
+        // Older API versions returned 404 when a company had no active inward rows.
+        if (err?.status === 404) {
+          return of([]);
+        }
+        return throwError(() => err);
+      })
     );
   }
 

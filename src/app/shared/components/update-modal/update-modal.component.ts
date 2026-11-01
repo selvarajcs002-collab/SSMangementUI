@@ -84,7 +84,7 @@ export class UpdateModalComponent implements OnInit {
       }))
       .subscribe({
         next: (data) => {
-          this.allData = data;
+          this.allData = Array.isArray(data) ? data : [];
           this.updateDropdowns();
           this.enableFields();
           this.cdr.markForCheck();
@@ -112,6 +112,9 @@ export class UpdateModalComponent implements OnInit {
   }
 
   private getUniqueOptions(data: any[], key: string): SelectOption[] {
+    if (!Array.isArray(data) || data.length === 0) {
+      return [];
+    }
     const unique = [...new Set(data.map(item => item[key]))];
     return unique
       .filter(val => val !== null && val !== undefined && val !== '')

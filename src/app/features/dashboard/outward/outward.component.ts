@@ -610,13 +610,17 @@ export class OutwardComponent implements OnInit {
           gst: loadedGst ? maskedGst : '(empty)'
         });
         // Data is now sorted by newest first directly from the Stored Procedure (CreatedDate DESC)
-        this.fullData = res.options;
+        this.fullData = Array.isArray(res.options) ? [...res.options] : [];
         this.selectedCompany = res.company;
         this.fullDcData = [];
 
-        this.designOptions = this.getUniqueStrings(res.options, (x: any) => x.designName);
-        this.styleOptions = this.getUniqueStrings(res.options, (x: any) => x.styleNo);
-        this.colourOptions = this.getUniqueStrings(res.options, (x: any) => x.colour);
+        if (isEditMode) {
+          this.seedEditSelectionRows();
+        }
+
+        this.designOptions = this.getUniqueStrings(this.fullData, (x: any) => x.designName);
+        this.styleOptions = this.getUniqueStrings(this.fullData, (x: any) => x.styleNo);
+        this.colourOptions = this.getUniqueStrings(this.fullData, (x: any) => x.colour);
 
         if (!this.colourOptions.includes('MULTI')) {
           this.colourOptions.push('MULTI');
@@ -669,6 +673,40 @@ export class OutwardComponent implements OnInit {
     });
   }
 
+  private seedEditSelectionRows(): void {
+    const currentVals = this.outwardForm.getRawValue();
+    const rows: Array<{ designName?: string; styleNo?: string; colour?: string; poNo?: string }> = [];
+
+    if (currentVals.designRef || currentVals.styleNo || currentVals.colour) {
+      rows.push({
+        designName: currentVals.designRef,
+        styleNo: currentVals.styleNo,
+        colour: currentVals.colour,
+        poNo: currentVals.poNo
+      });
+    }
+
+    this.colourBreakdowns.controls.forEach(group => {
+      const colourName = group.get('colourName')?.value || group.get('colourId')?.value;
+      if (!colourName) return;
+      rows.push({
+        designName: currentVals.designRef,
+        styleNo: currentVals.styleNo,
+        colour: colourName,
+        poNo: currentVals.poNo
+      });
+    });
+
+    rows.forEach(row => {
+      const exists = this.fullData.some((x: any) =>
+        x.designName === row.designName && x.styleNo === row.styleNo && x.colour === row.colour
+      );
+      if (!exists) {
+        this.fullData.push(row);
+      }
+    });
+  }
+
   onSelectionChange() {
     // Sync form values to component properties
     const { designRef, styleNo, colour, companyId } = this.outwardForm.getRawValue();
@@ -677,19 +715,19 @@ export class OutwardComponent implements OnInit {
     this.selectedColour = colour;
 
     // Design options should be filtered by selectedStyle and selectedColour
-    let designFiltered = this.fullData;
+    let designFiltered = Array.isArray(this.fullData) ? this.fullData : [];
     if (this.selectedStyle) designFiltered = designFiltered.filter(x => x.styleNo === this.selectedStyle);
     if (this.selectedColour && this.selectedColour !== 'MULTI') designFiltered = designFiltered.filter(x => x.colour === this.selectedColour);
     this.designOptions = this.getUniqueStrings(designFiltered, (x: any) => x.designName);
 
     // Style options should be filtered by selectedColour and selectedDesign
-    let styleFiltered = this.fullData;
+    let styleFiltered = Array.isArray(this.fullData) ? this.fullData : [];
     if (this.selectedDesign) styleFiltered = styleFiltered.filter(x => x.designName === this.selectedDesign);
     if (this.selectedColour && this.selectedColour !== 'MULTI') styleFiltered = styleFiltered.filter(x => x.colour === this.selectedColour);
     this.styleOptions = this.getUniqueStrings(styleFiltered, (x: any) => x.styleNo);
 
     // Colour options should be filtered by selectedStyle and selectedDesign
-    let colourFiltered = this.fullData;
+    let colourFiltered = Array.isArray(this.fullData) ? this.fullData : [];
     if (this.selectedDesign) colourFiltered = colourFiltered.filter(x => x.designName === this.selectedDesign);
     if (this.selectedStyle) colourFiltered = colourFiltered.filter(x => x.styleNo === this.selectedStyle);
     this.colourOptions = this.getUniqueStrings(colourFiltered, (x: any) => x.colour);
@@ -2146,6 +2184,9 @@ export class OutwardComponent implements OnInit {
 
   private getUniqueStrings(items: any[], selector: (item: any) => any): string[] {
     const map = new Map<string, string>();
+    if (!Array.isArray(items)) {
+      return [];
+    }
     items.forEach(item => {
       const val = selector(item);
       if (val) {

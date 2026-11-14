@@ -3,6 +3,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AppConfigService } from './app-config.service';
 
+// This is the file is used for to call the api services 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   constructor(private http: HttpClient, private configService: AppConfigService) { }
@@ -20,10 +21,12 @@ export class ApiService {
   }
 
   getWithResponse<T>(url: string, params?: any): Observable<HttpResponse<T>> {
-    return this.http.get<T>(this.getFullUrl(url), {
-      params,
-      observe: 'response'
-    });
+    return this.http.get<T>(this.getFullUrl(url),
+      {
+        params,
+        observe: 'response'
+      }
+    );
   }
 
   post<T>(url: string, data: unknown): Observable<T> {

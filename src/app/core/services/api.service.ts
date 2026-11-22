@@ -8,8 +8,10 @@ import { AppConfigService } from './app-config.service';
 export class ApiService {
   constructor(private http: HttpClient, private configService: AppConfigService) { }
 
-  public getFullUrl(url: string): string {
-    if (url.startsWith('http') || url.startsWith('assets/')) {
+  public getFullUrl(url: string): string 
+  {
+    if (url.startsWith('http') || url.startsWith('assets/')) 
+      {
       return url;
     }
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
